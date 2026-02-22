@@ -10,7 +10,7 @@
                 <h2 class="text-xl font-bold" style="color: var(--text);">Edit User</h2>
                 <p class="text-sm mt-1" style="color: var(--muted);">Update user information</p>
             </div>
-            <a href="{{ route('users.index') }}" class="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors" style="color: var(--text); border: 1px solid var(--border);">
+            <a href="{{ route('admin.users.index') }}" class="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors" style="color: var(--text); border: 1px solid var(--border);">
                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
                 </svg>
@@ -18,7 +18,7 @@
             </a>
         </div>
 
-        <form method="POST" action="{{ route('users.update', $user) }}" x-data="{ loading: false, showPassword: false, showPasswordConfirmation: false }" @submit="loading = true">
+        <form method="POST" action="{{ route('admin.users.update', $user) }}" x-data="{ loading: false, showPassword: false, showPasswordConfirmation: false }" @submit="loading = true">
             @csrf
             @method('PUT')
 
@@ -146,7 +146,7 @@
             </div>
 
             <div class="flex flex-col sm:flex-row sm:justify-end space-y-3 sm:space-y-0 sm:space-x-3 mt-6">
-                <a href="{{ route('users.index') }}" class="inline-flex items-center justify-center px-6 py-3 rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors" style="color: var(--text); border: 1px solid var(--border);">
+                <a href="{{ route('admin.users.index') }}" class="inline-flex items-center justify-center px-6 py-3 rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors" style="color: var(--text); border: 1px solid var(--border);">
                     Cancel
                 </a>
                 <button 

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Testimonial;
 use Illuminate\Http\Request;
 
 class TestimonialController extends Controller
@@ -48,6 +49,11 @@ class TestimonialController extends Controller
         Testimonial::create($validated);
 
         return redirect()->route('admin.testimonials.index')->with('success', 'Testimonial created successfully!');
+    }
+
+    public function show(Testimonial $testimonial)
+    {
+        return view('admin.testimonials.show', compact('testimonial'));
     }
 
     public function edit(Testimonial $testimonial)

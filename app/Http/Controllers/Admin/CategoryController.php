@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Category;
 use Illuminate\Http\Request;
 
 class CategoryController extends Controller
@@ -44,6 +45,11 @@ class CategoryController extends Controller
         Category::create($validated);
 
         return redirect()->route('admin.categories.index')->with('success', 'Category created successfully!');
+    }
+
+    public function show(Category $category)
+    {
+        return view('admin.categories.show', compact('category'));
     }
 
     public function edit(Category $category)

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\ContentSection;
 use Illuminate\Http\Request;
 
 class ContentSectionController extends Controller
@@ -20,7 +21,7 @@ class ContentSectionController extends Controller
             });
         }
 
-        $sections = $query->latest()->paginate(10);
+        $sections = $query->orderBy('section_key')->paginate(10);
 
         return view('admin.content-sections.index', compact('sections'));
     }
@@ -47,23 +48,25 @@ class ContentSectionController extends Controller
         ]);
 
         $validated['is_active'] = $request->has('is_active');
-
-        if ($request->filled('points')) {
-            $validated['points'] = json_decode($request->points, true);
-        }
-        if ($request->filled('buttons')) {
-            $validated['buttons'] = json_decode($request->buttons, true);
-        }
-        if ($request->filled('gallery_images')) {
-            $validated['gallery_images'] = json_decode($request->gallery_images, true);
-        }
-        if ($request->filled('meta')) {
-            $validated['meta'] = json_decode($request->meta, true);
+        
+        // Convert JSON strings to arrays
+        foreach (['points', 'buttons', 'gallery_images', 'meta'] as $field) {
+            if (!empty($validated[$field])) {
+                $decoded = json_decode($validated[$field], true);
+                $validated[$field] = $decoded ?: null;
+            } else {
+                $validated[$field] = null;
+            }
         }
 
         ContentSection::create($validated);
 
         return redirect()->route('admin.content-sections.index')->with('success', 'Content section created successfully!');
+    }
+
+    public function show(ContentSection $contentSection)
+    {
+        return view('admin.content-sections.show', compact('contentSection'));
     }
 
     public function edit(ContentSection $contentSection)
@@ -88,18 +91,15 @@ class ContentSectionController extends Controller
         ]);
 
         $validated['is_active'] = $request->has('is_active');
-
-        if ($request->filled('points')) {
-            $validated['points'] = json_decode($request->points, true);
-        }
-        if ($request->filled('buttons')) {
-            $validated['buttons'] = json_decode($request->buttons, true);
-        }
-        if ($request->filled('gallery_images')) {
-            $validated['gallery_images'] = json_decode($request->gallery_images, true);
-        }
-        if ($request->filled('meta')) {
-            $validated['meta'] = json_decode($request->meta, true);
+        
+        // Convert JSON strings to arrays
+        foreach (['points', 'buttons', 'gallery_images', 'meta'] as $field) {
+            if (!empty($validated[$field])) {
+                $decoded = json_decode($validated[$field], true);
+                $validated[$field] = $decoded ?: null;
+            } else {
+                $validated[$field] = null;
+            }
         }
 
         $contentSection->update($validated);

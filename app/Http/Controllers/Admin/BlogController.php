@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Blog;
 use Illuminate\Http\Request;
 
 class BlogController extends Controller
@@ -50,6 +51,11 @@ class BlogController extends Controller
         Blog::create($validated);
 
         return redirect()->route('admin.blogs.index')->with('success', 'Blog created successfully!');
+    }
+
+    public function show(Blog $blog)
+    {
+        return view('admin.blogs.show', compact('blog'));
     }
 
     public function edit(Blog $blog)

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Product;
 use Illuminate\Http\Request;
 
 class ProductController extends Controller
@@ -56,6 +57,11 @@ class ProductController extends Controller
         Product::create($validated);
 
         return redirect()->route('admin.products.index')->with('success', 'Product created successfully!');
+    }
+
+    public function show(Product $product)
+    {
+        return view('admin.products.show', compact('product'));
     }
 
     public function edit(Product $product)

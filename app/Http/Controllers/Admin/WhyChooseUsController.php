@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\WhyChooseUs;
 use Illuminate\Http\Request;
 
 class WhyChooseUsController extends Controller
@@ -44,6 +45,11 @@ class WhyChooseUsController extends Controller
         WhyChooseUs::create($validated);
 
         return redirect()->route('admin.why-choose-us.index')->with('success', 'Item created successfully!');
+    }
+
+    public function show(WhyChooseUs $whyChooseUs)
+    {
+        return view('admin.why-choose-us.show', compact('whyChooseUs'));
     }
 
     public function edit(WhyChooseUs $whyChooseUs)

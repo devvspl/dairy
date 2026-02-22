@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Usp;
 use Illuminate\Http\Request;
 
 class UspController extends Controller
@@ -44,6 +45,11 @@ class UspController extends Controller
         Usp::create($validated);
 
         return redirect()->route('admin.usps.index')->with('success', 'USP created successfully!');
+    }
+
+    public function show(Usp $usp)
+    {
+        return view('admin.usps.show', compact('usp'));
     }
 
     public function edit(Usp $usp)

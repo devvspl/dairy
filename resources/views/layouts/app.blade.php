@@ -92,8 +92,8 @@
                         <span class="ml-3 font-medium" x-show="!sidebarCollapsed">Dashboard</span>
                     </a>
 
-                    <a href="{{ route('users.index') }}" 
-                       class="sidebar-link {{ request()->routeIs('users.*') ? 'active' : '' }} flex items-center rounded-lg transition-all hover:bg-gray-50 text-sm"
+                    <a href="{{ route('admin.users.index') }}" 
+                       class="sidebar-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }} flex items-center rounded-lg transition-all hover:bg-gray-50 text-sm"
                        :class="sidebarCollapsed ? 'justify-center p-3' : 'px-3 py-2'"
                        style="{{ request()->routeIs('users.*') ? '' : 'color: var(--muted);' }}" 
                        :title="sidebarCollapsed ? 'Users' : ''">

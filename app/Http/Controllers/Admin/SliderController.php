@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Slider;
 use Illuminate\Http\Request;
 
 class SliderController extends Controller
@@ -50,6 +51,11 @@ class SliderController extends Controller
         Slider::create($validated);
 
         return redirect()->route('admin.sliders.index')->with('success', 'Slider created successfully!');
+    }
+
+    public function show(Slider $slider)
+    {
+        return view('admin.sliders.show', compact('slider'));
     }
 
     public function edit(Slider $slider)

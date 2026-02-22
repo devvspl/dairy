@@ -14,7 +14,7 @@
             </div>
             
             <div class="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3">
-                <form method="GET" action="{{ route('users.index') }}" class="flex-1 sm:flex-initial">
+                <form method="GET" action="{{ route('admin.users.index') }}" class="flex-1 sm:flex-initial">
                     <input 
                         type="text" 
                         name="search" 
@@ -27,7 +27,7 @@
                     >
                 </form>
                 
-                <a href="{{ route('users.create') }}" class="inline-flex items-center justify-center px-4 py-2 rounded-lg text-white text-sm font-medium hover:opacity-90 transition-opacity" style="background-color: var(--green);">
+                <a href="{{ route('admin.users.create') }}" class="inline-flex items-center justify-center px-4 py-2 rounded-lg text-white text-sm font-medium hover:opacity-90 transition-opacity" style="background-color: var(--green);">
                     <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
                     </svg>
@@ -82,19 +82,19 @@
                             </td>
                             <td class="px-4 lg:px-6 py-4">
                                 <div class="flex items-center justify-end space-x-2">
-                                    <a href="{{ route('users.show', $user) }}" class="p-2 rounded-lg hover:bg-gray-100 transition-colors" style="color: var(--green);" title="View">
+                                    <a href="{{ route('admin.users.show', $user) }}" class="p-2 rounded-lg hover:bg-gray-100 transition-colors" style="color: var(--green);" title="View">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
                                         </svg>
                                     </a>
-                                    <a href="{{ route('users.edit', $user) }}" class="p-2 rounded-lg hover:bg-gray-100 transition-colors" style="color: var(--green);" title="Edit">
+                                    <a href="{{ route('admin.users.edit', $user) }}" class="p-2 rounded-lg hover:bg-gray-100 transition-colors" style="color: var(--green);" title="Edit">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                                         </svg>
                                     </a>
                                     @if($user->id !== auth()->id())
-                                        <form method="POST" action="{{ route('users.destroy', $user) }}" onsubmit="return confirm('Are you sure you want to delete this user?');" class="inline">
+                                        <form method="POST" action="{{ route('admin.users.destroy', $user) }}" onsubmit="return confirm('Are you sure you want to delete this user?');" class="inline">
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" class="p-2 rounded-lg hover:bg-red-50 transition-colors text-red-600" title="Delete">
