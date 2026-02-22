@@ -505,24 +505,39 @@
 <body>
 
   <!-- TOP MOVING BAR -->
+  @php
+    $announcements = \App\Models\Announcement::active()->get();
+  @endphp
+  @if($announcements->count() > 0)
   <div class="topbar">
     <div class="container">
       <div class="marquee-wrap">
         <div class="marquee">
-          <span>🎉 Big Savings Alert! Get <b>10% OFF</b> on orders above <b>₹3000</b> | Use code - <b>TBOF10</b></span>
-          <span>⭐ Salary Day: Get <b>12% OFF</b> for Your Loved Ones | Code: <b>SAL12</b> | <b>ONLY ON APP</b></span>
-          <span>🎉 Big Savings Alert! Get <b>10% OFF</b> on orders above <b>₹3000</b> | Use code - <b>TBOF10</b></span>
-          <span>⭐ Salary Day: Get <b>12% OFF</b> for Your Loved Ones | Code: <b>SAL12</b> | <b>ONLY ON APP</b></span>
+          @foreach($announcements as $announcement)
+          <span>
+            @if($announcement->icon){{ $announcement->icon }} @endif
+            {!! $announcement->message !!}
+            @if($announcement->link && $announcement->link_text)
+            | <a href="{{ $announcement->link }}" style="color: inherit; text-decoration: underline;">{{ $announcement->link_text }}</a>
+            @endif
+          </span>
+          @endforeach
         </div>
         <div class="marquee" aria-hidden="true">
-          <span>🎉 Big Savings Alert! Get <b>10% OFF</b> on orders above <b>₹3000</b> | Use code - <b>TBOF10</b></span>
-          <span>⭐ Salary Day: Get <b>12% OFF</b> for Your Loved Ones | Code: <b>SAL12</b> | <b>ONLY ON APP</b></span>
-          <span>🎉 Big Savings Alert! Get <b>10% OFF</b> on orders above <b>₹3000</b> | Use code - <b>TBOF10</b></span>
-          <span>⭐ Salary Day: Get <b>12% OFF</b> for Your Loved Ones | Code: <b>SAL12</b> | <b>ONLY ON APP</b></span>
+          @foreach($announcements as $announcement)
+          <span>
+            @if($announcement->icon){{ $announcement->icon }} @endif
+            {!! $announcement->message !!}
+            @if($announcement->link && $announcement->link_text)
+            | <a href="{{ $announcement->link }}" style="color: inherit; text-decoration: underline;">{{ $announcement->link_text }}</a>
+            @endif
+          </span>
+          @endforeach
         </div>
       </div>
     </div>
   </div>
+  @endif
 
   <!-- MAIN HEADER -->
   <header class="mainbar">

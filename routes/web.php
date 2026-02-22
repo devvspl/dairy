@@ -56,6 +56,7 @@ Route::middleware('auth')->group(function () {
         Route::resource('sliders', App\Http\Controllers\Admin\SliderController::class);
         Route::resource('categories', App\Http\Controllers\Admin\CategoryController::class);
         Route::resource('types', App\Http\Controllers\Admin\TypeController::class);
+        Route::resource('announcements', App\Http\Controllers\Admin\AnnouncementController::class);
         Route::resource('products', App\Http\Controllers\Admin\ProductController::class);
         Route::resource('testimonials', App\Http\Controllers\Admin\TestimonialController::class);
         Route::resource('blogs', App\Http\Controllers\Admin\BlogController::class);
