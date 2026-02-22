@@ -662,9 +662,9 @@
 
         <div class="tb-foot-links">
           <h4>Support</h4>
-          <a href="#">Terms & Conditions</a>
-          <a href="#">FAQs</a>
-          <a href="#">Privacy Policy</a>
+          <a href="{{ route('terms-conditions') }}">Terms & Conditions</a>
+          <a href="{{ route('contact') }}">FAQs</a>
+          <a href="{{ route('privacy-policy') }}">Privacy Policy</a>
         </div>
 
         <!-- Newsletter -->
@@ -672,10 +672,23 @@
           <h4>Join Our Community</h4>
           <p>Get exclusive offers, product launches and healthy living tips.</p>
 
-          <form class="tb-foot-form">
-            <input type="email" placeholder="Your email address">
-            <button type="submit">Subscribe</button>
+          <form class="tb-foot-form" id="newsletterForm" action="{{ route('contact.submit') }}" method="POST">
+            @csrf
+            <input type="email" name="email" id="newsletter_email" placeholder="Your email address" required>
+            <input type="hidden" name="name" value="Newsletter Subscriber">
+            <input type="hidden" name="phone" value="0000000000">
+            <input type="hidden" name="subject" value="Newsletter Subscription">
+            <input type="hidden" name="message" value="I would like to subscribe to your newsletter for exclusive offers and updates.">
+            <button type="submit" id="newsletterBtn"><span id="newsletterBtnText">Subscribe</span></button>
           </form>
+          
+          <!-- Success/Error Messages -->
+          <div id="newsletterSuccess" style="display: none; margin-top: 12px; padding: 10px; background: #d1fae5; border-radius: 8px; color: #065f46; font-size: 13px; font-weight: 600;">
+            <i class="fa-solid fa-circle-check"></i> <span id="newsletterSuccessText"></span>
+          </div>
+          <div id="newsletterError" style="display: none; margin-top: 12px; padding: 10px; background: #fee2e2; border-radius: 8px; color: #991b1b; font-size: 13px; font-weight: 600;">
+            <i class="fa-solid fa-circle-xmark"></i> <span id="newsletterErrorText"></span>
+          </div>
         </div>
 
       </div>
@@ -1147,6 +1160,72 @@
             e.preventDefault();
             searchInput.focus();
             searchInput.select();
+          }
+        });
+      })();
+
+      // Newsletter Form AJAX Submission
+      (function() {
+        const form = document.getElementById('newsletterForm');
+        const btn = document.getElementById('newsletterBtn');
+        const btnText = document.getElementById('newsletterBtnText');
+        const successDiv = document.getElementById('newsletterSuccess');
+        const successText = document.getElementById('newsletterSuccessText');
+        const errorDiv = document.getElementById('newsletterError');
+        const errorText = document.getElementById('newsletterErrorText');
+        const emailInput = document.getElementById('newsletter_email');
+
+        if (!form) return;
+
+        form.addEventListener('submit', async function(e) {
+          e.preventDefault();
+
+          // Hide previous messages
+          successDiv.style.display = 'none';
+          errorDiv.style.display = 'none';
+
+          // Show loading state
+          btn.disabled = true;
+          btnText.textContent = 'Subscribing...';
+
+          try {
+            const formData = new FormData(form);
+            const response = await fetch(form.action, {
+              method: 'POST',
+              body: formData,
+              headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+              }
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+              // Show success message
+              successText.textContent = data.message || 'Thank you for subscribing!';
+              successDiv.style.display = 'block';
+              
+              // Reset form
+              emailInput.value = '';
+
+              // Auto-hide success message after 5 seconds
+              setTimeout(() => {
+                successDiv.style.display = 'none';
+              }, 5000);
+            } else {
+              // Show error message
+              errorText.textContent = data.message || 'Something went wrong. Please try again.';
+              errorDiv.style.display = 'block';
+            }
+          } catch (error) {
+            console.error('Newsletter error:', error);
+            errorText.textContent = 'Network error. Please check your connection and try again.';
+            errorDiv.style.display = 'block';
+          } finally {
+            // Reset button state
+            btn.disabled = false;
+            btnText.textContent = 'Subscribe';
           }
         });
       })();

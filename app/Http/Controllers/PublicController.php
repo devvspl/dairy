@@ -59,7 +59,12 @@ class PublicController extends Controller
     
     public function membership()
     {
-        return view('pages.membership');
+        $plans = \App\Models\MembershipPlan::active()->orderBy('order')->get();
+        $benefits = \App\Models\MembershipBenefit::active()->orderBy('order')->get();
+        $steps = \App\Models\MembershipStep::active()->orderBy('order')->get();
+        $faqs = \App\Models\MembershipFaq::active()->orderBy('order')->get();
+        
+        return view('pages.membership', compact('plans', 'benefits', 'steps', 'faqs'));
     }
     
     public function products(Request $request)
@@ -273,6 +278,30 @@ class PublicController extends Controller
         $contactPage = ContactPage::active()->byKey('main')->first();
         
         return view('pages.contact', compact('contactPage'));
+    }
+
+    public function submitContactInquiry(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|max:255',
+            'phone' => 'required|string|max:20',
+            'plan_id' => 'nullable|exists:membership_plans,id',
+            'subject' => 'nullable|string|max:255',
+            'message' => 'required|string',
+        ]);
+
+        \App\Models\ContactInquiry::create($validated);
+
+        // Check if it's an AJAX request
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Thank you for contacting us! We will get back to you shortly.'
+            ]);
+        }
+
+        return redirect()->back()->with('success', 'Thank you for contacting us! We will get back to you shortly.');
     }
     
     public function privacyPolicy()

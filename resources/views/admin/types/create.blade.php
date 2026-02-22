@@ -70,18 +70,18 @@
             <div>
                 <h3 class="text-lg font-bold mb-4" style="color: var(--text);">Status</h3>
                 <div class="flex items-center">
-                    <input type="checkbox" name="is_active" id="is_active" value="1" {{ old('is_active', true) ? 'checked' : '' }} class="w-4 h-4 rounded" style="color: var(--brand);">
+                    <input type="checkbox" name="is_active" id="is_active" value="1" {{ old('is_active', true) ? 'checked' : '' }} class="w-4 h-4 rounded" style="accent-color: var(--green);">
                     <label for="is_active" class="ml-2 text-sm font-medium" style="color: var(--text);">Active</label>
                 </div>
                 <p class="text-xs mt-1" style="color: var(--muted);">Inactive types won't be shown in filters</p>
             </div>
 
             <!-- Submit -->
-            <div class="flex items-center gap-3 pt-4">
-                <button type="submit" class="px-6 py-2 rounded-lg text-white font-medium transition-colors" style="background-color: var(--brand);">
+            <div class="flex items-center gap-3 pt-4 border-t" style="border-color: var(--border); padding-top: 1.5rem;">
+                <button type="submit" class="px-6 py-2 rounded-lg text-white font-medium transition-colors hover:opacity-90" style="background-color: var(--green);">
                     Create Type
                 </button>
-                <a href="{{ route('admin.types.index') }}" class="px-6 py-2 rounded-lg font-medium transition-colors" style="color: var(--text); border: 1px solid var(--border);">
+                <a href="{{ route('admin.types.index') }}" class="px-6 py-2 rounded-lg font-medium transition-colors hover:bg-gray-50" style="color: var(--text); border: 1px solid var(--border);">
                     Cancel
                 </a>
             </div>

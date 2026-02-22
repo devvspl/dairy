@@ -50,7 +50,7 @@
                                 <input type="text" name="icon" value="{{ old('icon', $type->icon) }}" class="flex-1 px-3 py-2 border rounded-lg" style="border-color: var(--border);" placeholder="fa-bottle-water">
                                 @if($type->icon)
                                 <div class="flex items-center justify-center w-12 h-10 border rounded-lg" style="border-color: var(--border);">
-                                    <i class="fa-solid {{ $type->icon }} text-xl" style="color: var(--brand);"></i>
+                                    <i class="fa-solid {{ $type->icon }} text-xl" style="color: var(--green);"></i>
                                 </div>
                                 @endif
                             </div>
@@ -78,15 +78,15 @@
             <div>
                 <h3 class="text-lg font-bold mb-4" style="color: var(--text);">Statistics</h3>
                 <div class="grid grid-cols-3 gap-4">
-                    <div class="p-4 rounded-lg" style="background-color: var(--soft);">
+                    <div class="p-4 rounded-lg" style="background-color: #f0f4ed;">
                         <div class="text-sm font-medium" style="color: var(--muted);">Products</div>
-                        <div class="text-2xl font-bold mt-1" style="color: var(--brand);">{{ $type->products->count() }}</div>
+                        <div class="text-2xl font-bold mt-1" style="color: var(--green);">{{ $type->products->count() }}</div>
                     </div>
-                    <div class="p-4 rounded-lg" style="background-color: var(--soft);">
+                    <div class="p-4 rounded-lg" style="background-color: #f0f4ed;">
                         <div class="text-sm font-medium" style="color: var(--muted);">Created</div>
                         <div class="text-sm font-bold mt-1" style="color: var(--text);">{{ $type->created_at->format('M d, Y') }}</div>
                     </div>
-                    <div class="p-4 rounded-lg" style="background-color: var(--soft);">
+                    <div class="p-4 rounded-lg" style="background-color: #f0f4ed;">
                         <div class="text-sm font-medium" style="color: var(--muted);">Updated</div>
                         <div class="text-sm font-bold mt-1" style="color: var(--text);">{{ $type->updated_at->format('M d, Y') }}</div>
                     </div>
@@ -97,18 +97,18 @@
             <div>
                 <h3 class="text-lg font-bold mb-4" style="color: var(--text);">Status</h3>
                 <div class="flex items-center">
-                    <input type="checkbox" name="is_active" id="is_active" value="1" {{ old('is_active', $type->is_active) ? 'checked' : '' }} class="w-4 h-4 rounded" style="color: var(--brand);">
+                    <input type="checkbox" name="is_active" id="is_active" value="1" {{ old('is_active', $type->is_active) ? 'checked' : '' }} class="w-4 h-4 rounded" style="accent-color: var(--green);">
                     <label for="is_active" class="ml-2 text-sm font-medium" style="color: var(--text);">Active</label>
                 </div>
                 <p class="text-xs mt-1" style="color: var(--muted);">Inactive types won't be shown in filters</p>
             </div>
 
             <!-- Submit -->
-            <div class="flex items-center gap-3 pt-4">
-                <button type="submit" class="px-6 py-2 rounded-lg text-white font-medium transition-colors" style="background-color: var(--brand);">
+            <div class="flex items-center gap-3 pt-4 border-t" style="border-color: var(--border); padding-top: 1.5rem;">
+                <button type="submit" class="px-6 py-2 rounded-lg text-white font-medium transition-colors hover:opacity-90" style="background-color: var(--green);">
                     Update Type
                 </button>
-                <a href="{{ route('admin.types.index') }}" class="px-6 py-2 rounded-lg font-medium transition-colors" style="color: var(--text); border: 1px solid var(--border);">
+                <a href="{{ route('admin.types.index') }}" class="px-6 py-2 rounded-lg font-medium transition-colors hover:bg-gray-50" style="color: var(--text); border: 1px solid var(--border);">
                     Cancel
                 </a>
             </div>

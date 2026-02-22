@@ -1139,26 +1139,41 @@
                         <p>{{ $aboutPage->contact_form_description ?? 'Share your details and our team will reach out shortly.' }}
                         </p>
                     </div>
-                    <form class="abpg-strap-form" action="#" method="post">
+                    <form class="abpg-strap-form" id="aboutForm" action="{{ route('contact.submit') }}" method="post">
+                        @csrf
                         <div class="abpg-field">
                             <i class="fa-solid fa-user"></i>
-                            <input type="text" name="name" placeholder="Your Name" required>
+                            <input type="text" name="name" id="about_name" placeholder="Your Name" required>
+                            <p class="text-red-600 text-xs mt-1" id="about-error-name" style="display: none;"></p>
                         </div>
                         <div class="abpg-field">
                             <i class="fa-solid fa-envelope"></i>
-                            <input type="email" name="email" placeholder="Email Address" required>
+                            <input type="email" name="email" id="about_email" placeholder="Email Address" required>
+                            <p class="text-red-600 text-xs mt-1" id="about-error-email" style="display: none;"></p>
                         </div>
                         <div class="abpg-field">
                             <i class="fa-solid fa-phone"></i>
-                            <input type="tel" name="phone" placeholder="Phone Number" required pattern="[0-9]{10}"
-                                maxlength="10">
+                            <input type="tel" name="phone" id="about_phone" placeholder="Phone Number" required>
+                            <p class="text-red-600 text-xs mt-1" id="about-error-phone" style="display: none;"></p>
                         </div>
                         <div class="abpg-field abpg-field-textarea">
                             <i class="fa-solid fa-message"></i>
-                            <textarea name="message" placeholder="Your Message" required rows="1"></textarea>
+                            <textarea name="message" id="about_message" placeholder="Your Message" required rows="1"></textarea>
+                            <p class="text-red-600 text-xs mt-1" id="about-error-message" style="display: none;"></p>
                         </div>
-                        <button class="abpg-btn abpg-btn-primary abpg-strap-btn" type="submit">
-                            <i class="fa-solid fa-paper-plane"></i> Submit
+
+                        <!-- Success Message -->
+                        <div style="grid-column: 1/-1; display: none; padding: 12px; background: #d1fae5; border: 1px solid #10b981; border-radius: 12px; color: #065f46; font-weight: 650;" id="aboutSuccessMessage">
+                            <i class="fa-solid fa-circle-check"></i> <span id="aboutSuccessText"></span>
+                        </div>
+
+                        <!-- Error Message -->
+                        <div style="grid-column: 1/-1; display: none; padding: 12px; background: #fee2e2; border: 1px solid #ef4444; border-radius: 12px; color: #991b1b; font-weight: 650;" id="aboutErrorMessage">
+                            <i class="fa-solid fa-circle-xmark"></i> <span id="aboutErrorText"></span>
+                        </div>
+
+                        <button class="abpg-btn abpg-btn-primary abpg-strap-btn" type="submit" id="aboutSubmitBtn">
+                            <i class="fa-solid fa-paper-plane"></i> <span id="aboutBtnText">Submit</span>
                         </button>
                     </form>
                 </div>
@@ -1213,6 +1228,105 @@
             });
 
             counters.forEach(c => io.observe(c));
+
+            // AJAX Form Submission for About Page
+            const aboutForm = document.getElementById('aboutForm');
+            if (aboutForm) {
+                aboutForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+
+                    // Get form elements
+                    const submitBtn = document.getElementById('aboutSubmitBtn');
+                    const btnText = document.getElementById('aboutBtnText');
+                    const successMessage = document.getElementById('aboutSuccessMessage');
+                    const errorMessage = document.getElementById('aboutErrorMessage');
+                    const successText = document.getElementById('aboutSuccessText');
+                    const errorText = document.getElementById('aboutErrorText');
+
+                    // Hide previous messages
+                    successMessage.style.display = 'none';
+                    errorMessage.style.display = 'none';
+
+                    // Clear previous error messages
+                    document.querySelectorAll('[id^="about-error-"]').forEach(el => {
+                        el.style.display = 'none';
+                        el.textContent = '';
+                    });
+
+                    // Disable submit button
+                    submitBtn.disabled = true;
+                    btnText.textContent = 'Sending...';
+
+                    // Get form data
+                    const formData = new FormData(aboutForm);
+
+                    // Send AJAX request
+                    fetch(aboutForm.action, {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Accept': 'application/json'
+                        }
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            return response.json().then(data => {
+                                throw data;
+                            });
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.success) {
+                            // Show success message
+                            successText.textContent = data.message;
+                            successMessage.style.display = 'block';
+
+                            // Reset form
+                            aboutForm.reset();
+
+                            // Scroll to success message
+                            successMessage.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+                            // Hide success message after 5 seconds
+                            setTimeout(() => {
+                                successMessage.style.display = 'none';
+                            }, 5000);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        
+                        // Handle validation errors
+                        if (error.errors) {
+                            // Display field-specific errors
+                            Object.keys(error.errors).forEach(field => {
+                                const errorElement = document.getElementById('about-error-' + field);
+                                if (errorElement) {
+                                    errorElement.textContent = error.errors[field][0];
+                                    errorElement.style.display = 'block';
+                                }
+                            });
+
+                            // Show general error message
+                            errorText.textContent = error.message || 'Please fix the errors below.';
+                            errorMessage.style.display = 'block';
+                            errorMessage.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        } else {
+                            // Show generic error message
+                            errorText.textContent = error.message || 'Something went wrong. Please try again.';
+                            errorMessage.style.display = 'block';
+                            errorMessage.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }
+                    })
+                    .finally(() => {
+                        // Re-enable submit button
+                        submitBtn.disabled = false;
+                        btnText.textContent = 'Submit';
+                    });
+                });
+            }
         })();
     </script>
 @endsection
