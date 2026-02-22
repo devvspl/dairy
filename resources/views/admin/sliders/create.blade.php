@@ -15,7 +15,7 @@
         </a>
     </div>
 
-    <form method="POST" action="{{ route('admin.sliders.store') }}">
+    <form method="POST" action="{{ route('admin.sliders.store') }}" enctype="multipart/form-data">
             @csrf
             
             <div class="space-y-4">
@@ -66,10 +66,33 @@
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium mb-2" style="color: var(--text);">Image Path</label>
-                    <input type="text" name="image" value="{{ old('image') }}" class="w-full px-3 py-2 border rounded-lg" style="border-color: var(--border);">
+                    <label class="block text-sm font-medium mb-2" style="color: var(--text);">Image</label>
+                    <div class="space-y-2">
+                        <input type="file" name="image_file" accept="image/*" class="w-full px-3 py-2 border rounded-lg" style="border-color: var(--border);" onchange="previewImage(event, 'imagePreview')">
+                        <input type="text" name="image" value="{{ old('image') }}" placeholder="Or enter image path manually" class="w-full px-3 py-2 border rounded-lg" style="border-color: var(--border);">
+                        <p class="text-xs" style="color: var(--muted);">Upload an image or enter path manually (e.g., uploads/sliders/image.jpg)</p>
+                        <div id="imagePreview" class="mt-2 hidden">
+                            <img src="" alt="Preview" class="max-w-xs rounded-lg border" style="border-color: var(--border);">
+                        </div>
+                    </div>
                     @error('image')<p class="text-red-600 text-sm mt-1">{{ $message }}</p>@enderror
+                    @error('image_file')<p class="text-red-600 text-sm mt-1">{{ $message }}</p>@enderror
                 </div>
+
+                <script>
+                    function previewImage(event, previewId) {
+                        const preview = document.getElementById(previewId);
+                        const file = event.target.files[0];
+                        if (file) {
+                            const reader = new FileReader();
+                            reader.onload = function(e) {
+                                preview.querySelector('img').src = e.target.result;
+                                preview.classList.remove('hidden');
+                            }
+                            reader.readAsDataURL(file);
+                        }
+                    }
+                </script>
 
                 <div>
                     <label class="block text-sm font-medium mb-2" style="color: var(--text);">Order *</label>

@@ -107,14 +107,21 @@
       height:44px;
       border:1px solid #cfcfcf;
       border-radius:7px;
-      padding:0 48px 0 14px;
+      padding:0 88px 0 14px;
       font-size:14px;
       outline:none;
+      transition: border-color 0.2s ease;
     }
-    .search input:focus{ border-color:var(--green); }
-    .search button{
+    .search input:focus{ 
+      border-color:var(--green); 
+      box-shadow: 0 0 0 3px rgba(47, 74, 30, 0.1);
+    }
+    .search input::placeholder{
+      color: #999;
+    }
+    .search-submit,
+    .search-clear{
       position:absolute;
-      right:8px;
       top:50%;
       transform:translateY(-50%);
       width:36px;
@@ -123,12 +130,218 @@
       border-radius:8px;
       background:#fff;
       cursor:pointer;
-      color:var(--green-dark);
       display:flex;
       align-items:center;
       justify-content:center;
+      transition: all 0.2s ease;
     }
-    .search button i{ font-size:20px; color:var(--green-dark); }
+    .search-submit{
+      right:8px;
+      color:var(--green-dark);
+    }
+    .search-submit:hover{
+      background: var(--green);
+    }
+    .search-submit:hover i{ 
+      color: #fff;
+    }
+    .search-submit i{ 
+      font-size:20px; 
+      color:var(--green-dark);
+      transition: color 0.2s ease;
+    }
+    .search-submit:disabled{
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    
+    .search-clear{
+      right: 48px;
+      color: #999;
+      display: none;
+    }
+    .search-clear:hover{
+      background: #f5f5f5;
+      color: #e74c3c;
+    }
+    .search-clear i{
+      font-size: 18px;
+    }
+    .search.has-value .search-clear{
+      display: flex;
+    }
+    .search.has-value input{
+      padding-right: 88px;
+    }
+    
+    /* Active search indicator */
+    .search.has-value input{
+      border-color: var(--green);
+      background: #f9fdf7;
+    }
+
+    /* Search Dropdown */
+    .search-dropdown{
+      position: absolute;
+      top: calc(100% + 8px);
+      left: 0;
+      right: 0;
+      background: #fff;
+      border: 1px solid #e0e0e0;
+      border-radius: 12px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+      max-height: 400px;
+      overflow-y: auto;
+      z-index: 1000;
+      display: none;
+    }
+    .search-dropdown.show{
+      display: block;
+    }
+    .search-dropdown.loading .search-dropdown-loading{
+      display: flex;
+    }
+    .search-dropdown.loading .search-dropdown-results,
+    .search-dropdown.loading .search-dropdown-empty{
+      display: none;
+    }
+    .search-dropdown.empty .search-dropdown-empty{
+      display: flex;
+    }
+    .search-dropdown.empty .search-dropdown-results,
+    .search-dropdown.empty .search-dropdown-loading{
+      display: none;
+    }
+    .search-dropdown-loading{
+      display: none;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 20px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+    .search-dropdown-loading i{
+      font-size: 18px;
+      color: var(--green);
+    }
+    .search-dropdown-empty{
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 30px 20px;
+      color: var(--muted);
+    }
+    .search-dropdown-empty i{
+      font-size: 32px;
+      opacity: 0.5;
+    }
+    .search-dropdown-empty p{
+      margin: 0;
+      font-size: 14px;
+      font-weight: 600;
+    }
+    .search-dropdown-results{
+      padding: 8px;
+    }
+    .search-result-item{
+      display: flex;
+      gap: 12px;
+      padding: 10px;
+      border-radius: 8px;
+      text-decoration: none;
+      color: var(--text);
+      transition: background 0.2s ease;
+      cursor: pointer;
+    }
+    .search-result-item:hover{
+      background: #f7f7f7;
+    }
+    .search-result-img{
+      width: 60px;
+      height: 60px;
+      border-radius: 8px;
+      object-fit: cover;
+      border: 1px solid #e0e0e0;
+      flex-shrink: 0;
+    }
+    .search-result-info{
+      flex: 1;
+      min-width: 0;
+    }
+    .search-result-name{
+      font-weight: 700;
+      font-size: 14px;
+      color: var(--green-dark);
+      margin: 0 0 4px 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .search-result-desc{
+      font-size: 12px;
+      color: var(--muted);
+      margin: 0 0 6px 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .search-result-price{
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+    }
+    .search-result-price-current{
+      font-weight: 800;
+      color: var(--green);
+    }
+    .search-result-price-old{
+      font-size: 12px;
+      color: #999;
+      text-decoration: line-through;
+    }
+    .search-result-badge{
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      background: #fff3cd;
+      color: #856404;
+    }
+    .search-dropdown-footer{
+      padding: 10px;
+      border-top: 1px solid #e0e0e0;
+      text-align: center;
+    }
+    .search-dropdown-footer a{
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      background: var(--green);
+      color: #fff;
+      text-decoration: none;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      transition: background 0.2s ease;
+    }
+    .search-dropdown-footer a:hover{
+      background: var(--green-dark);
+    }
+    
+    /* Highlight matched text */
+    .search-highlight{
+      background: #fff3cd;
+      color: #856404;
+      font-weight: 700;
+      padding: 0 2px;
+      border-radius: 2px;
+    }
 
     /* Logo */
     .logo{
@@ -265,6 +478,24 @@
         border-radius:10px;
       }
       .nav a:hover{ background:#f7f7f7; opacity:1; }
+      
+      /* Search dropdown mobile adjustments */
+      .search-dropdown{
+        max-height: 300px;
+      }
+      .search-result-item{
+        padding: 8px;
+      }
+      .search-result-img{
+        width: 50px;
+        height: 50px;
+      }
+      .search-result-name{
+        font-size: 13px;
+      }
+      .search-result-desc{
+        font-size: 11px;
+      }
     }
   </style>
   
@@ -299,12 +530,29 @@
       <div class="mainbar-inner">
 
         <!-- Search -->
-        <div class="search">
-          <input type="text" placeholder="Search..." />
-          <button type="button" aria-label="Search">
+        <form action="{{ route('products') }}" method="GET" class="search">
+          <input type="text" name="search" id="searchInput" placeholder="Search products... (Ctrl+K)" value="{{ request('search') }}" autocomplete="off" />
+          @if(request('search'))
+          <button type="button" class="search-clear" aria-label="Clear search" title="Clear">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+          @endif
+          <button type="submit" class="search-submit" aria-label="Search">
             <i class="fa-solid fa-magnifying-glass"></i>
           </button>
-        </div>
+          
+          <!-- Search Dropdown -->
+          <div class="search-dropdown" id="searchDropdown">
+            <div class="search-dropdown-loading">
+              <i class="fa-solid fa-spinner fa-spin"></i> Searching...
+            </div>
+            <div class="search-dropdown-results" id="searchResults"></div>
+            <div class="search-dropdown-empty">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <p>No products found</p>
+            </div>
+          </div>
+        </form>
 
         <!-- Logo -->
         <a href="{{ route('home') }}" class="logo" aria-label="{{ config('app.name') }}">
@@ -666,6 +914,226 @@
 
         // default state
         setExpanded(false);
+      })();
+
+      // Search Enhancement with Live Results
+      (function() {
+        const searchForm = document.querySelector('.search');
+        const searchInput = searchForm?.querySelector('input[name="search"]');
+        const clearBtn = searchForm?.querySelector('.search-clear');
+        const dropdown = document.getElementById('searchDropdown');
+        const resultsContainer = document.getElementById('searchResults');
+        
+        if (!searchInput || !dropdown) return;
+
+        let searchTimeout;
+        let currentQuery = '';
+
+        // Update visual state based on input value
+        function updateSearchState() {
+          if (searchInput.value.trim()) {
+            searchForm.classList.add('has-value');
+          } else {
+            searchForm.classList.remove('has-value');
+            hideDropdown();
+          }
+        }
+
+        // Show dropdown
+        function showDropdown() {
+          dropdown.classList.add('show');
+        }
+
+        // Hide dropdown
+        function hideDropdown() {
+          dropdown.classList.remove('show');
+          dropdown.classList.remove('loading', 'empty');
+        }
+
+        // Highlight matching text
+        function highlightText(text, query) {
+          if (!query || !text) return text;
+          const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+          return text.replace(regex, '<span class="search-highlight">$1</span>');
+        }
+
+        // Render search results
+        function renderResults(products, query) {
+          if (products.length === 0) {
+            dropdown.classList.add('empty');
+            dropdown.classList.remove('loading');
+            return;
+          }
+
+          dropdown.classList.remove('loading', 'empty');
+
+          let html = '';
+          products.forEach(product => {
+            html += `
+              <a href="${product.url}" class="search-result-item">
+                <img src="${product.image}" alt="${product.name}" class="search-result-img" onerror="this.src='{{ asset('images/products-1.png') }}'">
+                <div class="search-result-info">
+                  <h4 class="search-result-name">${highlightText(product.name, query)}</h4>
+                  <p class="search-result-desc">${product.short_description || ''}</p>
+                  <div class="search-result-price">
+                    <span class="search-result-price-current">₹${Math.round(product.price)}</span>
+                    ${product.mrp ? `<span class="search-result-price-old">₹${Math.round(product.mrp)}</span>` : ''}
+                    ${product.badge ? `<span class="search-result-badge">${product.badge}</span>` : ''}
+                  </div>
+                </div>
+              </a>
+            `;
+          });
+
+          html += `
+            <div class="search-dropdown-footer">
+              <a href="{{ route('products') }}?search=${encodeURIComponent(query)}">
+                View all results <i class="fa-solid fa-arrow-right"></i>
+              </a>
+            </div>
+          `;
+
+          resultsContainer.innerHTML = html;
+        }
+
+        // Perform search
+        async function performSearch(query) {
+          if (query.length < 2) {
+            hideDropdown();
+            return;
+          }
+
+          currentQuery = query;
+          showDropdown();
+          dropdown.classList.add('loading');
+          dropdown.classList.remove('empty');
+
+          try {
+            const response = await fetch(`{{ route('api.search.products') }}?q=${encodeURIComponent(query)}`);
+            const products = await response.json();
+            
+            // Only render if this is still the current query
+            if (query === currentQuery) {
+              renderResults(products, query);
+            }
+          } catch (error) {
+            console.error('Search error:', error);
+            dropdown.classList.remove('loading');
+            dropdown.classList.add('empty');
+          }
+        }
+
+        // Initial state
+        updateSearchState();
+
+        // Handle input with debounce
+        searchInput.addEventListener('input', function() {
+          updateSearchState();
+          
+          clearTimeout(searchTimeout);
+          const query = searchInput.value.trim();
+          
+          if (query.length >= 2) {
+            searchTimeout = setTimeout(() => {
+              performSearch(query);
+            }, 300);
+          } else {
+            hideDropdown();
+          }
+        });
+
+        // Show dropdown on focus if there's a value
+        searchInput.addEventListener('focus', function() {
+          const query = searchInput.value.trim();
+          if (query.length >= 2) {
+            performSearch(query);
+          }
+        });
+
+        // Clear button functionality
+        if (clearBtn) {
+          clearBtn.addEventListener('click', function() {
+            searchInput.value = '';
+            updateSearchState();
+            searchInput.focus();
+            window.location.href = '{{ route("products") }}';
+          });
+        }
+
+        // Clear search on ESC
+        searchInput.addEventListener('keydown', function(e) {
+          if (e.key === 'Escape') {
+            searchInput.value = '';
+            updateSearchState();
+            searchInput.blur();
+            hideDropdown();
+          }
+          // Navigate results with arrow keys
+          if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+            e.preventDefault();
+            const items = dropdown.querySelectorAll('.search-result-item');
+            if (items.length > 0) {
+              const focused = dropdown.querySelector('.search-result-item:focus');
+              if (!focused) {
+                items[0].focus();
+              } else {
+                const index = Array.from(items).indexOf(focused);
+                if (e.key === 'ArrowDown' && index < items.length - 1) {
+                  items[index + 1].focus();
+                } else if (e.key === 'ArrowUp' && index > 0) {
+                  items[index - 1].focus();
+                }
+              }
+            }
+          }
+        });
+
+        // Hide dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+          if (!searchForm.contains(e.target)) {
+            hideDropdown();
+          }
+        });
+
+        // Trim whitespace on submit
+        searchForm.addEventListener('submit', function(e) {
+          const value = searchInput.value.trim();
+          if (!value) {
+            e.preventDefault();
+            return;
+          }
+          searchInput.value = value;
+          hideDropdown();
+        });
+
+        // Add loading state
+        searchForm.addEventListener('submit', function() {
+          const btn = searchForm.querySelector('.search-submit');
+          if (btn) {
+            btn.disabled = true;
+            btn.style.opacity = '0.6';
+            const icon = btn.querySelector('i');
+            if (icon) {
+              icon.className = 'fa-solid fa-spinner fa-spin';
+            }
+            setTimeout(() => {
+              btn.disabled = false;
+              btn.style.opacity = '1';
+              if (icon) {
+                icon.className = 'fa-solid fa-magnifying-glass';
+              }
+            }, 2000);
+          }
+        });
+
+        // Focus search with Ctrl/Cmd + K
+        document.addEventListener('keydown', function(e) {
+          if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+            e.preventDefault();
+            searchInput.focus();
+            searchInput.select();
+          }
+        });
       })();
     </script>
     

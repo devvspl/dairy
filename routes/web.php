@@ -13,8 +13,13 @@ Route::get('/', [PublicController::class, 'home'])->name('home');
 Route::get('/about', [PublicController::class, 'about'])->name('about');
 Route::get('/membership', [PublicController::class, 'membership'])->name('membership');
 Route::get('/products', [PublicController::class, 'products'])->name('products');
+Route::get('/products/{slug}', [PublicController::class, 'productDetail'])->name('product.detail');
+Route::get('/api/search-products', [PublicController::class, 'searchProducts'])->name('api.search.products');
+Route::get('/api/filter-products', [PublicController::class, 'filterProducts'])->name('api.filter.products');
 Route::get('/blogs', [PublicController::class, 'blogs'])->name('blogs');
 Route::get('/contact', [PublicController::class, 'contact'])->name('contact');
+Route::get('/privacy-policy', [PublicController::class, 'privacyPolicy'])->name('privacy-policy');
+Route::get('/terms-and-conditions', [PublicController::class, 'termsConditions'])->name('terms-conditions');
 
 // Guest routes (redirect to dashboard if authenticated)
 Route::middleware('guest')->group(function () {
@@ -50,12 +55,23 @@ Route::middleware('auth')->group(function () {
         Route::resource('users', App\Http\Controllers\UserController::class);
         Route::resource('sliders', App\Http\Controllers\Admin\SliderController::class);
         Route::resource('categories', App\Http\Controllers\Admin\CategoryController::class);
+        Route::resource('types', App\Http\Controllers\Admin\TypeController::class);
         Route::resource('products', App\Http\Controllers\Admin\ProductController::class);
         Route::resource('testimonials', App\Http\Controllers\Admin\TestimonialController::class);
         Route::resource('blogs', App\Http\Controllers\Admin\BlogController::class);
         Route::resource('why-choose-us', App\Http\Controllers\Admin\WhyChooseUsController::class);
         Route::resource('usps', App\Http\Controllers\Admin\UspController::class);
         Route::resource('content-sections', App\Http\Controllers\Admin\ContentSectionController::class);
+        Route::resource('about-sections', App\Http\Controllers\Admin\AboutSectionController::class);
+        
+        Route::get('contact-page', [App\Http\Controllers\Admin\ContactPageController::class, 'index'])->name('contact-page.index');
+        Route::post('contact-page', [App\Http\Controllers\Admin\ContactPageController::class, 'update'])->name('contact-page.update');
+        
+        Route::get('about-page', [App\Http\Controllers\Admin\AboutPageController::class, 'index'])->name('about-page.index');
+        Route::post('about-page', [App\Http\Controllers\Admin\AboutPageController::class, 'update'])->name('about-page.update');
+        
+        Route::get('legal-pages/{pageKey}', [App\Http\Controllers\Admin\LegalPageController::class, 'index'])->name('legal-pages.index');
+        Route::post('legal-pages/{pageKey}', [App\Http\Controllers\Admin\LegalPageController::class, 'update'])->name('legal-pages.update');
     });
     
     // Legacy routes for backward compatibility

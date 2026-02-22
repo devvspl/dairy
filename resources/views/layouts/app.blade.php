@@ -69,10 +69,14 @@
                style="border-color: var(--border);">
             <div class="flex flex-col h-full">
                 <!-- Logo -->
-                <div class="flex items-center justify-center h-16 border-b" style="background-color: var(--green); border-color: var(--border);">
-                    <h1 class="text-lg font-bold text-white" x-show="!sidebarCollapsed">{{ config('app.name') }}</h1>
-                    <h1 class="text-lg font-bold text-white" x-show="sidebarCollapsed" style="display: none;">L</h1>
-                    <button @click="sidebarOpen = false" class="absolute right-4 lg:hidden text-white">
+                <div class="flex items-center justify-center h-16 border-b px-4" style="background-color: #ffffff; border-color: var(--border);">
+                    <a href="{{ route('dashboard') }}" class="flex items-center" x-show="!sidebarCollapsed">
+                        <img src="{{ asset('images/new.png') }}" alt="{{ config('app.name') }}" class="h-10 w-auto">
+                    </a>
+                    <a href="{{ route('dashboard') }}" class="flex items-center" x-show="sidebarCollapsed" style="display: none;">
+                        <img src="{{ asset('images/new.png') }}" alt="{{ config('app.name') }}" class="h-8 w-auto">
+                    </a>
+                    <button @click="sidebarOpen = false" class="absolute right-4 lg:hidden" style="color: var(--green);">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                         </svg>
@@ -130,6 +134,17 @@
                         <span class="ml-3 font-medium" x-show="!sidebarCollapsed">Categories</span>
                     </a>
 
+                    <a href="{{ route('admin.types.index') }}" 
+                       class="sidebar-link {{ request()->routeIs('admin.types.*') ? 'active' : '' }} flex items-center rounded-lg transition-all hover:bg-gray-50 text-sm"
+                       :class="sidebarCollapsed ? 'justify-center p-3' : 'px-3 py-2'"
+                       style="{{ request()->routeIs('admin.types.*') ? '' : 'color: var(--muted);' }}" 
+                       :title="sidebarCollapsed ? 'Types' : ''">
+                        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                        </svg>
+                        <span class="ml-3 font-medium" x-show="!sidebarCollapsed">Types</span>
+                    </a>
+
                     <a href="{{ route('admin.products.index') }}" 
                        class="sidebar-link {{ request()->routeIs('admin.products.*') ? 'active' : '' }} flex items-center rounded-lg transition-all hover:bg-gray-50 text-sm"
                        :class="sidebarCollapsed ? 'justify-center p-3' : 'px-3 py-2'"
@@ -174,6 +189,17 @@
                         <span class="ml-3 font-medium" x-show="!sidebarCollapsed">Content Sections</span>
                     </a>
 
+                    <a href="{{ route('admin.about-sections.index') }}" 
+                       class="sidebar-link {{ request()->routeIs('admin.about-sections.*') ? 'active' : '' }} flex items-center rounded-lg transition-all hover:bg-gray-50 text-sm"
+                       :class="sidebarCollapsed ? 'justify-center p-3' : 'px-3 py-2'"
+                       style="{{ request()->routeIs('admin.about-sections.*') ? '' : 'color: var(--muted);' }}" 
+                       :title="sidebarCollapsed ? 'About Sections' : ''">
+                        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <span class="ml-3 font-medium" x-show="!sidebarCollapsed">About Sections</span>
+                    </a>
+
                     <a href="{{ route('admin.testimonials.index') }}" 
                        class="sidebar-link {{ request()->routeIs('admin.testimonials.*') ? 'active' : '' }} flex items-center rounded-lg transition-all hover:bg-gray-50 text-sm"
                        :class="sidebarCollapsed ? 'justify-center p-3' : 'px-3 py-2'"
@@ -195,6 +221,55 @@
                         </svg>
                         <span class="ml-3 font-medium" x-show="!sidebarCollapsed">Blogs</span>
                     </a>
+
+                    <!-- Pages Section -->
+                    <div x-show="!sidebarCollapsed" class="px-3 pt-4 pb-2">
+                        <p class="text-xs font-semibold uppercase tracking-wider" style="color: var(--muted);">Pages</p>
+                    </div>
+
+                    <a href="{{ route('admin.contact-page.index') }}" 
+                       class="sidebar-link {{ request()->routeIs('admin.contact-page.*') ? 'active' : '' }} flex items-center rounded-lg transition-all hover:bg-gray-50 text-sm"
+                       :class="sidebarCollapsed ? 'justify-center p-3' : 'px-3 py-2'"
+                       style="{{ request()->routeIs('admin.contact-page.*') ? '' : 'color: var(--muted);' }}" 
+                       :title="sidebarCollapsed ? 'Contact Page' : ''">
+                        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                        </svg>
+                        <span class="ml-3 font-medium" x-show="!sidebarCollapsed">Contact Page</span>
+                    </a>
+
+                    <a href="{{ route('admin.about-page.index') }}" 
+                       class="sidebar-link {{ request()->routeIs('admin.about-page.*') ? 'active' : '' }} flex items-center rounded-lg transition-all hover:bg-gray-50 text-sm"
+                       :class="sidebarCollapsed ? 'justify-center p-3' : 'px-3 py-2'"
+                       style="{{ request()->routeIs('admin.about-page.*') ? '' : 'color: var(--muted);' }}" 
+                       :title="sidebarCollapsed ? 'About Page' : ''">
+                        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <span class="ml-3 font-medium" x-show="!sidebarCollapsed">About Page</span>
+                    </a>
+                    
+                    <a href="{{ route('admin.legal-pages.index', 'privacy-policy') }}" 
+                       class="sidebar-link {{ request()->routeIs('admin.legal-pages.*') && request()->route('pageKey') === 'privacy-policy' ? 'active' : '' }} flex items-center rounded-lg transition-all hover:bg-gray-50 text-sm"
+                       :class="sidebarCollapsed ? 'justify-center p-3' : 'px-3 py-2'"
+                       style="{{ request()->routeIs('admin.legal-pages.*') && request()->route('pageKey') === 'privacy-policy' ? '' : 'color: var(--muted);' }}" 
+                       :title="sidebarCollapsed ? 'Privacy Policy' : ''">
+                        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                        </svg>
+                        <span class="ml-3 font-medium" x-show="!sidebarCollapsed">Privacy Policy</span>
+                    </a>
+                    
+                    <a href="{{ route('admin.legal-pages.index', 'terms-conditions') }}" 
+                       class="sidebar-link {{ request()->routeIs('admin.legal-pages.*') && request()->route('pageKey') === 'terms-conditions' ? 'active' : '' }} flex items-center rounded-lg transition-all hover:bg-gray-50 text-sm"
+                       :class="sidebarCollapsed ? 'justify-center p-3' : 'px-3 py-2'"
+                       style="{{ request()->routeIs('admin.legal-pages.*') && request()->route('pageKey') === 'terms-conditions' ? '' : 'color: var(--muted);' }}" 
+                       :title="sidebarCollapsed ? 'Terms & Conditions' : ''">
+                        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        <span class="ml-3 font-medium" x-show="!sidebarCollapsed">Terms & Conditions</span>
+                    </a>
                 </nav>
 
                 <!-- Collapse Toggle Button (Desktop Only) -->
@@ -211,24 +286,6 @@
                     </button>
                 </div>
 
-                <!-- User Section -->
-                <div class="border-t" style="border-color: var(--border);" :class="sidebarCollapsed ? 'p-2' : 'p-4'">
-                    <div x-show="!sidebarCollapsed" class="flex items-center space-x-3 px-2">
-                        <div class="w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold flex-shrink-0" style="background-color: var(--green);">
-                            {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
-                        </div>
-                        <div class="flex-1 min-w-0">
-                            <p class="text-sm font-medium truncate" style="color: var(--text);">{{ auth()->user()->name }}</p>
-                            <p class="text-xs truncate" style="color: var(--muted);">{{ auth()->user()->email }}</p>
-                        </div>
-                    </div>
-                    
-                    <div x-show="sidebarCollapsed" class="flex justify-center" style="display: none;">
-                        <div class="w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold" style="background-color: var(--green);" :title="'{{ auth()->user()->name }}'">
-                            {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
-                        </div>
-                    </div>
-                </div>
             </div>
         </aside>
 

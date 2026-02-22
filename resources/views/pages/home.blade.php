@@ -723,8 +723,7 @@
                 box-shadow: 0 26px 80px rgba(0, 0, 0, 0.14);
                 background:
                     radial-gradient(circle at 30% 30%, rgba(241, 204, 36, 0.18), transparent 60%),
-                    radial-gradient(circle at 70% 70%, rgba(47, 74, 30, 0.12), transparent 62%),
-                    url("{{ asset('images/transport.png') }}");
+                    radial-gradient(circle at 70% 70%, rgba(47, 74, 30, 0.12), transparent 62%);
                 background-size: cover;
                 background-position: center;
             }
@@ -778,46 +777,55 @@
         </style>
     @endpush
     <!--- about section -->
+    @if($aboutSection)
     <section class="tb-abintro-sec" id="tbAbIntroSec">
         <div class="container">
             <div class="tb-abintro-wrap">
                 <!-- LEFT CONTENT -->
                 <div class="tb-abintro-left">
-                    <span class="tb-abintro-kicker">About Us</span>
-                    <h2>Clean, Honest Essentials — Made to Feel Premium</h2>
-                    <p>
-                        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt
-                        ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco
-                        laboris nisi ut aliquip ex ea commodo consequat.
-                        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore
-                        et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut
-                        aliquip ex ea commodo consequat.
-                    </p>
-                    <a href="{{ route('about') }}" class="tb-abintro-btn">
-                        Know More
-                    </a>
-                    <div class="tb-abintro-mini">
-                        <div class="tb-abintro-mini-item">
-                            <strong>Clean Standards</strong>
-                            <span>Transparent sourcing & processes</span>
+                    @if($aboutSection->kicker)
+                        <span class="tb-abintro-kicker">{{ $aboutSection->kicker }}</span>
+                    @endif
+                    <h2>{{ $aboutSection->title }}</h2>
+                    <p>{{ $aboutSection->description }}</p>
+                    @if($aboutSection->button_text && $aboutSection->button_link)
+                        <a href="{{ $aboutSection->button_link }}" class="tb-abintro-btn">
+                            {{ $aboutSection->button_text }}
+                        </a>
+                    @endif
+                    @if($aboutSection->mini_items && count($aboutSection->mini_items) > 0)
+                        <div class="tb-abintro-mini">
+                            @foreach($aboutSection->mini_items as $item)
+                                <div class="tb-abintro-mini-item">
+                                    <strong>{{ $item['title'] ?? '' }}</strong>
+                                    <span>{{ $item['text'] ?? '' }}</span>
+                                </div>
+                            @endforeach
                         </div>
-                        <div class="tb-abintro-mini-item">
-                            <strong>Packaging</strong>
-                            <span>Refined look & better protection</span>
-                        </div>
-                    </div>
+                    @endif
                 </div>
                 <!-- RIGHT IMAGE -->
                 <div class="tb-abintro-right">
-                    <div class="tb-abintro-img" aria-label="About image"></div>
-                    <div class="tb-abintro-badge">
-                        <strong><i class="fa-solid fa-star"></i> 4.8/5</strong>
-                        <span>Average customer rating</span>
-                    </div>
+                    <div class="tb-abintro-img" 
+                         @if($aboutSection->image)
+                         style="background-image: url('{{ asset($aboutSection->image) }}');"
+                         @endif
+                         aria-label="About image"></div>
+                    @if($aboutSection->badge_rating || $aboutSection->badge_text)
+                        <div class="tb-abintro-badge">
+                            @if($aboutSection->badge_rating)
+                                <strong><i class="fa-solid fa-star"></i> {{ $aboutSection->badge_rating }}</strong>
+                            @endif
+                            @if($aboutSection->badge_text)
+                                <span>{{ $aboutSection->badge_text }}</span>
+                            @endif
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>
     </section>
+    @endif
     @push('styles')
         <style>
             /* Products Section */

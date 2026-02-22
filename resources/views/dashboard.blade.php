@@ -90,6 +90,22 @@
             <a href="{{ route('admin.content-sections.index') }}" class="p-4 rounded-lg border hover:shadow-md transition-all text-center" style="border-color: var(--border);">
                 <p class="text-sm font-medium" style="color: var(--text);">Content Sections</p>
             </a>
+            <a href="{{ route('admin.about-sections.index') }}" class="p-4 rounded-lg border hover:shadow-md transition-all text-center" style="border-color: var(--border);">
+                <p class="text-sm font-medium" style="color: var(--text);">About Sections</p>
+            </a>
+        </div>
+    </div>
+
+    <!-- Pages Management -->
+    <div class="bg-white rounded-xl shadow-sm p-6 border" style="border-color: var(--border);">
+        <h2 class="text-lg font-semibold mb-4" style="color: var(--text);">Pages Management</h2>
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+            <a href="{{ route('admin.contact-page.index') }}" class="p-4 rounded-lg border hover:shadow-md transition-all text-center" style="border-color: var(--border);">
+                <p class="text-sm font-medium" style="color: var(--text);">Contact Page</p>
+            </a>
+            <a href="{{ route('admin.about-page.index') }}" class="p-4 rounded-lg border hover:shadow-md transition-all text-center" style="border-color: var(--border);">
+                <p class="text-sm font-medium" style="color: var(--text);">About Page</p>
+            </a>
         </div>
     </div>
 </div>
