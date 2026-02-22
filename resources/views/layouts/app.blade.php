@@ -78,10 +78,10 @@
                 <!-- Logo -->
                 <div class="flex items-center justify-center h-16 border-b px-4"
                     style="background-color: #ffffff; border-color: var(--border);">
-                    <a href="{{ route('dashboard') }}" class="flex items-center" x-show="!sidebarCollapsed">
+                    <a href="{{ route('admin.dashboard') }}" class="flex items-center" x-show="!sidebarCollapsed">
                         <img src="{{ asset('images/new.png') }}" alt="{{ config('app.name') }}" class="h-10 w-auto">
                     </a>
-                    <a href="{{ route('dashboard') }}" class="flex items-center" x-show="sidebarCollapsed"
+                    <a href="{{ route('admin.dashboard') }}" class="flex items-center" x-show="sidebarCollapsed"
                         style="display: none;">
                         <img src="{{ asset('images/new.png') }}" alt="{{ config('app.name') }}" class="h-8 w-auto">
                     </a>
