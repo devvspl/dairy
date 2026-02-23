@@ -26,20 +26,20 @@
                 <div>
                     <label class="block text-sm font-medium mb-2" style="color: var(--text);">Order</label>
                     <input type="number" name="order" value="{{ old('order', 0) }}" class="w-full px-3 py-2 border rounded-lg" style="border-color: var(--border);">
-                    @error('order')<p class="text-red-600 text-sm mt-1">{{ $message }}</p>@enderror>
+                    @error('order')<p class="text-red-600 text-sm mt-1">{{ $message }}</p>@enderror
                 </div>
             </div>
 
             <div>
                 <label class="block text-sm font-medium mb-2" style="color: var(--text);">Title *</label>
                 <input type="text" name="title" value="{{ old('title') }}" required class="w-full px-3 py-2 border rounded-lg" style="border-color: var(--border);">
-                @error('title')<p class="text-red-600 text-sm mt-1">{{ $message }}</p>@enderror>
+                @error('title')<p class="text-red-600 text-sm mt-1">{{ $message }}</p>@enderror
             </div>
 
             <div>
                 <label class="block text-sm font-medium mb-2" style="color: var(--text);">Description</label>
                 <textarea name="description" rows="3" class="w-full px-3 py-2 border rounded-lg" style="border-color: var(--border);">{{ old('description') }}</textarea>
-                @error('description')<p class="text-red-600 text-sm mt-1">{{ $message }}</p>@enderror>
+                @error('description')<p class="text-red-600 text-sm mt-1">{{ $message }}</p>@enderror
             </div>
 
             <div>
