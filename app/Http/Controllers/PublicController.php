@@ -2,20 +2,20 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Slider;
-use App\Models\Category;
-use App\Models\Type;
-use App\Models\Product;
-use App\Models\Testimonial;
-use App\Models\Blog;
-use App\Models\WhyChooseUs;
-use App\Models\Usp;
-use App\Models\ContentSection;
-use App\Models\AboutSection;
-use App\Models\ContactPage;
 use App\Models\AboutPage;
+use App\Models\AboutSection;
+use App\Models\Blog;
+use App\Models\Category;
+use App\Models\ContactPage;
+use App\Models\ContentSection;
 use App\Models\LegalPage;
+use App\Models\Product;
 use App\Models\Setting;
+use App\Models\Slider;
+use App\Models\Testimonial;
+use App\Models\Type;
+use App\Models\Usp;
+use App\Models\WhyChooseUs;
 use Illuminate\Http\Request;
 
 class PublicController extends Controller
@@ -30,16 +30,14 @@ class PublicController extends Controller
         $whyChooseUs = WhyChooseUs::active()->get();
         $usps = Usp::active()->get();
         $aboutSection = AboutSection::active()->orderBy('order')->first();
-        
         $whyItWorks = ContentSection::active()->byKey('why_it_works')->first();
         $videoSection = ContentSection::active()->byKey('video_section')->first();
         $ctaSection = ContentSection::active()->byKey('cta_section')->first();
-
         return view('pages.home', compact(
-            'sliders', 
-            'categories', 
-            'products', 
-            'testimonials', 
+            'sliders',
+            'categories',
+            'products',
+            'testimonials',
             'blogs',
             'whyChooseUs',
             'usps',
@@ -49,52 +47,53 @@ class PublicController extends Controller
             'ctaSection'
         ));
     }
-    
+
     public function about()
     {
         $aboutPage = AboutPage::active()->byKey('main')->first();
-        
+
         return view('pages.about', compact('aboutPage'));
     }
-    
+
     public function membership()
     {
         $plans = \App\Models\MembershipPlan::active()->orderBy('order')->get();
         $benefits = \App\Models\MembershipBenefit::active()->orderBy('order')->get();
         $steps = \App\Models\MembershipStep::active()->orderBy('order')->get();
         $faqs = \App\Models\MembershipFaq::active()->orderBy('order')->get();
-        
+
         return view('pages.membership', compact('plans', 'benefits', 'steps', 'faqs'));
     }
-    
+
     public function products(Request $request)
     {
         $query = Product::active()->with(['category', 'type']);
-        
+
         // Filter by type (using slug)
         if ($request->has('type') && $request->type) {
             $typeSlugs = explode(',', $request->type);
-            $query->whereHas('type', function($q) use ($typeSlugs) {
+            $query->whereHas('type', function ($q) use ($typeSlugs) {
                 $q->whereIn('slug', $typeSlugs);
             });
         }
-        
+
         // Filter by category
         if ($request->has('category') && $request->category) {
             $categoryIds = explode(',', $request->category);
             $query->whereIn('category_id', $categoryIds);
         }
-        
+
         // Search
         if ($request->has('search') && $request->search) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('short_description', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%");
+            $query->where(function ($q) use ($search) {
+                $q
+                    ->where('name', 'like', "%{$search}%")
+                    ->orWhere('short_description', 'like', "%{$search}%")
+                    ->orWhere('description', 'like', "%{$search}%");
             });
         }
-        
+
         // Price range
         if ($request->has('min_price') && $request->min_price) {
             $query->where('price', '>=', $request->min_price);
@@ -102,12 +101,12 @@ class PublicController extends Controller
         if ($request->has('max_price') && $request->max_price) {
             $query->where('price', '<=', $request->max_price);
         }
-        
+
         // Rating filter
         if ($request->has('min_rating') && $request->min_rating) {
             $query->where('rating', '>=', $request->min_rating);
         }
-        
+
         // Sorting
         $sort = $request->get('sort', 'featured');
         switch ($sort) {
@@ -126,14 +125,14 @@ class PublicController extends Controller
             default:
                 $query->orderBy('is_featured', 'desc')->orderBy('order');
         }
-        
+
         $products = $query->paginate(12);
         $types = Type::active()->get();
         $categories = Category::active()->get();
-        
+
         return view('pages.products', compact('products', 'types', 'categories'));
     }
-    
+
     public function productDetail($slug)
     {
         $product = Product::active()->with('category')->where('slug', $slug)->firstOrFail();
@@ -142,28 +141,29 @@ class PublicController extends Controller
             ->where('id', '!=', $product->id)
             ->limit(4)
             ->get();
-        
+
         return view('pages.product-detail', compact('product', 'relatedProducts'));
     }
 
     public function searchProducts(Request $request)
     {
         $query = $request->get('q', '');
-        
+
         if (strlen($query) < 2) {
             return response()->json([]);
         }
 
         $products = Product::active()
-            ->where(function($q) use ($query) {
-                $q->where('name', 'like', "%{$query}%")
-                  ->orWhere('short_description', 'like', "%{$query}%")
-                  ->orWhere('description', 'like', "%{$query}%")
-                  ->orWhere('category', 'like', "%{$query}%");
+            ->where(function ($q) use ($query) {
+                $q
+                    ->where('name', 'like', "%{$query}%")
+                    ->orWhere('short_description', 'like', "%{$query}%")
+                    ->orWhere('description', 'like', "%{$query}%")
+                    ->orWhere('category', 'like', "%{$query}%");
             })
             ->limit(8)
             ->get()
-            ->map(function($product) {
+            ->map(function ($product) {
                 return [
                     'id' => $product->id,
                     'name' => $product->name,
@@ -184,31 +184,32 @@ class PublicController extends Controller
     public function filterProducts(Request $request)
     {
         $query = Product::active()->with(['category', 'type']);
-        
+
         // Filter by type (using slug)
         if ($request->has('type') && $request->type) {
             $typeSlugs = explode(',', $request->type);
-            $query->whereHas('type', function($q) use ($typeSlugs) {
+            $query->whereHas('type', function ($q) use ($typeSlugs) {
                 $q->whereIn('slug', $typeSlugs);
             });
         }
-        
+
         // Filter by category
         if ($request->has('category') && $request->category) {
             $categoryIds = explode(',', $request->category);
             $query->whereIn('category_id', $categoryIds);
         }
-        
+
         // Search
         if ($request->has('search') && $request->search) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('short_description', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%");
+            $query->where(function ($q) use ($search) {
+                $q
+                    ->where('name', 'like', "%{$search}%")
+                    ->orWhere('short_description', 'like', "%{$search}%")
+                    ->orWhere('description', 'like', "%{$search}%");
             });
         }
-        
+
         // Price range
         if ($request->has('min_price') && $request->min_price) {
             $query->where('price', '>=', $request->min_price);
@@ -216,12 +217,12 @@ class PublicController extends Controller
         if ($request->has('max_price') && $request->max_price) {
             $query->where('price', '<=', $request->max_price);
         }
-        
+
         // Rating filter
         if ($request->has('min_rating') && $request->min_rating) {
             $query->where('rating', '>=', $request->min_rating);
         }
-        
+
         // Sorting
         $sort = $request->get('sort', 'featured');
         switch ($sort) {
@@ -240,8 +241,8 @@ class PublicController extends Controller
             default:
                 $query->orderBy('is_featured', 'desc')->orderBy('order');
         }
-        
-        $products = $query->get()->map(function($product) {
+
+        $products = $query->get()->map(function ($product) {
             return [
                 'id' => $product->id,
                 'name' => $product->name,
@@ -267,16 +268,30 @@ class PublicController extends Controller
             'total' => $products->count(),
         ]);
     }
-    
+
     public function blogs()
     {
-        return view('pages.blogs');
+        $blogs = Blog::active()->orderBy('order')->paginate(9);
+
+        return view('pages.blogs', compact('blogs'));
     }
-    
+
+    public function blogDetail($slug)
+    {
+        $blog = Blog::active()->where('slug', $slug)->firstOrFail();
+        $relatedBlogs = Blog::active()
+            ->where('id', '!=', $blog->id)
+            ->orderBy('order')
+            ->limit(3)
+            ->get();
+
+        return view('pages.blog-detail', compact('blog', 'relatedBlogs'));
+    }
+
     public function contact()
     {
         $contactPage = ContactPage::active()->byKey('main')->first();
-        
+
         return view('pages.contact', compact('contactPage'));
     }
 
@@ -303,18 +318,18 @@ class PublicController extends Controller
 
         return redirect()->back()->with('success', 'Thank you for contacting us! We will get back to you shortly.');
     }
-    
+
     public function privacyPolicy()
     {
         $legalPage = LegalPage::active()->byKey('privacy-policy')->first();
-        
+
         return view('pages.privacy-policy', compact('legalPage'));
     }
-    
+
     public function termsConditions()
     {
         $legalPage = LegalPage::active()->byKey('terms-conditions')->first();
-        
+
         return view('pages.terms-and-conditions', compact('legalPage'));
     }
 }

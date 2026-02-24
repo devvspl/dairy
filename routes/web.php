@@ -15,6 +15,7 @@ Route::get('/products/{slug}', [PublicController::class, 'productDetail'])->name
 Route::get('/api/search-products', [PublicController::class, 'searchProducts'])->name('api.search.products');
 Route::get('/api/filter-products', [PublicController::class, 'filterProducts'])->name('api.filter.products');
 Route::get('/blogs', [PublicController::class, 'blogs'])->name('blogs');
+Route::get('/blogs/{slug}', [PublicController::class, 'blogDetail'])->name('blog.detail');
 Route::get('/contact', [PublicController::class, 'contact'])->name('contact');
 Route::post('/contact', [PublicController::class, 'submitContactInquiry'])->name('contact.submit');
 Route::get('/privacy-policy', [PublicController::class, 'privacyPolicy'])->name('privacy-policy');
@@ -33,6 +34,7 @@ Route::middleware('guest')->group(function () {
 // Authenticated routes
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/member/dashboard', [DashboardController::class, 'index'])->name('member.dashboard');
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
     Route::get('/profile', [App\Http\Controllers\ProfileController::class, 'edit'])->name('profile.edit');
     Route::put('/profile', [App\Http\Controllers\ProfileController::class, 'update'])->name('profile.update');
@@ -40,7 +42,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/account', [App\Http\Controllers\ProfileController::class, 'account'])->name('account');
     Route::delete('/account', [App\Http\Controllers\ProfileController::class, 'deleteAccount'])->name('account.delete');
     // Admin Routes
-    Route::prefix('admin')->name('admin.')->group(function () {
+    Route::prefix('admin')->name('admin.')->middleware('admin')->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'admin'])->name('dashboard');
         Route::resource('users', App\Http\Controllers\UserController::class);
         Route::resource('sliders', App\Http\Controllers\Admin\SliderController::class);
@@ -50,27 +52,29 @@ Route::middleware('auth')->group(function () {
         Route::resource('products', App\Http\Controllers\Admin\ProductController::class);
         Route::resource('testimonials', App\Http\Controllers\Admin\TestimonialController::class);
         Route::resource('blogs', App\Http\Controllers\Admin\BlogController::class);
-        Route::resource('why-choose-us', App\Http\Controllers\Admin\WhyChooseUsController::class);
+        Route::post('blogs/upload-image', [App\Http\Controllers\Admin\BlogController::class, 'uploadImage'])->name('blogs.upload-image');
+        Route::resource('whychooseus', App\Http\Controllers\Admin\WhyChooseUsController::class);
         Route::resource('usps', App\Http\Controllers\Admin\UspController::class);
         Route::resource('content-sections', App\Http\Controllers\Admin\ContentSectionController::class);
         Route::resource('about-sections', App\Http\Controllers\Admin\AboutSectionController::class);
+        
         Route::get('contact-page', [App\Http\Controllers\Admin\ContactPageController::class, 'index'])->name('contact-page.index');
         Route::post('contact-page', [App\Http\Controllers\Admin\ContactPageController::class, 'update'])->name('contact-page.update');
+        
         Route::get('about-page', [App\Http\Controllers\Admin\AboutPageController::class, 'index'])->name('about-page.index');
         Route::post('about-page', [App\Http\Controllers\Admin\AboutPageController::class, 'update'])->name('about-page.update');
+        
         Route::get('legal-pages/{pageKey}', [App\Http\Controllers\Admin\LegalPageController::class, 'index'])->name('legal-pages.index');
         Route::post('legal-pages/{pageKey}', [App\Http\Controllers\Admin\LegalPageController::class, 'update'])->name('legal-pages.update');
+        
         Route::resource('membership-plans', App\Http\Controllers\Admin\MembershipPlanController::class);
         Route::resource('membership-benefits', App\Http\Controllers\Admin\MembershipBenefitController::class);
         Route::resource('membership-faqs', App\Http\Controllers\Admin\MembershipFaqController::class);
         Route::resource('membership-steps', App\Http\Controllers\Admin\MembershipStepController::class);
+        
         Route::get('contact-inquiries', [App\Http\Controllers\Admin\ContactInquiryController::class, 'index'])->name('contact-inquiries.index');
         Route::get('contact-inquiries/{contactInquiry}', [App\Http\Controllers\Admin\ContactInquiryController::class, 'show'])->name('contact-inquiries.show');
         Route::post('contact-inquiries/{contactInquiry}/status', [App\Http\Controllers\Admin\ContactInquiryController::class, 'updateStatus'])->name('contact-inquiries.update-status');
         Route::delete('contact-inquiries/{contactInquiry}', [App\Http\Controllers\Admin\ContactInquiryController::class, 'destroy'])->name('contact-inquiries.destroy');
-    });
-    // Legacy routes for backward compatibility
-    Route::get('/users', function () {
-        return redirect()->route('admin.users.index');
     });
 });

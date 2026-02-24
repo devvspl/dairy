@@ -8,8 +8,12 @@
     <!-- Profile Information -->
     <div class="bg-white rounded-xl shadow-sm p-4 lg:p-6 border" style="border-color: var(--border);">
         <div class="flex items-center space-x-4 mb-6">
-            <div class="w-20 h-20 rounded-full flex items-center justify-center text-white text-2xl font-bold" style="background-color: var(--green);">
-                {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
+            <div class="w-20 h-20 rounded-full flex items-center justify-center text-white text-2xl font-bold overflow-hidden" style="background-color: var(--green);">
+                @if(auth()->user()->profile_image)
+                    <img src="{{ asset(auth()->user()->profile_image) }}" alt="{{ auth()->user()->name }}" class="w-full h-full object-cover">
+                @else
+                    {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
+                @endif
             </div>
             <div>
                 <h2 class="text-xl font-bold" style="color: var(--text);">{{ auth()->user()->name }}</h2>
@@ -17,9 +21,52 @@
             </div>
         </div>
 
-        <form method="POST" action="{{ route('profile.update') }}" x-data="{ loading: false }" @submit="loading = true">
+        <form method="POST" action="{{ route('profile.update') }}" enctype="multipart/form-data" x-data="{ loading: false, imagePreview: '{{ auth()->user()->profile_image ? asset(auth()->user()->profile_image) : '' }}' }" @submit="loading = true">
             @csrf
             @method('PUT')
+
+            <!-- Profile Image Upload -->
+            <div class="mb-6">
+                <label class="block text-sm font-medium mb-2" style="color: var(--text);">Profile Image</label>
+                <div class="flex items-center space-x-4">
+                    <div class="w-24 h-24 rounded-full flex items-center justify-center text-white text-3xl font-bold overflow-hidden border-2" style="background-color: var(--green); border-color: var(--border);">
+                        <template x-if="imagePreview">
+                            <img :src="imagePreview" alt="Preview" class="w-full h-full object-cover">
+                        </template>
+                        <template x-if="!imagePreview">
+                            <span>{{ strtoupper(substr(auth()->user()->name, 0, 1)) }}</span>
+                        </template>
+                    </div>
+                    <div class="flex-1">
+                        <input 
+                            type="file" 
+                            id="profile_image" 
+                            name="profile_image"
+                            accept="image/jpeg,image/jpg,image/png,image/gif"
+                            class="hidden"
+                            @change="
+                                const file = $event.target.files[0];
+                                if (file) {
+                                    const reader = new FileReader();
+                                    reader.onload = (e) => imagePreview = e.target.result;
+                                    reader.readAsDataURL(file);
+                                }
+                            "
+                        >
+                        <label 
+                            for="profile_image" 
+                            class="inline-block px-4 py-2 text-sm font-medium text-white rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+                            style="background-color: var(--green);"
+                        >
+                            Choose Image
+                        </label>
+                        <p class="text-xs mt-2" style="color: var(--muted);">JPG, PNG or GIF. Max size 2MB.</p>
+                        @error('profile_image')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+                </div>
+            </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6">
                 <div>

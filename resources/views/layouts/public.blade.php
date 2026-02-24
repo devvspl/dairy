@@ -499,6 +499,284 @@
     }
   </style>
   
+  <!-- Toast Notifications -->
+  <style>
+    .dairy-toast {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      background: #fff;
+      border: 1px solid rgba(0,0,0,0.1);
+      border-radius: 12px;
+      padding: 14px 18px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      z-index: 9999;
+      transform: translateX(400px);
+      opacity: 0;
+      transition: all 0.3s ease;
+      min-width: 280px;
+      max-width: 400px;
+    }
+    .dairy-toast.show {
+      transform: translateX(0);
+      opacity: 1;
+    }
+    .dairy-toast i {
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+    .dairy-toast-success {
+      border-left: 4px solid #2F4A1E;
+    }
+    .dairy-toast-success i {
+      color: #2F4A1E;
+    }
+    .dairy-toast-error {
+      border-left: 4px solid #e74c3c;
+    }
+    .dairy-toast-error i {
+      color: #e74c3c;
+    }
+    .dairy-toast span {
+      font-weight: 700;
+      font-size: 14px;
+      color: var(--text);
+    }
+
+    /* Offcanvas Styles */
+    .dairy-offcanvas-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 10000;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+    }
+    .dairy-offcanvas-overlay.show {
+      opacity: 1;
+      visibility: visible;
+    }
+    .dairy-offcanvas {
+      position: fixed;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      width: min(450px, 90vw);
+      background: #fff;
+      box-shadow: -5px 0 25px rgba(0,0,0,0.2);
+      z-index: 10001;
+      transform: translateX(100%);
+      transition: transform 0.3s ease;
+      display: flex;
+      flex-direction: column;
+    }
+    .dairy-offcanvas.show {
+      transform: translateX(0);
+    }
+    .dairy-offcanvas-header {
+      padding: 20px 24px;
+      border-bottom: 1px solid #e0e0e0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: linear-gradient(180deg, #fff, #f9f9f9);
+    }
+    .dairy-offcanvas-header h3 {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 900;
+      color: var(--green-dark);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .dairy-offcanvas-close {
+      width: 36px;
+      height: 36px;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      background: #fff;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+    }
+    .dairy-offcanvas-close:hover {
+      background: #f5f5f5;
+      border-color: #f1cc24;
+    }
+    .dairy-offcanvas-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px 24px;
+    }
+    .dairy-offcanvas-empty {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--muted);
+    }
+    .dairy-offcanvas-empty i {
+      font-size: 64px;
+      opacity: 0.3;
+      margin-bottom: 16px;
+    }
+    .dairy-offcanvas-empty p {
+      font-size: 16px;
+      font-weight: 700;
+      margin: 0 0 20px 0;
+    }
+    .dairy-offcanvas-item {
+      display: flex;
+      gap: 14px;
+      padding: 14px;
+      border: 1px solid #e0e0e0;
+      border-radius: 12px;
+      margin-bottom: 12px;
+      background: #fff;
+      transition: all 0.2s ease;
+    }
+    .dairy-offcanvas-item:hover {
+      border-color: #f1cc24;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    .dairy-offcanvas-img {
+      width: 80px;
+      height: 80px;
+      border-radius: 8px;
+      object-fit: cover;
+      border: 1px solid #e0e0e0;
+      flex-shrink: 0;
+    }
+    .dairy-offcanvas-info {
+      flex: 1;
+      min-width: 0;
+    }
+    .dairy-offcanvas-name {
+      font-weight: 800;
+      font-size: 14px;
+      color: var(--green-dark);
+      margin: 0 0 6px 0;
+      display: block;
+      text-decoration: none;
+      transition: color 0.2s ease;
+    }
+    .dairy-offcanvas-name:hover {
+      color: #f1cc24;
+    }
+    .dairy-offcanvas-price {
+      font-weight: 900;
+      font-size: 16px;
+      color: var(--text);
+      margin-bottom: 8px;
+    }
+    .dairy-offcanvas-qty {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .dairy-offcanvas-qty button {
+      width: 28px;
+      height: 28px;
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      background: #fff;
+      cursor: pointer;
+      font-weight: 900;
+      transition: all 0.2s ease;
+    }
+    .dairy-offcanvas-qty button:hover {
+      background: var(--green);
+      color: #fff;
+      border-color: var(--green);
+    }
+    .dairy-offcanvas-qty span {
+      font-weight: 800;
+      min-width: 30px;
+      text-align: center;
+    }
+    .dairy-offcanvas-remove {
+      width: 32px;
+      height: 32px;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      background: #fff;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #e74c3c;
+      transition: all 0.2s ease;
+      flex-shrink: 0;
+    }
+    .dairy-offcanvas-remove:hover {
+      background: #fee;
+      border-color: #e74c3c;
+    }
+    .dairy-offcanvas-footer {
+      padding: 20px 24px;
+      border-top: 1px solid #e0e0e0;
+      background: #f9f9f9;
+    }
+    .dairy-offcanvas-total {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      font-size: 18px;
+      font-weight: 900;
+    }
+    .dairy-offcanvas-btn {
+      width: 100%;
+      padding: 14px;
+      border: 0;
+      border-radius: 10px;
+      background: var(--green);
+      color: #fff;
+      font-weight: 900;
+      font-size: 15px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      text-decoration: none;
+    }
+    .dairy-offcanvas-btn:hover {
+      background: var(--green-dark);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    .dairy-offcanvas-btn.secondary {
+      background: #fff;
+      color: var(--green-dark);
+      border: 1px solid #e0e0e0;
+      margin-top: 10px;
+    }
+    .dairy-offcanvas-btn.secondary:hover {
+      background: #f5f5f5;
+      border-color: #f1cc24;
+    }
+
+    @media (max-width: 560px) {
+      .dairy-toast {
+        bottom: 20px;
+        right: 20px;
+        left: 20px;
+        min-width: auto;
+      }
+      .dairy-offcanvas {
+        width: 100%;
+      }
+    }
+  </style>
+
   @stack('styles')
 </head>
 
@@ -577,22 +855,30 @@
         <!-- Icons + Hamburger -->
         <div class="icons">
           @auth
-            <a href="{{ route('dashboard') }}" class="icon-btn" title="Dashboard">
-              <i class="fa-solid fa-user"></i>
-            </a>
+            @if(auth()->user()->isAdmin())
+              <!-- Admin User -->
+              <a href="{{ route('admin.dashboard') }}" class="icon-btn" title="Admin Dashboard">
+                <i class="fa-solid fa-user-shield"></i>
+              </a>
+            @else
+              <!-- Member User -->
+              <a href="{{ route('member.dashboard') }}" class="icon-btn" title="My Dashboard">
+                <i class="fa-solid fa-user"></i>
+              </a>
+            @endif
           @else
             <a href="{{ route('login') }}" class="icon-btn" title="Login">
               <i class="fa-solid fa-user"></i>
             </a>
           @endauth
 
-          <button class="icon-btn" type="button" aria-label="Wishlist">
-            <span class="badge">0</span>
+          <button class="icon-btn" type="button" aria-label="Wishlist" id="wishlistBtn">
+            <span class="badge" id="wishlistCount">0</span>
             <i class="fa-regular fa-heart"></i>
           </button>
 
-          <button class="icon-btn" type="button" aria-label="Cart">
-            <span class="badge">0</span>
+          <button class="icon-btn" type="button" aria-label="Cart" id="cartBtn">
+            <span class="badge" id="cartCount">0</span>
             <i class="fa-solid fa-bag-shopping"></i>
           </button>
 
@@ -616,6 +902,13 @@
         <li><a href="{{ route('products') }}" class="{{ request()->routeIs('products') ? 'active' : '' }}"><i class="fa-solid fa-box-open"></i> Products</a></li>
         <li><a href="{{ route('blogs') }}" class="{{ request()->routeIs('blogs') ? 'active' : '' }}"><i class="fa-solid fa-pen-to-square"></i> Blogs</a></li>
         <li><a href="{{ route('contact') }}" class="{{ request()->routeIs('contact') ? 'active' : '' }}"><i class="fa-solid fa-envelope"></i> Contact Us</a></li>
+        
+        @auth
+          @if(auth()->user()->isAdmin())
+            <!-- Admin Menu Items -->
+            <li><a href="{{ route('admin.dashboard') }}" class="{{ request()->routeIs('admin.*') ? 'active' : '' }}"><i class="fa-solid fa-gauge"></i> Admin Panel</a></li>
+          @endif
+        @endauth
       </ul>
     </div>
   </nav>
@@ -885,6 +1178,51 @@
     }
     </style>
     
+    <!-- Cart Offcanvas -->
+    <div class="dairy-offcanvas-overlay" id="cartOverlay"></div>
+    <div class="dairy-offcanvas" id="cartOffcanvas">
+      <div class="dairy-offcanvas-header">
+        <h3><i class="fa-solid fa-bag-shopping"></i> Shopping Cart</h3>
+        <button class="dairy-offcanvas-close" id="closeCart" aria-label="Close cart">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="dairy-offcanvas-body" id="cartBody">
+        <!-- Cart items will be inserted here -->
+      </div>
+      <div class="dairy-offcanvas-footer" id="cartFooter" style="display: none;">
+        <div class="dairy-offcanvas-total">
+          <span>Total:</span>
+          <span id="cartTotal">₹0</span>
+        </div>
+        <a href="{{ route('contact') }}" class="dairy-offcanvas-btn">
+          <i class="fa-solid fa-paper-plane"></i> Proceed to Inquiry
+        </a>
+        <button class="dairy-offcanvas-btn secondary" id="clearCartBtn">
+          <i class="fa-solid fa-trash"></i> Clear Cart
+        </button>
+      </div>
+    </div>
+
+    <!-- Wishlist Offcanvas -->
+    <div class="dairy-offcanvas-overlay" id="wishlistOverlay"></div>
+    <div class="dairy-offcanvas" id="wishlistOffcanvas">
+      <div class="dairy-offcanvas-header">
+        <h3><i class="fa-solid fa-heart"></i> My Wishlist</h3>
+        <button class="dairy-offcanvas-close" id="closeWishlist" aria-label="Close wishlist">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="dairy-offcanvas-body" id="wishlistBody">
+        <!-- Wishlist items will be inserted here -->
+      </div>
+      <div class="dairy-offcanvas-footer" id="wishlistFooter" style="display: none;">
+        <button class="dairy-offcanvas-btn secondary" id="clearWishlistBtn">
+          <i class="fa-solid fa-trash"></i> Clear Wishlist
+        </button>
+      </div>
+    </div>
+
     <!-- Scripts -->
     <script>
       (function () {
@@ -1226,6 +1564,251 @@
             // Reset button state
             btn.disabled = false;
             btnText.textContent = 'Subscribe';
+          }
+        });
+      })();
+    </script>
+
+    <!-- Cart & Wishlist Management -->
+    <script src="{{ asset('js/cart-wishlist.js') }}"></script>
+
+    <!-- Cart & Wishlist Modals -->
+    <script>
+      // Cart Offcanvas Handler
+      (function() {
+        const cartBtn = document.getElementById('cartBtn');
+        const cartOverlay = document.getElementById('cartOverlay');
+        const cartOffcanvas = document.getElementById('cartOffcanvas');
+        const closeCart = document.getElementById('closeCart');
+        const cartBody = document.getElementById('cartBody');
+        const cartFooter = document.getElementById('cartFooter');
+        const cartTotal = document.getElementById('cartTotal');
+        const clearCartBtn = document.getElementById('clearCartBtn');
+
+        if (!cartBtn || !cartOffcanvas) return;
+
+        function openCart() {
+          if (!window.DairyCart) {
+            console.error('DairyCart not loaded');
+            return;
+          }
+
+          const cart = window.DairyCart.getCart();
+          const total = window.DairyCart.getCartTotal();
+
+          console.log('Opening cart with items:', cart);
+
+          // Render cart items
+          if (cart.length === 0) {
+            cartBody.innerHTML = `
+              <div class="dairy-offcanvas-empty">
+                <i class="fa-solid fa-bag-shopping"></i>
+                <p>Your cart is empty</p>
+                <a href="{{ route('products') }}" class="dairy-offcanvas-btn">
+                  <i class="fa-solid fa-store"></i> Browse Products
+                </a>
+              </div>
+            `;
+            cartFooter.style.display = 'none';
+          } else {
+            let html = '';
+            cart.forEach(item => {
+              // Ensure all values have defaults
+              const itemName = item.name || 'Unknown Product';
+              const itemPrice = parseFloat(item.price) || 0;
+              const itemQty = parseInt(item.quantity) || 1;
+              const itemImage = item.image || '{{ asset('images/products-1.png') }}';
+              const itemSlug = item.slug || '';
+              const productUrl = itemSlug ? `{{ url('products') }}/${itemSlug}` : '#';
+              const itemTotal = itemPrice * itemQty;
+
+              html += `
+                <div class="dairy-offcanvas-item" data-cart-item-id="${item.id}">
+                  <img src="${itemImage}" alt="${itemName}" class="dairy-offcanvas-img" onerror="this.src='{{ asset('images/products-1.png') }}'">
+                  <div class="dairy-offcanvas-info">
+                    <a href="${productUrl}" class="dairy-offcanvas-name">${itemName}</a>
+                    <div class="dairy-offcanvas-price">₹${itemTotal.toFixed(0)}</div>
+                    <div class="dairy-offcanvas-qty">
+                      <button onclick="updateCartQty(${item.id}, ${itemQty - 1})" aria-label="Decrease quantity">−</button>
+                      <span>${itemQty}</span>
+                      <button onclick="updateCartQty(${item.id}, ${itemQty + 1})" aria-label="Increase quantity">+</button>
+                      <span style="color: var(--muted); font-size: 12px; margin-left: 4px;">× ₹${itemPrice.toFixed(0)}</span>
+                    </div>
+                  </div>
+                  <button class="dairy-offcanvas-remove" onclick="removeFromCart(${item.id})" aria-label="Remove item">
+                    <i class="fa-solid fa-trash"></i>
+                  </button>
+                </div>
+              `;
+            });
+            cartBody.innerHTML = html;
+            cartTotal.textContent = `₹${total.toFixed(0)}`;
+            cartFooter.style.display = 'block';
+          }
+
+          // Show offcanvas
+          cartOverlay.classList.add('show');
+          cartOffcanvas.classList.add('show');
+          document.body.style.overflow = 'hidden';
+        }
+
+        function closeCartPanel() {
+          cartOverlay.classList.remove('show');
+          cartOffcanvas.classList.remove('show');
+          document.body.style.overflow = '';
+        }
+
+        // Global functions for cart operations
+        window.updateCartQty = function(productId, newQty) {
+          if (window.DairyCart) {
+            window.DairyCart.updateCartQuantity(productId, newQty);
+            openCart(); // Refresh cart display
+          }
+        };
+
+        window.removeFromCart = function(productId) {
+          if (window.DairyCart) {
+            window.DairyCart.removeFromCart(productId);
+            openCart(); // Refresh cart display
+          }
+        };
+
+        // Event listeners
+        cartBtn.addEventListener('click', openCart);
+        closeCart.addEventListener('click', closeCartPanel);
+        cartOverlay.addEventListener('click', closeCartPanel);
+        
+        if (clearCartBtn) {
+          clearCartBtn.addEventListener('click', function() {
+            if (confirm('Are you sure you want to clear your cart?')) {
+              window.DairyCart.clearCart();
+              closeCartPanel();
+            }
+          });
+        }
+
+        // Close on ESC key
+        document.addEventListener('keydown', function(e) {
+          if (e.key === 'Escape' && cartOffcanvas.classList.contains('show')) {
+            closeCartPanel();
+          }
+        });
+      })();
+
+      // Wishlist Offcanvas Handler
+      (function() {
+        const wishlistBtn = document.getElementById('wishlistBtn');
+        const wishlistOverlay = document.getElementById('wishlistOverlay');
+        const wishlistOffcanvas = document.getElementById('wishlistOffcanvas');
+        const closeWishlist = document.getElementById('closeWishlist');
+        const wishlistBody = document.getElementById('wishlistBody');
+        const wishlistFooter = document.getElementById('wishlistFooter');
+        const clearWishlistBtn = document.getElementById('clearWishlistBtn');
+
+        if (!wishlistBtn || !wishlistOffcanvas) return;
+
+        function openWishlist() {
+          if (!window.DairyCart) {
+            console.error('DairyCart not loaded');
+            return;
+          }
+
+          const wishlist = window.DairyCart.getWishlist();
+
+          console.log('Opening wishlist with items:', wishlist);
+
+          // Render wishlist items
+          if (wishlist.length === 0) {
+            wishlistBody.innerHTML = `
+              <div class="dairy-offcanvas-empty">
+                <i class="fa-solid fa-heart"></i>
+                <p>Your wishlist is empty</p>
+                <a href="{{ route('products') }}" class="dairy-offcanvas-btn">
+                  <i class="fa-solid fa-store"></i> Browse Products
+                </a>
+              </div>
+            `;
+            wishlistFooter.style.display = 'none';
+          } else {
+            let html = '';
+            wishlist.forEach(item => {
+              // Ensure all values have defaults
+              const itemName = item.name || 'Unknown Product';
+              const itemPrice = parseFloat(item.price) || 0;
+              const itemImage = item.image || '{{ asset('images/products-1.png') }}';
+              const itemSlug = item.slug || '';
+              const productUrl = itemSlug ? `{{ url('products') }}/${itemSlug}` : '#';
+
+              html += `
+                <div class="dairy-offcanvas-item" data-wishlist-item-id="${item.id}">
+                  <img src="${itemImage}" alt="${itemName}" class="dairy-offcanvas-img" onerror="this.src='{{ asset('images/products-1.png') }}'">
+                  <div class="dairy-offcanvas-info">
+                    <a href="${productUrl}" class="dairy-offcanvas-name">${itemName}</a>
+                    <div class="dairy-offcanvas-price">₹${itemPrice.toFixed(0)}</div>
+                    <button class="dairy-offcanvas-btn" onclick="moveToCart(${item.id})" style="margin-top: 8px; padding: 8px 12px; font-size: 13px;">
+                      <i class="fa-solid fa-bag-shopping"></i> Add to Cart
+                    </button>
+                  </div>
+                  <button class="dairy-offcanvas-remove" onclick="removeFromWishlist(${item.id})" aria-label="Remove item">
+                    <i class="fa-solid fa-trash"></i>
+                  </button>
+                </div>
+              `;
+            });
+            wishlistBody.innerHTML = html;
+            wishlistFooter.style.display = 'block';
+          }
+
+          // Show offcanvas
+          wishlistOverlay.classList.add('show');
+          wishlistOffcanvas.classList.add('show');
+          document.body.style.overflow = 'hidden';
+        }
+
+        function closeWishlistPanel() {
+          wishlistOverlay.classList.remove('show');
+          wishlistOffcanvas.classList.remove('show');
+          document.body.style.overflow = '';
+        }
+
+        // Global functions for wishlist operations
+        window.removeFromWishlist = function(productId) {
+          if (window.DairyCart) {
+            window.DairyCart.removeFromWishlist(productId);
+            openWishlist(); // Refresh wishlist display
+          }
+        };
+
+        window.moveToCart = function(productId) {
+          if (window.DairyCart) {
+            const wishlist = window.DairyCart.getWishlist();
+            const item = wishlist.find(i => i.id === productId);
+            if (item) {
+              window.DairyCart.addToCart({ ...item, quantity: 1 });
+              window.DairyCart.removeFromWishlist(productId);
+              openWishlist(); // Refresh wishlist display
+            }
+          }
+        };
+
+        // Event listeners
+        wishlistBtn.addEventListener('click', openWishlist);
+        closeWishlist.addEventListener('click', closeWishlistPanel);
+        wishlistOverlay.addEventListener('click', closeWishlistPanel);
+        
+        if (clearWishlistBtn) {
+          clearWishlistBtn.addEventListener('click', function() {
+            if (confirm('Are you sure you want to clear your wishlist?')) {
+              window.DairyCart.clearWishlist();
+              closeWishlistPanel();
+            }
+          });
+        }
+
+        // Close on ESC key
+        document.addEventListener('keydown', function(e) {
+          if (e.key === 'Escape' && wishlistOffcanvas.classList.contains('show')) {
+            closeWishlistPanel();
           }
         });
       })();

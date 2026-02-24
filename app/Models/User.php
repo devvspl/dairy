@@ -22,6 +22,7 @@ class User extends Authenticatable
         'email',
         'phone',
         'profile_image',
+        'user_type',
         'password',
     ];
 
@@ -46,5 +47,25 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    /**
+     * Check if user is an admin
+     *
+     * @return bool
+     */
+    public function isAdmin(): bool
+    {
+        return $this->user_type === 'Admin';
+    }
+
+    /**
+     * Check if user is a member
+     *
+     * @return bool
+     */
+    public function isMember(): bool
+    {
+        return $this->user_type === 'Member';
     }
 }

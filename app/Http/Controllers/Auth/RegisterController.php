@@ -29,6 +29,7 @@ class RegisterController extends Controller
             'name' => $validated['name'],
             'email' => $validated['email'],
             'phone' => $validated['phone'] ?? null,
+            'user_type' => 'Member', // Default to Member
             'password' => Hash::make($validated['password']),
         ]);
 

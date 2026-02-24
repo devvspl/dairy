@@ -25,7 +25,14 @@ class LoginController extends Controller
 
         if (Auth::attempt($credentials, $remember)) {
             $request->session()->regenerate();
-            return redirect()->intended(route('admin.dashboard'))->with('success', 'Welcome back!');
+            
+            // Redirect based on user type
+            $user = Auth::user();
+            if ($user->isAdmin()) {
+                return redirect()->intended(route('admin.dashboard'))->with('success', 'Welcome back, Admin!');
+            } else {
+                return redirect()->intended(route('member.dashboard'))->with('success', 'Welcome back!');
+            }
         }
 
         throw ValidationException::withMessages([

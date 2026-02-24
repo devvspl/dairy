@@ -40,6 +40,7 @@ class BlogController extends Controller
             'content' => ['nullable', 'string'],
             'tag' => ['nullable', 'string', 'max:255'],
             'image' => ['nullable', 'string', 'max:255'],
+            'featured_image' => ['nullable', 'image', 'max:2048'],
             'order' => ['required', 'integer', 'min:0'],
             'is_active' => ['boolean'],
             'is_featured' => ['boolean'],
@@ -47,6 +48,14 @@ class BlogController extends Controller
 
         $validated['is_active'] = $request->has('is_active');
         $validated['is_featured'] = $request->has('is_featured');
+
+        // Handle featured image upload
+        if ($request->hasFile('featured_image')) {
+            $file = $request->file('featured_image');
+            $filename = time() . '_' . $file->getClientOriginalName();
+            $file->move(public_path('uploads/blogs'), $filename);
+            $validated['image'] = 'uploads/blogs/' . $filename;
+        }
 
         Blog::create($validated);
 
@@ -72,6 +81,7 @@ class BlogController extends Controller
             'content' => ['nullable', 'string'],
             'tag' => ['nullable', 'string', 'max:255'],
             'image' => ['nullable', 'string', 'max:255'],
+            'featured_image' => ['nullable', 'image', 'max:2048'],
             'order' => ['required', 'integer', 'min:0'],
             'is_active' => ['boolean'],
             'is_featured' => ['boolean'],
@@ -79,6 +89,19 @@ class BlogController extends Controller
 
         $validated['is_active'] = $request->has('is_active');
         $validated['is_featured'] = $request->has('is_featured');
+
+        // Handle featured image upload
+        if ($request->hasFile('featured_image')) {
+            // Delete old image if exists
+            if ($blog->image && file_exists(public_path($blog->image))) {
+                unlink(public_path($blog->image));
+            }
+            
+            $file = $request->file('featured_image');
+            $filename = time() . '_' . $file->getClientOriginalName();
+            $file->move(public_path('uploads/blogs'), $filename);
+            $validated['image'] = 'uploads/blogs/' . $filename;
+        }
 
         $blog->update($validated);
 
@@ -90,5 +113,30 @@ class BlogController extends Controller
         $blog->delete();
 
         return redirect()->route('admin.blogs.index')->with('success', 'Blog deleted successfully!');
+    }
+
+    public function uploadImage(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|image|max:2048'
+        ]);
+
+        if ($request->hasFile('file')) {
+            $file = $request->file('file');
+            $filename = time() . '_' . $file->getClientOriginalName();
+            
+            // Create directory if it doesn't exist
+            if (!file_exists(public_path('uploads/blogs'))) {
+                mkdir(public_path('uploads/blogs'), 0777, true);
+            }
+            
+            $file->move(public_path('uploads/blogs'), $filename);
+            
+            return response()->json([
+                'location' => asset('uploads/blogs/' . $filename)
+            ]);
+        }
+
+        return response()->json(['error' => 'No file uploaded'], 400);
     }
 }

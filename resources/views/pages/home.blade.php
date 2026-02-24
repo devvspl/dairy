@@ -1,6 +1,7 @@
 @extends('layouts.public')
 @section('title', 'Home')
-@section('meta_description', 'Welcome to our home page - Premium essentials delivering purity, quality, and trust
+@section('meta_description',
+    'Welcome to our home page - Premium essentials delivering purity, quality, and trust
     daily')
 @section('content')
     @push('styles')
@@ -499,34 +500,6 @@
                         <span class="tb-cat-title">{{ $category->title }}</span>
                     </a>
                 @endforeach
-                </span>
-                <span class="tb-cat-title">Membership Deals</span>
-                </a>
-                <a href="{{ route('products') }}" class="tb-cat">
-                    <span class="tb-cat-ico bg-green">
-                        <svg class="tb-cat-svg" viewBox="0 0 64 64" aria-hidden="true">
-                            <path
-                                d="M32 54s-18-10-22-24c-2-7 3-14 11-14 5 0 9 3 11 7 2-4 6-7 11-7 8 0 13 7 11 14-4 14-22 24-22 24Z" />
-                        </svg>
-                    </span>
-                    <span class="tb-cat-title">Shop By Concern</span>
-                </a>
-                <a href="{{ route('products') }}" class="tb-cat">
-                    <span class="tb-cat-ico bg-brown">
-                        <span class="tb-price-chip">Under<br>₹499</span>
-                    </span>
-                    <span class="tb-cat-title">Under ₹499</span>
-                </a>
-                <a href="{{ route('products') }}" class="tb-cat">
-                    <span class="tb-cat-ico bg-green">
-                        <svg class="tb-cat-svg" viewBox="0 0 64 64" aria-hidden="true">
-                            <path d="M22 10h20M22 14h20" />
-                            <path d="M20 14h24v40a6 6 0 0 1-6 6H26a6 6 0 0 1-6-6V14Z" />
-                            <path d="M26 28h12" />
-                        </svg>
-                    </span>
-                    <span class="tb-cat-title">All Products</span>
-                </a>
             </div>
         </div>
     </section>
@@ -777,54 +750,52 @@
         </style>
     @endpush
     <!--- about section -->
-    @if($aboutSection)
-    <section class="tb-abintro-sec" id="tbAbIntroSec">
-        <div class="container">
-            <div class="tb-abintro-wrap">
-                <!-- LEFT CONTENT -->
-                <div class="tb-abintro-left">
-                    @if($aboutSection->kicker)
-                        <span class="tb-abintro-kicker">{{ $aboutSection->kicker }}</span>
-                    @endif
-                    <h2>{{ $aboutSection->title }}</h2>
-                    <p>{{ $aboutSection->description }}</p>
-                    @if($aboutSection->button_text && $aboutSection->button_link)
-                        <a href="{{ $aboutSection->button_link }}" class="tb-abintro-btn">
-                            {{ $aboutSection->button_text }}
-                        </a>
-                    @endif
-                    @if($aboutSection->mini_items && count($aboutSection->mini_items) > 0)
-                        <div class="tb-abintro-mini">
-                            @foreach($aboutSection->mini_items as $item)
-                                <div class="tb-abintro-mini-item">
-                                    <strong>{{ $item['title'] ?? '' }}</strong>
-                                    <span>{{ $item['text'] ?? '' }}</span>
-                                </div>
-                            @endforeach
-                        </div>
-                    @endif
-                </div>
-                <!-- RIGHT IMAGE -->
-                <div class="tb-abintro-right">
-                    <div class="tb-abintro-img" 
-                         @if($aboutSection->image)
-                         style="background-image: url('{{ asset($aboutSection->image) }}');"
-                         @endif
-                         aria-label="About image"></div>
-                    @if($aboutSection->badge_rating || $aboutSection->badge_text)
-                        <div class="tb-abintro-badge">
-                            @if($aboutSection->badge_rating)
-                                <strong><i class="fa-solid fa-star"></i> {{ $aboutSection->badge_rating }}</strong>
-                            @endif
-                            @if($aboutSection->badge_text)
-                                <span>{{ $aboutSection->badge_text }}</span>
-                            @endif
-                        </div>
-                    @endif
+    @if ($aboutSection)
+        <section class="tb-abintro-sec" id="tbAbIntroSec">
+            <div class="container">
+                <div class="tb-abintro-wrap">
+                    <!-- LEFT CONTENT -->
+                    <div class="tb-abintro-left">
+                        @if ($aboutSection->kicker)
+                            <span class="tb-abintro-kicker">{{ $aboutSection->kicker }}</span>
+                        @endif
+                        <h2>{{ $aboutSection->title }}</h2>
+                        <p>{{ $aboutSection->description }}</p>
+                        @if ($aboutSection->button_text && $aboutSection->button_link)
+                            <a href="{{ $aboutSection->button_link }}" class="tb-abintro-btn">
+                                {{ $aboutSection->button_text }}
+                            </a>
+                        @endif
+                        @if ($aboutSection->mini_items && count($aboutSection->mini_items) > 0)
+                            <div class="tb-abintro-mini">
+                                @foreach ($aboutSection->mini_items as $item)
+                                    <div class="tb-abintro-mini-item">
+                                        <strong>{{ $item['title'] ?? '' }}</strong>
+                                        <span>{{ $item['text'] ?? '' }}</span>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @endif
+                    </div>
+                    <!-- RIGHT IMAGE -->
+                    <div class="tb-abintro-right">
+                        <div class="tb-abintro-img"
+                            @if ($aboutSection->image) style="background-image: url('{{ asset($aboutSection->image) }}');" @endif
+                            aria-label="About image"></div>
+                        @if ($aboutSection->badge_rating || $aboutSection->badge_text)
+                            <div class="tb-abintro-badge">
+                                @if ($aboutSection->badge_rating)
+                                    <strong><i class="fa-solid fa-star"></i> {{ $aboutSection->badge_rating }}</strong>
+                                @endif
+                                @if ($aboutSection->badge_text)
+                                    <span>{{ $aboutSection->badge_text }}</span>
+                                @endif
+                            </div>
+                        @endif
+                    </div>
                 </div>
             </div>
-        </div>
-    </section>
+        </section>
     @endif
     @push('styles')
         <style>
@@ -987,6 +958,14 @@
             .tb-wish:hover {
                 border-color: #f1cc24;
                 color: #f1cc24;
+            }
+
+            .tb-wish i.fa-solid {
+                color: #e74c3c;
+            }
+
+            .tb-wish:hover i.fa-solid {
+                color: #c0392b;
             }
 
             .tb-card-body {
@@ -1179,12 +1158,19 @@
                 <div class="tb-prod-viewport" id="tbProdViewport">
                     <div class="tb-prod-track" id="tbProdTrack">
                         @foreach ($products as $product)
-                            <article class="tb-card">
+                            <article class="tb-card" 
+                                data-product-id="{{ $product->id }}"
+                                data-product-name="{{ $product->name }}"
+                                data-product-price="{{ $product->price }}"
+                                data-product-image="{{ asset($product->image) }}"
+                                data-product-slug="{{ $product->slug }}">
                                 <div class="tb-card-media">
                                     @if ($product->badge)
                                         <span class="tb-badge {{ $product->badge_color }}">{{ $product->badge }}</span>
                                     @endif
-                                    <button class="tb-wish" type="button" aria-label="Add to wishlist">♡</button>
+                                    <button class="tb-wish wishlist-btn" type="button" aria-label="Add to wishlist" data-product-id="{{ $product->id }}">
+                                        <i class="fa-regular fa-heart"></i>
+                                    </button>
                                     <div class="tb-img" style="background-image: url('{{ asset($product->image) }}');">
                                     </div>
                                 </div>
@@ -1206,7 +1192,7 @@
                                             @endforeach
                                         </select>
                                     </div>
-                                    <button class="tb-add" type="button">ADD TO CART</button>
+                                    <button class="tb-add add-to-cart-btn" type="button" data-product-id="{{ $product->id }}">ADD TO CART</button>
                                 </div>
                             </article>
                         @endforeach
@@ -1284,6 +1270,112 @@
 
                 window.addEventListener('resize', update);
                 update();
+            })();
+
+            // Cart and Wishlist Event Listeners
+            (function() {
+                // Wait for DairyCart to be available
+                function initCartWishlist() {
+                    if (!window.DairyCart) {
+                        console.log('Waiting for DairyCart...');
+                        setTimeout(initCartWishlist, 100);
+                        return;
+                    }
+
+                    console.log('DairyCart loaded, initializing event listeners');
+
+                    // Add to Cart buttons
+                    document.querySelectorAll('.add-to-cart-btn').forEach(btn => {
+                        btn.addEventListener('click', function() {
+                            // Find the parent card (article element)
+                            const card = this.closest('article.tb-card');
+                            if (!card) {
+                                console.error('Card not found for button:', this);
+                                return;
+                            }
+
+                            // Get data from the card
+                            const productId = card.getAttribute('data-product-id');
+                            const productName = card.getAttribute('data-product-name');
+                            const productPrice = card.getAttribute('data-product-price');
+                            const productImage = card.getAttribute('data-product-image');
+                            const productSlug = card.getAttribute('data-product-slug');
+
+                            console.log('Raw data from card:', {
+                                productId,
+                                productName,
+                                productPrice,
+                                productImage,
+                                productSlug
+                            });
+
+                            const product = {
+                                id: parseInt(productId),
+                                name: productName,
+                                price: parseFloat(productPrice),
+                                image: productImage,
+                                slug: productSlug,
+                                quantity: 1
+                            };
+
+                            console.log('Parsed product object:', product);
+                            window.DairyCart.addToCart(product);
+                        });
+                    });
+
+                    // Wishlist buttons
+                    document.querySelectorAll('.wishlist-btn').forEach(btn => {
+                        btn.addEventListener('click', function() {
+                            // Find the parent card (article element)
+                            const card = this.closest('article.tb-card');
+                            if (!card) {
+                                console.error('Card not found for wishlist button:', this);
+                                return;
+                            }
+
+                            const productId = parseInt(card.getAttribute('data-product-id'));
+                            const product = {
+                                id: productId,
+                                name: card.getAttribute('data-product-name'),
+                                price: parseFloat(card.getAttribute('data-product-price')),
+                                image: card.getAttribute('data-product-image'),
+                                slug: card.getAttribute('data-product-slug')
+                            };
+
+                            const isAdded = window.DairyCart.toggleWishlist(product);
+                            const icon = this.querySelector('i');
+                            if (icon) {
+                                icon.className = isAdded ? 'fa-solid fa-heart' : 'fa-regular fa-heart';
+                            }
+                        });
+                    });
+
+                    // Update wishlist button states on page load
+                    document.querySelectorAll('.wishlist-btn').forEach(btn => {
+                        const productId = parseInt(btn.dataset.productId);
+                        if (window.DairyCart.isInWishlist(productId)) {
+                            const icon = btn.querySelector('i');
+                            if (icon) {
+                                icon.className = 'fa-solid fa-heart';
+                            }
+                        }
+                    });
+                }
+
+                // Start initialization
+                initCartWishlist();
+
+                // Debug: Log first product card data
+                const firstCard = document.querySelector('[data-product-id]');
+                if (firstCard) {
+                    console.log('First product card data:', {
+                        id: firstCard.dataset.productId,
+                        name: firstCard.dataset.productName,
+                        price: firstCard.dataset.productPrice,
+                        image: firstCard.dataset.productImage,
+                        slug: firstCard.dataset.productSlug
+                    });
+                }
             })();
         </script>
     @endpush
@@ -1459,16 +1551,16 @@
                 <a href="{{ route('about') }}" class="tb-why-cta">Learn More</a>
             </div>
             <div class="tb-why-grid">
-                @foreach($whyChooseUs as $item)
-                <article class="tb-why-card">
-                    <div class="tb-why-ico">
-                        <svg class="tb-why-svg" viewBox="0 0 64 64" aria-hidden="true">
-                            {!! $item->svg_path !!}
-                        </svg>
-                    </div>
-                    <h3>{{ $item->title }}</h3>
-                    <p>{{ $item->description }}</p>
-                </article>
+                @foreach ($whyChooseUs as $item)
+                    <article class="tb-why-card">
+                        <div class="tb-why-ico">
+                            <svg class="tb-why-svg" viewBox="0 0 64 64" aria-hidden="true">
+                                {!! $item->svg_path !!}
+                            </svg>
+                        </div>
+                        <h3>{{ $item->title }}</h3>
+                        <p>{{ $item->description }}</p>
+                    </article>
                 @endforeach
             </div>
         </div>
@@ -1818,42 +1910,44 @@
         </style>
     @endpush
     <!-- Content Section -->
-    @if($whyItWorks)
-    <section class="tb-splitcoll-sec" id="tbSplitCollSec">
-        <div class="container">
-            <div class="tb-splitcoll-wrap">
-                <div class="tb-splitcoll-left">
-                    <span class="tb-splitcoll-kicker">{{ $whyItWorks->kicker }}</span>
-                    <h2>{{ $whyItWorks->title }}</h2>
-                    <p>{{ $whyItWorks->description }}</p>
-                    <div class="tb-splitcoll-points tb-checklist">
-                        @foreach($whyItWorks->points as $point)
-                        <div class="tb-splitcoll-point">
-                            <span class="tb-check-ico" aria-hidden="true">✓</span>
-                            <span>{{ $point }}</span>
+    @if ($whyItWorks)
+        <section class="tb-splitcoll-sec" id="tbSplitCollSec">
+            <div class="container">
+                <div class="tb-splitcoll-wrap">
+                    <div class="tb-splitcoll-left">
+                        <span class="tb-splitcoll-kicker">{{ $whyItWorks->kicker }}</span>
+                        <h2>{{ $whyItWorks->title }}</h2>
+                        <p>{{ $whyItWorks->description }}</p>
+                        <div class="tb-splitcoll-points tb-checklist">
+                            @foreach ($whyItWorks->points as $point)
+                                <div class="tb-splitcoll-point">
+                                    <span class="tb-check-ico" style="color: white;" aria-hidden="true">✓</span>
+                                    <span>{{ $point }}</span>
+                                </div>
+                            @endforeach
                         </div>
-                        @endforeach
+                        <div class="tb-splitcoll-actions">
+                            @foreach ($whyItWorks->buttons as $button)
+                                <a href="{{ $button['link'] }}" class="tb-splitcoll-btn {{ $button['type'] }}">
+                                    {{ $button['text'] }}
+                                </a>
+                            @endforeach
+                        </div>
                     </div>
-                    <div class="tb-splitcoll-actions">
-                        @foreach($whyItWorks->buttons as $button)
-                        <a href="{{ $button['link'] }}" class="tb-splitcoll-btn {{ $button['type'] }}">
-                            {{ $button['text'] }}
-                        </a>
-                        @endforeach
-                    </div>
-                </div>
-                <div class="tb-splitcoll-right">
-                    <div class="tb-splitcoll-collage">
-                        <div class="tb-splitcoll-img big" style="background-image: url('{{ asset($whyItWorks->image) }}');"></div>
-                        <div class="tb-splitcoll-float">
-                            <strong><i class="fa-solid fa-star"></i> {{ $whyItWorks->meta['rating'] ?? '4.8' }}★ Rating</strong>
-                            <span>{{ $whyItWorks->meta['rating_text'] ?? 'Trusted by customers' }}</span>
+                    <div class="tb-splitcoll-right">
+                        <div class="tb-splitcoll-collage">
+                            <div class="tb-splitcoll-img big"
+                                style="background-image: url('{{ asset($whyItWorks->image) }}');"></div>
+                            <div class="tb-splitcoll-float">
+                                <strong><i class="fa-solid fa-star"></i> {{ $whyItWorks->meta['rating'] ?? '4.8' }}★
+                                    Rating</strong>
+                                <span>{{ $whyItWorks->meta['rating_text'] ?? 'Trusted by customers' }}</span>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
-    </section>
+        </section>
     @endif
     <!-- USPs Section -->
     <section class="tb-usps" id="tbUsps">
@@ -1864,67 +1958,68 @@
                     experience you can trust.</p>
             </div>
             <div class="tb-usps-grid">
-                @foreach($usps as $usp)
-                <div class="tb-usp-card">
-                    <div class="tb-usp-icon" aria-hidden="true">
-                        <svg viewBox="0 0 24 24" fill="none">
-                            {!! $usp->svg_path !!}
-                        </svg>
+                @foreach ($usps as $usp)
+                    <div class="tb-usp-card">
+                        <div class="tb-usp-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none">
+                                {!! $usp->svg_path !!}
+                            </svg>
+                        </div>
+                        <h3>{{ $usp->title }}</h3>
+                        <p>{{ $usp->description }}</p>
                     </div>
-                    <h3>{{ $usp->title }}</h3>
-                    <p>{{ $usp->description }}</p>
-                </div>
                 @endforeach
             </div>
         </div>
     </section>
     <!-- Video/Media Section -->
-    @if($videoSection)
-    <section class="tb-media-split" id="tbMediaSplit">
-        <div class="container">
-            <div class="tb-ms-head">
-                <h2>{{ $videoSection->title }}</h2>
-                <p>{{ $videoSection->description }}</p>
-            </div>
-            <div class="tb-ms-grid">
-                <!-- LEFT IMAGES -->
-                <div class="tb-ms-left">
-                    @foreach($videoSection->gallery_images ?? [] as $image)
-                    <div class="tb-ms-img" style="background-image: url('{{ asset($image) }}');"></div>
-                    @endforeach
+    @if ($videoSection)
+        <section class="tb-media-split" id="tbMediaSplit">
+            <div class="container">
+                <div class="tb-ms-head">
+                    <h2>{{ $videoSection->title }}</h2>
+                    <p>{{ $videoSection->description }}</p>
                 </div>
-                <!-- RIGHT VIDEO -->
-                <div class="tb-ms-right">
-                    <div class="tb-ms-video" role="button" tabindex="0" aria-label="Play video"
-                        data-youtube="{{ $videoSection->video_id }}">
-                        <div class="tb-ms-overlay"></div>
-                        <!-- ghost text -->
-                        <div class="tb-ms-ghost">{{ $videoSection->meta['ghost_text'] ?? 'OUR STORY' }}</div>
-                        <!-- play -->
-                        <div class="tb-ms-play">
-                            <span class="tb-ms-ring"></span>
-                            <span class="tb-ms-core"><i class="tb-ms-tri"></i></span>
-                            <span class="tb-ms-cta">
-                                <b>Watch</b>
-                                <small>{{ $videoSection->meta['video_duration'] ?? '2 min video' }}</small>
-                            </span>
-                        </div>
-                        <div class="tb-ms-cap">
-                            <span class="tb-ms-pill">{{ $videoSection->meta['video_pill'] ?? 'Clean • Simple • Trusted' }}</span>
-                            <h3>{{ $videoSection->meta['video_caption'] ?? 'Crafted with care, built on trust.' }}</h3>
+                <div class="tb-ms-grid">
+                    <!-- LEFT IMAGES -->
+                    <div class="tb-ms-left">
+                        @foreach ($videoSection->gallery_images ?? [] as $image)
+                            <div class="tb-ms-img" style="background-image: url('{{ asset($image) }}');"></div>
+                        @endforeach
+                    </div>
+                    <!-- RIGHT VIDEO -->
+                    <div class="tb-ms-right">
+                        <div class="tb-ms-video" role="button" tabindex="0" aria-label="Play video"
+                            data-youtube="{{ $videoSection->video_id }}">
+                            <div class="tb-ms-overlay"></div>
+                            <!-- ghost text -->
+                            <div class="tb-ms-ghost">{{ $videoSection->meta['ghost_text'] ?? 'OUR STORY' }}</div>
+                            <!-- play -->
+                            <div class="tb-ms-play">
+                                <span class="tb-ms-ring"></span>
+                                <span class="tb-ms-core"><i class="tb-ms-tri"></i></span>
+                                <span class="tb-ms-cta">
+                                    <b>Watch</b>
+                                    <small>{{ $videoSection->meta['video_duration'] ?? '2 min video' }}</small>
+                                </span>
+                            </div>
+                            <div class="tb-ms-cap">
+                                <span
+                                    class="tb-ms-pill">{{ $videoSection->meta['video_pill'] ?? 'Clean • Simple • Trusted' }}</span>
+                                <h3>{{ $videoSection->meta['video_caption'] ?? 'Crafted with care, built on trust.' }}</h3>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
-        <!-- Modal -->
-        <div class="tb-ms-modal" aria-hidden="true">
-            <div class="tb-ms-modalbox">
-                <button class="tb-ms-close" type="button">✕</button>
-                <div class="tb-ms-frame" id="tbMsFrame"></div>
+            <!-- Modal -->
+            <div class="tb-ms-modal" aria-hidden="true">
+                <div class="tb-ms-modalbox">
+                    <button class="tb-ms-close" type="button">✕</button>
+                    <div class="tb-ms-frame" id="tbMsFrame"></div>
+                </div>
             </div>
-        </div>
-    </section>
+        </section>
     @endif
     <!-- Testimonials Section -->
     <section class="tb-testimonials" id="tbTestimonials">
@@ -1953,35 +2048,37 @@
         </div>
     </section>
     <!-- CTA/Pre-footer Section -->
-    @if($ctaSection)
-    <section class="tb-prefooter-cta" id="tbPreFooterCta">
-        <div class="container">
-            <div class="tb-pcta-box">
-                <div class="tb-pcta-left">
-                    <span class="tb-pcta-kicker">{{ $ctaSection->kicker }}</span>
-                    <h2>{{ $ctaSection->title }}</h2>
-                    <p>{{ $ctaSection->description }}</p>
-                    <div class="tb-pcta-points">
-                        @foreach($ctaSection->points ?? [] as $point)
-                        <div class="tb-point">
-                            <span class="tb-dot"></span>
-                            <span>{{ $point }}</span>
+    @if ($ctaSection)
+        <section class="tb-prefooter-cta" id="tbPreFooterCta">
+            <div class="container">
+                <div class="tb-pcta-box">
+                    <div class="tb-pcta-left">
+                        <span class="tb-pcta-kicker">{{ $ctaSection->kicker }}</span>
+                        <h2>{{ $ctaSection->title }}</h2>
+                        <p>{{ $ctaSection->description }}</p>
+                        <div class="tb-pcta-points">
+                            @foreach ($ctaSection->points ?? [] as $point)
+                                <div class="tb-point">
+                                    <span class="tb-dot"></span>
+                                    <span>{{ $point }}</span>
+                                </div>
+                            @endforeach
                         </div>
-                        @endforeach
                     </div>
-                </div>
-                <div class="tb-pcta-right">
-                    @foreach($ctaSection->buttons ?? [] as $button)
-                    <a href="{{ $button['link'] }}" class="tb-pcta-btn {{ $button['type'] }}">{{ $button['text'] }}</a>
-                    @endforeach
-                    <div class="tb-pcta-mini">
-                        <span class="tb-mini-badge">★</span>
-                        <span><b>{{ $ctaSection->meta['rating'] ?? '4.8/5' }}</b> {{ $ctaSection->meta['rating_text'] ?? 'average customer rating' }}</span>
+                    <div class="tb-pcta-right">
+                        @foreach ($ctaSection->buttons ?? [] as $button)
+                            <a href="{{ $button['link'] }}"
+                                class="tb-pcta-btn {{ $button['type'] }}">{{ $button['text'] }}</a>
+                        @endforeach
+                        <div class="tb-pcta-mini">
+                            <span class="tb-mini-badge">★</span>
+                            <span><b>{{ $ctaSection->meta['rating'] ?? '4.8/5' }}</b>
+                                {{ $ctaSection->meta['rating_text'] ?? 'average customer rating' }}</span>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-    </section>
+        </section>
     @endif
     <!-- Blogs Section -->
     <section class="tb-blog-sec" id="tbBlogSec">

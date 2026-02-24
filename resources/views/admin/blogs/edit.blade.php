@@ -13,7 +13,7 @@
         </a>
     </div>
 
-    <form method="POST" action="{{ route('admin.blogs.update', $blog) }}">
+    <form method="POST" action="{{ route('admin.blogs.update', $blog) }}" enctype="multipart/form-data">
         @csrf @method('PUT')
         <div class="space-y-4">
             <div>
@@ -29,6 +29,19 @@
             </div>
 
             <div>
+                <label class="block text-sm font-medium mb-2" style="color: var(--text);">Featured Image</label>
+                @if($blog->image)
+                    <div class="mb-2">
+                        <img src="{{ asset($blog->image) }}" alt="Current featured image" class="w-48 h-32 object-cover rounded border">
+                        <p class="text-xs mt-1" style="color: var(--muted);">Current image</p>
+                    </div>
+                @endif
+                <input type="file" name="featured_image" accept="image/*" class="w-full px-3 py-2 border rounded-lg" style="border-color: var(--border);">
+                <p class="text-xs mt-1" style="color: var(--muted);">Max 2MB. Leave empty to keep current image.</p>
+                @error('featured_image')<p class="text-red-600 text-sm mt-1">{{ $message }}</p>@enderror
+            </div>
+
+            <div>
                 <label class="block text-sm font-medium mb-2" style="color: var(--text);">Excerpt</label>
                 <textarea name="excerpt" rows="3" class="w-full px-3 py-2 border rounded-lg" style="border-color: var(--border);">{{ old('excerpt', $blog->excerpt) }}</textarea>
                 @error('excerpt')<p class="text-red-600 text-sm mt-1">{{ $message }}</p>@enderror
@@ -36,7 +49,7 @@
 
             <div>
                 <label class="block text-sm font-medium mb-2" style="color: var(--text);">Content</label>
-                <textarea name="content" rows="8" class="w-full px-3 py-2 border rounded-lg" style="border-color: var(--border);">{{ old('content', $blog->content) }}</textarea>
+                <textarea id="editor1" name="content" rows="8" class="w-full px-3 py-2 border rounded-lg" style="border-color: var(--border);">{{ old('content', $blog->content) }}</textarea>
                 @error('content')<p class="text-red-600 text-sm mt-1">{{ $message }}</p>@enderror
             </div>
 
@@ -48,16 +61,10 @@
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium mb-2" style="color: var(--text);">Image Path</label>
-                    <input type="text" name="image" value="{{ old('image', $blog->image) }}" class="w-full px-3 py-2 border rounded-lg" style="border-color: var(--border);">
-                    @error('image')<p class="text-red-600 text-sm mt-1">{{ $message }}</p>@enderror
+                    <label class="block text-sm font-medium mb-2" style="color: var(--text);">Order *</label>
+                    <input type="number" name="order" value="{{ old('order', $blog->order) }}" required min="0" class="w-full px-3 py-2 border rounded-lg" style="border-color: var(--border);">
+                    @error('order')<p class="text-red-600 text-sm mt-1">{{ $message }}</p>@enderror
                 </div>
-            </div>
-
-            <div>
-                <label class="block text-sm font-medium mb-2" style="color: var(--text);">Order *</label>
-                <input type="number" name="order" value="{{ old('order', $blog->order) }}" required min="0" class="w-full px-3 py-2 border rounded-lg" style="border-color: var(--border);">
-                @error('order')<p class="text-red-600 text-sm mt-1">{{ $message }}</p>@enderror
             </div>
 
             <div class="flex space-x-4">
@@ -78,4 +85,68 @@
         </div>
     </form>
 </div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/5.10.2/tinymce.min.js"></script>
+<script>
+tinymce.init({
+    selector: '#editor1',
+    height: 450,
+    plugins: 'advlist lists link image table preview fullscreen charmap paste codesample code',
+    toolbar: `bold italic underline | alignleft aligncenter alignright alignjustify | 
+              fontsizeselect | forecolor backcolor | numlist bullist | indent outdent | 
+              link image | table | preview fullscreen | charmap code`,
+    
+    automatic_uploads: true,
+    images_upload_url: '{{ route("admin.blogs.upload-image") }}',
+    
+    images_upload_handler: function (blobInfo, success, failure) {
+        var xhr, formData;
+        xhr = new XMLHttpRequest();
+        xhr.withCredentials = false;
+        xhr.open('POST', '{{ route("admin.blogs.upload-image") }}');
+        xhr.setRequestHeader('X-CSRF-TOKEN', '{{ csrf_token() }}');
+        
+        xhr.onload = function() {
+            var json;
+            if (xhr.status != 200) {
+                failure('HTTP Error: ' + xhr.status);
+                return;
+            }
+            json = JSON.parse(xhr.responseText);
+            if (!json || typeof json.location != 'string') {
+                failure('Invalid JSON: ' + xhr.responseText);
+                return;
+            }
+            success(json.location);
+        };
+        
+        formData = new FormData();
+        formData.append('file', blobInfo.blob(), blobInfo.filename());
+        xhr.send(formData);
+    },
+    
+    file_picker_types: 'image',
+    file_picker_callback: function(callback, value, meta) {
+        if (meta.filetype === 'image') {
+            var input = document.createElement('input');
+            input.setAttribute('type', 'file');
+            input.setAttribute('accept', 'image/*');
+            input.onchange = function() {
+                var file = this.files[0];
+                var reader = new FileReader();
+                reader.onload = function() {
+                    var id = 'blobid' + (new Date()).getTime();
+                    var blobCache = tinymce.activeEditor.editorUpload.blobCache;
+                    var base64 = reader.result.split(',')[1];
+                    var blobInfo = blobCache.create(id, file, base64);
+                    blobCache.add(blobInfo);
+                    callback(blobInfo.blobUri(), { title: file.name });
+                };
+                reader.readAsDataURL(file);
+            };
+            input.click();
+        }
+    }
+});
+</script>
 @endsection

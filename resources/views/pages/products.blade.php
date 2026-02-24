@@ -436,6 +436,14 @@
   color:var(--brand);
   line-height:1.2;
 }
+#plpgProductPage .plpg-title a{
+  text-decoration:none;
+  color:inherit;
+  transition:color 0.2s ease;
+}
+#plpgProductPage .plpg-title a:hover strong{
+  color:#f1cc24;
+}
 #plpgProductPage .plpg-rating{
   display:inline-flex;
   align-items:center;
@@ -498,6 +506,12 @@
   transform:translateY(-2px);
   border-color:rgba(241,204,36,.65);
   box-shadow:0 18px 44px rgba(0,0,0,.10);
+}
+#plpgProductPage .plpg-iconbtn i.fa-solid.fa-heart{
+  color:#e74c3c;
+}
+#plpgProductPage .plpg-iconbtn:hover i.fa-solid.fa-heart{
+  color:#c0392b;
 }
 
 /* PAGINATION */
@@ -823,14 +837,23 @@
               <option value="ratingHigh">Rating: High to Low</option>
               <option value="nameAZ">Name: A to Z</option>
             </select>
-            <a class="plpg-btn plpg-btn-outline" href="#"><i class="fa-solid fa-bag-shopping"></i> View Cart</a>
+            <button class="plpg-btn plpg-btn-outline" type="button" id="viewCartBtn"><i class="fa-solid fa-bag-shopping"></i> View Cart</button>
           </div>
         </div>
 
         <div class="plpg-cards" id="plpgCards">
 
           @forelse($products as $product)
-          <article class="plpg-card" data-name="{{ $product->name }}" data-type="{{ $product->type ? $product->type->name : '' }}" data-price="{{ $product->price }}" data-rating="{{ $product->rating }}">
+          <article class="plpg-card" 
+            data-name="{{ $product->name }}" 
+            data-type="{{ $product->type ? $product->type->name : '' }}" 
+            data-price="{{ $product->price }}" 
+            data-rating="{{ $product->rating }}"
+            data-product-id="{{ $product->id }}"
+            data-product-name="{{ $product->name }}"
+            data-product-price="{{ $product->price }}"
+            data-product-image="{{ asset($product->main_image) }}"
+            data-product-slug="{{ $product->slug }}">
             @if($product->badge)
             <div class="plpg-badges">
               <span class="plpg-tag plpg-tag-{{ $product->badge_color }}">
@@ -844,7 +867,9 @@
             </div>
             <div class="plpg-info">
               <div class="plpg-title">
-                <strong>{{ $product->name }}</strong>
+                <a href="{{ route('product.detail', $product->slug) }}" style="text-decoration: none; color: inherit;">
+                  <strong>{{ $product->name }}</strong>
+                </a>
                 <span class="plpg-rating"><i class="fa-solid fa-star"></i> {{ number_format($product->rating, 1) }}</span>
               </div>
               <div class="plpg-desc">{{ $product->short_description ?? $product->meta }}</div>
@@ -856,7 +881,7 @@
                   @endif
                 </div>
                 <div class="plpg-actions">
-                  <button class="plpg-iconbtn" type="button" title="Wishlist"><i class="fa-regular fa-heart"></i></button>
+                  <button class="plpg-iconbtn wishlist-btn" type="button" title="Wishlist" data-product-id="{{ $product->id }}"><i class="fa-regular fa-heart"></i></button>
                   <a class="plpg-btn plpg-btn-primary" href="{{ route('product.detail', $product->slug) }}"><i class="fa-solid fa-eye"></i> View</a>
                 </div>
               </div>
@@ -1266,6 +1291,78 @@
 
   // Initialize from URL on page load
   initFromUrl();
+})();
+
+// Cart and Wishlist Event Listeners for Products Page
+(function() {
+  // Wait for DairyCart to be available
+  function initCartWishlist() {
+    if (!window.DairyCart) {
+      console.log('Waiting for DairyCart on products page...');
+      setTimeout(initCartWishlist, 100);
+      return;
+    }
+
+    console.log('DairyCart loaded on products page, initializing wishlist');
+
+    // Wishlist buttons
+    document.querySelectorAll('.wishlist-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        // Find the parent card (article element)
+        const card = this.closest('article.plpg-card');
+        if (!card) {
+          console.error('Card not found for wishlist button:', this);
+          return;
+        }
+
+        const productId = parseInt(card.getAttribute('data-product-id'));
+        const product = {
+          id: productId,
+          name: card.getAttribute('data-product-name'),
+          price: parseFloat(card.getAttribute('data-product-price')),
+          image: card.getAttribute('data-product-image'),
+          slug: card.getAttribute('data-product-slug')
+        };
+
+        const isAdded = window.DairyCart.toggleWishlist(product);
+        const icon = this.querySelector('i');
+        if (icon) {
+          icon.className = isAdded ? 'fa-solid fa-heart' : 'fa-regular fa-heart';
+        }
+      });
+    });
+
+    // Update wishlist button states on page load
+    document.querySelectorAll('.wishlist-btn').forEach(btn => {
+      const card = btn.closest('article.plpg-card');
+      if (!card) return;
+      
+      const productId = parseInt(card.getAttribute('data-product-id'));
+      if (window.DairyCart.isInWishlist(productId)) {
+        const icon = btn.querySelector('i');
+        if (icon) {
+          icon.className = 'fa-solid fa-heart';
+        }
+      }
+    });
+  }
+
+  // Start initialization
+  initCartWishlist();
+})();
+
+// View Cart Button Handler
+(function() {
+  const viewCartBtn = document.getElementById('viewCartBtn');
+  if (viewCartBtn) {
+    viewCartBtn.addEventListener('click', function() {
+      // Trigger the cart button click in the header
+      const cartBtn = document.getElementById('cartBtn');
+      if (cartBtn) {
+        cartBtn.click();
+      }
+    });
+  }
 })();
 </script>
 

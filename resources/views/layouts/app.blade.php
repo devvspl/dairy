@@ -78,10 +78,10 @@
                 <!-- Logo -->
                 <div class="flex items-center justify-center h-16 border-b px-4"
                     style="background-color: #ffffff; border-color: var(--border);">
-                    <a href="{{ route('admin.dashboard') }}" class="flex items-center" x-show="!sidebarCollapsed">
+                    <a href="{{ auth()->user()->isAdmin() ? route('admin.dashboard') : route('member.dashboard') }}" class="flex items-center" x-show="!sidebarCollapsed">
                         <img src="{{ asset('images/new.png') }}" alt="{{ config('app.name') }}" class="h-10 w-auto">
                     </a>
-                    <a href="{{ route('admin.dashboard') }}" class="flex items-center" x-show="sidebarCollapsed"
+                    <a href="{{ auth()->user()->isAdmin() ? route('admin.dashboard') : route('member.dashboard') }}" class="flex items-center" x-show="sidebarCollapsed"
                         style="display: none;">
                         <img src="{{ asset('images/new.png') }}" alt="{{ config('app.name') }}" class="h-8 w-auto">
                     </a>
@@ -97,10 +97,10 @@
                 <!-- Navigation -->
                 <nav class="flex-1 py-6 space-y-1 overflow-y-auto" :class="sidebarCollapsed ? 'px-2' : 'px-4'">
                     <!-- Dashboard -->
-                    <a href="{{ route('admin.dashboard') }}"
-                        class="sidebar-link {{ request()->routeIs('dashboard') ? 'active' : '' }} flex items-center rounded-lg transition-all text-sm"
+                    <a href="{{ auth()->user()->isAdmin() ? route('admin.dashboard') : route('member.dashboard') }}"
+                        class="sidebar-link {{ request()->routeIs('dashboard') || request()->routeIs('admin.dashboard') || request()->routeIs('member.dashboard') ? 'active' : '' }} flex items-center rounded-lg transition-all text-sm"
                         :class="sidebarCollapsed ? 'justify-center p-3' : 'px-3 py-2'"
-                        style="{{ request()->routeIs('dashboard') ? '' : 'color: var(--muted);' }}"
+                        style="{{ request()->routeIs('dashboard') || request()->routeIs('admin.dashboard') || request()->routeIs('member.dashboard') ? '' : 'color: var(--muted);' }}"
                         :title="sidebarCollapsed ? 'Dashboard' : ''">
                         <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -110,6 +110,7 @@
                         <span class="ml-3 font-medium" x-show="!sidebarCollapsed">Dashboard</span>
                     </a>
 
+                    @if(auth()->user()->isAdmin())
                     <!-- Users -->
                     <a href="{{ route('admin.users.index') }}"
                         class="sidebar-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }} flex items-center rounded-lg transition-all hover:bg-gray-50 text-sm"
@@ -200,10 +201,10 @@
                         <span class="ml-3 font-medium" x-show="!sidebarCollapsed">Categories</span>
                     </a>
 
-                    <a href="{{ route('admin.why-choose-us.index') }}"
-                        class="sidebar-link {{ request()->routeIs('admin.why-choose-us.*') ? 'active' : '' }} flex items-center rounded-lg transition-all hover:bg-gray-50 text-sm"
+                    <a href="{{ route('admin.whychooseus.index') }}"
+                        class="sidebar-link {{ request()->routeIs('admin.whychooseus.*') ? 'active' : '' }} flex items-center rounded-lg transition-all hover:bg-gray-50 text-sm"
                         :class="sidebarCollapsed ? 'justify-center p-3' : 'px-3 py-2'"
-                        style="{{ request()->routeIs('admin.why-choose-us.*') ? '' : 'color: var(--muted);' }}"
+                        style="{{ request()->routeIs('admin.whychooseus.*') ? '' : 'color: var(--muted);' }}"
                         :title="sidebarCollapsed ? 'Why Choose Us' : ''">
                         <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -405,6 +406,7 @@
                         </svg>
                         <span class="ml-3 font-medium" x-show="!sidebarCollapsed">Terms & Conditions</span>
                     </a>
+                    @endif
                 </nav>
 
                 <!-- Collapse Toggle Button (Desktop Only) -->
@@ -457,12 +459,20 @@
                     <div class="relative" x-data="{ open: false }">
                         <button @click="open = !open"
                             class="flex items-center space-x-2 lg:space-x-3 p-2 rounded-lg hover:bg-gray-100 transition-colors">
-                            <div class="w-8 h-8 lg:w-10 lg:h-10 rounded-full flex items-center justify-center text-white font-semibold text-sm"
+                            <div class="w-8 h-8 lg:w-10 lg:h-10 rounded-full flex items-center justify-center text-white font-semibold text-sm overflow-hidden"
                                 style="background-color: var(--green);">
-                                {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
+                                @if(auth()->user()->profile_image)
+                                    <img src="{{ asset(auth()->user()->profile_image) }}" alt="{{ auth()->user()->name }}" class="w-full h-full object-cover">
+                                @elseif(auth()->user()->isAdmin())
+                                    <i class="fa-solid fa-user-shield"></i>
+                                @else
+                                    {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
+                                @endif
                             </div>
-                            <span class="hidden md:block text-sm font-medium"
-                                style="color: var(--text);">{{ auth()->user()->name }}</span>
+                            <div class="hidden md:block">
+                                <span class="text-sm font-medium block" style="color: var(--text);">{{ auth()->user()->name }}</span>
+                                <span class="text-xs" style="color: var(--muted);">{{ auth()->user()->user_type }}</span>
+                            </div>
                             <svg class="w-4 h-4 hidden md:block" style="color: var(--muted);" fill="none"
                                 stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"

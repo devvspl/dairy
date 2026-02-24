@@ -44,20 +44,20 @@ class WhyChooseUsController extends Controller
 
         WhyChooseUs::create($validated);
 
-        return redirect()->route('admin.why-choose-us.index')->with('success', 'Item created successfully!');
+        return redirect()->route('admin.whychooseus.index')->with('success', 'Item created successfully!');
     }
 
-    public function show(WhyChooseUs $whyChooseUs)
+    public function show(WhyChooseUs $whychooseu)
     {
-        return view('admin.why-choose-us.show', compact('whyChooseUs'));
+        return view('admin.why-choose-us.show', ['whyChooseUs' => $whychooseu]);
     }
 
-    public function edit(WhyChooseUs $whyChooseUs)
+    public function edit(WhyChooseUs $whychooseu)
     {
-        return view('admin.why-choose-us.edit', compact('whyChooseUs'));
+        return view('admin.why-choose-us.edit', ['whyChooseUs' => $whychooseu]);
     }
 
-    public function update(Request $request, WhyChooseUs $whyChooseUs)
+    public function update(Request $request, WhyChooseUs $whychooseu)
     {
         $validated = $request->validate([
             'title' => ['required', 'string', 'max:255'],
@@ -69,15 +69,15 @@ class WhyChooseUsController extends Controller
 
         $validated['is_active'] = $request->has('is_active');
 
-        $whyChooseUs->update($validated);
+        $whychooseu->update($validated);
 
-        return redirect()->route('admin.why-choose-us.index')->with('success', 'Item updated successfully!');
+        return redirect()->route('admin.whychooseus.index')->with('success', 'Item updated successfully!');
     }
 
-    public function destroy(WhyChooseUs $whyChooseUs)
+    public function destroy(WhyChooseUs $whychooseu)
     {
-        $whyChooseUs->delete();
+        $whychooseu->delete();
 
-        return redirect()->route('admin.why-choose-us.index')->with('success', 'Item deleted successfully!');
+        return redirect()->route('admin.whychooseus.index')->with('success', 'Item deleted successfully!');
     }
 }

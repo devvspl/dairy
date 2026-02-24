@@ -720,9 +720,26 @@
   
  (function(){
     const btn = document.getElementById('apwPdAddToCartBtn');
+    const qtyInput = document.getElementById('apwPdQty');
     if(!btn) return;
 
     btn.addEventListener('click', ()=>{
+      const quantity = parseInt(qtyInput?.value || 1);
+      
+      // Get product data from page
+      const product = {
+        id: {{ $product->id }},
+        name: "{{ $product->name }}",
+        price: {{ $product->price }},
+        image: "{{ asset($product->images[0] ?? $product->image) }}",
+        slug: "{{ $product->slug }}",
+        quantity: quantity
+      };
+
+      if (window.DairyCart) {
+        window.DairyCart.addToCart(product);
+      }
+
       const old = btn.textContent;
       btn.textContent = 'Added ✓';
       btn.style.transform = 'translateY(-2px)';

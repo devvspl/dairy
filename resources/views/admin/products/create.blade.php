@@ -110,16 +110,16 @@
                 <div>
                     <label class="block text-sm font-medium mb-2" style="color: var(--text);">Stock Status</label>
                     <select name="stock_status" class="w-full px-3 py-2 border rounded-lg" style="border-color: var(--border);">
-                        <option value="available" {{ old('stock_status', $product->stock_status) == 'available' ? 'selected' : '' }}>Available</option>
-                        <option value="out_of_stock" {{ old('stock_status', $product->stock_status) == 'out_of_stock' ? 'selected' : '' }}>Out of Stock</option>
-                        <option value="limited" {{ old('stock_status', $product->stock_status) == 'limited' ? 'selected' : '' }}>Limited Stock</option>
+                        <option value="available" {{ old('stock_status', 'available') == 'available' ? 'selected' : '' }}>Available</option>
+                        <option value="out_of_stock" {{ old('stock_status') == 'out_of_stock' ? 'selected' : '' }}>Out of Stock</option>
+                        <option value="limited" {{ old('stock_status') == 'limited' ? 'selected' : '' }}>Limited Stock</option>
                     </select>
                     @error('stock_status')<p class="text-red-600 text-sm mt-1">{{ $message }}</p>@enderror
                 </div>
 
                 <div>
                     <label class="block text-sm font-medium mb-2" style="color: var(--text);">Stock Quantity</label>
-                    <input type="number" name="stock_quantity" value="{{ old('stock_quantity', $product->stock_quantity) }}" min="0" class="w-full px-3 py-2 border rounded-lg" style="border-color: var(--border);">
+                    <input type="number" name="stock_quantity" value="{{ old('stock_quantity', 0) }}" min="0" class="w-full px-3 py-2 border rounded-lg" style="border-color: var(--border);">
                     @error('stock_quantity')<p class="text-red-600 text-sm mt-1">{{ $message }}</p>@enderror
                 </div>
             </div>
@@ -131,19 +131,19 @@
             <div class="grid grid-cols-3 gap-4">
                 <div>
                     <label class="block text-sm font-medium mb-2" style="color: var(--text);">Shelf Life</label>
-                    <input type="text" name="shelf_life" value="{{ old('shelf_life', $product->shelf_life) }}" placeholder="e.g., 2 Days" class="w-full px-3 py-2 border rounded-lg" style="border-color: var(--border);">
+                    <input type="text" name="shelf_life" value="{{ old('shelf_life') }}" placeholder="e.g., 2 Days" class="w-full px-3 py-2 border rounded-lg" style="border-color: var(--border);">
                     @error('shelf_life')<p class="text-red-600 text-sm mt-1">{{ $message }}</p>@enderror
                 </div>
 
                 <div>
                     <label class="block text-sm font-medium mb-2" style="color: var(--text);">Storage Temp</label>
-                    <input type="text" name="storage_temp" value="{{ old('storage_temp', $product->storage_temp) }}" placeholder="e.g., 0–4°C" class="w-full px-3 py-2 border rounded-lg" style="border-color: var(--border);">
+                    <input type="text" name="storage_temp" value="{{ old('storage_temp') }}" placeholder="e.g., 0–4°C" class="w-full px-3 py-2 border rounded-lg" style="border-color: var(--border);">
                     @error('storage_temp')<p class="text-red-600 text-sm mt-1">{{ $message }}</p>@enderror
                 </div>
 
                 <div>
                     <label class="block text-sm font-medium mb-2" style="color: var(--text);">Best For</label>
-                    <input type="text" name="best_for" value="{{ old('best_for', $product->best_for) }}" placeholder="e.g., Tea, Coffee" class="w-full px-3 py-2 border rounded-lg" style="border-color: var(--border);">
+                    <input type="text" name="best_for" value="{{ old('best_for') }}" placeholder="e.g., Tea, Coffee" class="w-full px-3 py-2 border rounded-lg" style="border-color: var(--border);">
                     @error('best_for')<p class="text-red-600 text-sm mt-1">{{ $message }}</p>@enderror
                 </div>
             </div>
@@ -152,17 +152,6 @@
         <!-- Images -->
         <div class="mb-6">
             <h3 class="text-lg font-bold mb-4" style="color: var(--text);">Images</h3>
-            
-            @if($product->images && count($product->images) > 0)
-            <div class="mb-4">
-                <label class="block text-sm font-medium mb-2" style="color: var(--text);">Current Images</label>
-                <div class="grid grid-cols-5 gap-2">
-                    @foreach($product->images as $img)
-                    <img src="{{ asset($img) }}" alt="Product" class="w-full h-24 object-cover rounded border">
-                    @endforeach
-                </div>
-            </div>
-            @endif
 
             <div>
                 <label class="block text-sm font-medium mb-2" style="color: var(--text);">Upload New Images (Multiple)</label>
@@ -173,7 +162,7 @@
 
             <div class="mt-4">
                 <label class="block text-sm font-medium mb-2" style="color: var(--text);">Or Enter Image Path</label>
-                <input type="text" name="image" value="{{ old('image', $product->image) }}" class="w-full px-3 py-2 border rounded-lg" style="border-color: var(--border);">
+                <input type="text" name="image" value="{{ old('image') }}" class="w-full px-3 py-2 border rounded-lg" style="border-color: var(--border);">
                 @error('image')<p class="text-red-600 text-sm mt-1">{{ $message }}</p>@enderror
             </div>
         </div>
@@ -224,13 +213,13 @@
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <label class="block text-sm font-medium mb-2" style="color: var(--text);">Rating</label>
-                    <input type="number" name="rating" value="{{ old('rating', $product->rating) }}" min="0" max="5" step="0.1" class="w-full px-3 py-2 border rounded-lg" style="border-color: var(--border);">
+                    <input type="number" name="rating" value="{{ old('rating', 0) }}" min="0" max="5" step="0.1" class="w-full px-3 py-2 border rounded-lg" style="border-color: var(--border);">
                     @error('rating')<p class="text-red-600 text-sm mt-1">{{ $message }}</p>@enderror
                 </div>
 
                 <div>
                     <label class="block text-sm font-medium mb-2" style="color: var(--text);">Reviews Count</label>
-                    <input type="number" name="reviews_count" value="{{ old('reviews_count', $product->reviews_count) }}" min="0" class="w-full px-3 py-2 border rounded-lg" style="border-color: var(--border);">
+                    <input type="number" name="reviews_count" value="{{ old('reviews_count', 0) }}" min="0" class="w-full px-3 py-2 border rounded-lg" style="border-color: var(--border);">
                     @error('reviews_count')<p class="text-red-600 text-sm mt-1">{{ $message }}</p>@enderror
                 </div>
             </div>
@@ -242,26 +231,26 @@
             <div class="grid grid-cols-3 gap-4">
                 <div>
                     <label class="block text-sm font-medium mb-2" style="color: var(--text);">Badge</label>
-                    <input type="text" name="badge" value="{{ old('badge', $product->badge) }}" placeholder="e.g., Best Seller" class="w-full px-3 py-2 border rounded-lg" style="border-color: var(--border);">
+                    <input type="text" name="badge" value="{{ old('badge') }}" placeholder="e.g., Best Seller" class="w-full px-3 py-2 border rounded-lg" style="border-color: var(--border);">
                     @error('badge')<p class="text-red-600 text-sm mt-1">{{ $message }}</p>@enderror
                 </div>
 
                 <div>
                     <label class="block text-sm font-medium mb-2" style="color: var(--text);">Badge Color</label>
-                    <input type="text" name="badge_color" value="{{ old('badge_color', $product->badge_color) }}" placeholder="green" class="w-full px-3 py-2 border rounded-lg" style="border-color: var(--border);">
+                    <input type="text" name="badge_color" value="{{ old('badge_color') }}" placeholder="green" class="w-full px-3 py-2 border rounded-lg" style="border-color: var(--border);">
                     @error('badge_color')<p class="text-red-600 text-sm mt-1">{{ $message }}</p>@enderror
                 </div>
 
                 <div>
                     <label class="block text-sm font-medium mb-2" style="color: var(--text);">Order</label>
-                    <input type="number" name="order" value="{{ old('order', $product->order) }}" required min="0" class="w-full px-3 py-2 border rounded-lg" style="border-color: var(--border);">
+                    <input type="number" name="order" value="{{ old('order', 0) }}" required min="0" class="w-full px-3 py-2 border rounded-lg" style="border-color: var(--border);">
                     @error('order')<p class="text-red-600 text-sm mt-1">{{ $message }}</p>@enderror
                 </div>
             </div>
 
             <div class="mt-4">
                 <label class="block text-sm font-medium mb-2" style="color: var(--text);">Meta</label>
-                <input type="text" name="meta" value="{{ old('meta', $product->meta) }}" class="w-full px-3 py-2 border rounded-lg" style="border-color: var(--border);">
+                <input type="text" name="meta" value="{{ old('meta') }}" class="w-full px-3 py-2 border rounded-lg" style="border-color: var(--border);">
                 @error('meta')<p class="text-red-600 text-sm mt-1">{{ $message }}</p>@enderror
             </div>
         </div>
@@ -271,11 +260,11 @@
             <h3 class="text-lg font-bold mb-4" style="color: var(--text);">Status</h3>
             <div class="flex space-x-4">
                 <label class="flex items-center">
-                    <input type="checkbox" name="is_featured" value="1" {{ old('is_featured', $product->is_featured) ? 'checked' : '' }} class="mr-2">
+                    <input type="checkbox" name="is_featured" value="1" {{ old('is_featured') ? 'checked' : '' }} class="mr-2">
                     <span class="text-sm" style="color: var(--text);">Featured</span>
                 </label>
                 <label class="flex items-center">
-                    <input type="checkbox" name="is_active" value="1" {{ old('is_active', $product->is_active) ? 'checked' : '' }} class="mr-2">
+                    <input type="checkbox" name="is_active" value="1" {{ old('is_active', true) ? 'checked' : '' }} class="mr-2">
                     <span class="text-sm" style="color: var(--text);">Active</span>
                 </label>
             </div>
@@ -289,7 +278,7 @@
 </div>
 
 <script>
-let featureIndex = {{ $product->features ? count($product->features) : 1 }};
+let featureIndex = 1;
 
 function addPackSize() {
     const container = document.getElementById('packSizesContainer');

@@ -7,7 +7,7 @@
 <div class="bg-white rounded-xl shadow-sm p-4 lg:p-6 border" style="border-color: var(--border);">
     <div class="flex items-center justify-between mb-6">
         <h2 class="text-xl font-bold" style="color: var(--text);">Create Why Choose Us Item</h2>
-        <a href="{{ route('admin.why-choose-us.index') }}" class="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors" style="color: var(--text); border: 1px solid var(--border);">
+        <a href="{{ route('admin.whychooseus.index') }}" class="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors" style="color: var(--text); border: 1px solid var(--border);">
             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
             </svg>
@@ -15,7 +15,7 @@
         </a>
     </div>
 
-    <form method="POST" action="{{ route('admin.why-choose-us.store') }}">
+    <form method="POST" action="{{ route('admin.whychooseus.store') }}">
             @csrf
             <div class="space-y-4">
                 <div>
@@ -47,7 +47,7 @@
             </div>
             <div class="flex space-x-3 mt-6">
                 <button type="submit" class="px-4 py-2 rounded-lg text-white font-medium" style="background-color: var(--green);">Create Item</button>
-                <a href="{{ route('admin.why-choose-us.index') }}" class="px-4 py-2 rounded-lg border" style="border-color: var(--border);">Cancel</a>
+                <a href="{{ route('admin.whychooseus.index') }}" class="px-4 py-2 rounded-lg border" style="border-color: var(--border);">Cancel</a>
             </div>
         </form>
     </div>
