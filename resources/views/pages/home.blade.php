@@ -1158,17 +1158,16 @@
                 <div class="tb-prod-viewport" id="tbProdViewport">
                     <div class="tb-prod-track" id="tbProdTrack">
                         @foreach ($products as $product)
-                            <article class="tb-card" 
-                                data-product-id="{{ $product->id }}"
-                                data-product-name="{{ $product->name }}"
-                                data-product-price="{{ $product->price }}"
+                            <article class="tb-card" data-product-id="{{ $product->id }}"
+                                data-product-name="{{ $product->name }}" data-product-price="{{ $product->price }}"
                                 data-product-image="{{ asset($product->image) }}"
                                 data-product-slug="{{ $product->slug }}">
                                 <div class="tb-card-media">
                                     @if ($product->badge)
                                         <span class="tb-badge {{ $product->badge_color }}">{{ $product->badge }}</span>
                                     @endif
-                                    <button class="tb-wish wishlist-btn" type="button" aria-label="Add to wishlist" data-product-id="{{ $product->id }}">
+                                    <button class="tb-wish wishlist-btn" type="button" aria-label="Add to wishlist"
+                                        data-product-id="{{ $product->id }}">
                                         <i class="fa-regular fa-heart"></i>
                                     </button>
                                     <div class="tb-img" style="background-image: url('{{ asset($product->image) }}');">
@@ -1187,7 +1186,7 @@
                                     </div>
                                     <div class="tb-variant">
                                         <select aria-label="Select variant">
-                                            @if($product->variants && is_array($product->variants))
+                                            @if ($product->variants && is_array($product->variants))
                                                 @foreach ($product->variants as $variant)
                                                     <option>{{ $variant }}</option>
                                                 @endforeach
@@ -1196,7 +1195,8 @@
                                             @endif
                                         </select>
                                     </div>
-                                    <button class="tb-add add-to-cart-btn" type="button" data-product-id="{{ $product->id }}">ADD TO CART</button>
+                                    <button class="tb-add add-to-cart-btn" type="button"
+                                        data-product-id="{{ $product->id }}">ADD TO CART</button>
                                 </div>
                             </article>
                         @endforeach
