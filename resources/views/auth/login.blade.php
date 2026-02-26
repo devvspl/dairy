@@ -4,6 +4,13 @@
 
 @section('content')
 <div class="bg-white rounded-2xl shadow-xl p-6 sm:p-8 border" style="border-color: var(--border);">
+    <!-- Logo -->
+    <div class="text-center mb-6">
+        <a href="{{ route('home') }}" class="inline-block">
+            <img src="{{ asset('images/new.png') }}" alt="{{ config('app.name') }}" class="h-12 sm:h-16 w-auto mx-auto">
+        </a>
+    </div>
+
     <div class="text-center mb-6 sm:mb-8">
         <h2 class="text-2xl sm:text-3xl font-bold" style="color: var(--text);">Welcome Back</h2>
         <p class="mt-2 text-sm sm:text-base" style="color: var(--muted);">Sign in to your account</p>
