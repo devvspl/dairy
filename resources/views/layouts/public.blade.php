@@ -902,13 +902,6 @@
         <li><a href="{{ route('products') }}" class="{{ request()->routeIs('products') ? 'active' : '' }}"><i class="fa-solid fa-box-open"></i> Products</a></li>
         <li><a href="{{ route('blogs') }}" class="{{ request()->routeIs('blogs') ? 'active' : '' }}"><i class="fa-solid fa-pen-to-square"></i> Blogs</a></li>
         <li><a href="{{ route('contact') }}" class="{{ request()->routeIs('contact') ? 'active' : '' }}"><i class="fa-solid fa-envelope"></i> Contact Us</a></li>
-        
-        @auth
-          @if(auth()->user()->isAdmin())
-            <!-- Admin Menu Items -->
-            <li><a href="{{ route('admin.dashboard') }}" class="{{ request()->routeIs('admin.*') ? 'active' : '' }}"><i class="fa-solid fa-gauge"></i> Admin Panel</a></li>
-          @endif
-        @endauth
       </ul>
     </div>
   </nav>
