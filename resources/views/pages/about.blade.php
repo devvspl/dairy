@@ -1039,30 +1039,30 @@
             </div>
         </section>
         <!-- TEAM -->
-        <section class="abpg-team" id="abpgTeam">
-            <div class="container">
-                <div class="abpg-sec-head">
-                    <span class="abpg-kicker"><i class="fa-solid fa-people-group"></i> Team</span>
-                    <h2>Meet our team</h2>
-                    <p>People behind quality, consistency and customer experience.</p>
-                </div>
-                @if ($aboutPage->team_members && count($aboutPage->team_members) > 0)
-                    <div class="abpg-team-grid">
-                        @foreach ($aboutPage->team_members as $member)
-                            <div class="abpg-team-card">
-                                <div class="abpg-team-img"
-                                    style="background-image:url('{{ asset($member['image'] ?? 'images/placeholder.jpg') }}');">
-                                </div>
-                                <div class="abpg-team-info">
-                                    <strong>{{ $member['name'] }}</strong>
-                                    <span>{{ $member['role'] }}</span>
-                                </div>
-                            </div>
-                        @endforeach
-                    </div>
-                @endif
-            </div>
-        </section>
+        <!--<section class="abpg-team" id="abpgTeam">-->
+        <!--    <div class="container">-->
+        <!--        <div class="abpg-sec-head">-->
+        <!--            <span class="abpg-kicker"><i class="fa-solid fa-people-group"></i> Team</span>-->
+        <!--            <h2>Meet our team</h2>-->
+        <!--            <p>People behind quality, consistency and customer experience.</p>-->
+        <!--        </div>-->
+        <!--        @if ($aboutPage->team_members && count($aboutPage->team_members) > 0)-->
+        <!--            <div class="abpg-team-grid">-->
+        <!--                @foreach ($aboutPage->team_members as $member)-->
+        <!--                    <div class="abpg-team-card">-->
+        <!--                        <div class="abpg-team-img"-->
+        <!--                            style="background-image:url('{{ asset($member['image'] ?? 'images/placeholder.jpg') }}');">-->
+        <!--                        </div>-->
+        <!--                        <div class="abpg-team-info">-->
+        <!--                            <strong>{{ $member['name'] }}</strong>-->
+        <!--                            <span>{{ $member['role'] }}</span>-->
+        <!--                        </div>-->
+        <!--                    </div>-->
+        <!--                @endforeach-->
+        <!--            </div>-->
+        <!--        @endif-->
+        <!--    </div>-->
+        <!--</section>-->
         <!-- FAQ (optional, add if you want) -->
         <section class="abpg-faq" id="abpgFaq">
             <div class="container">
