@@ -1187,9 +1187,13 @@
                                     </div>
                                     <div class="tb-variant">
                                         <select aria-label="Select variant">
-                                            @foreach ($product->variants as $variant)
-                                                <option>{{ $variant }}</option>
-                                            @endforeach
+                                            @if($product->variants && is_array($product->variants))
+                                                @foreach ($product->variants as $variant)
+                                                    <option>{{ $variant }}</option>
+                                                @endforeach
+                                            @else
+                                                <option>Standard</option>
+                                            @endif
                                         </select>
                                     </div>
                                     <button class="tb-add add-to-cart-btn" type="button" data-product-id="{{ $product->id }}">ADD TO CART</button>
@@ -1921,7 +1925,7 @@
                         <div class="tb-splitcoll-points tb-checklist">
                             @foreach ($whyItWorks->points as $point)
                                 <div class="tb-splitcoll-point">
-                                    <span class="tb-check-ico" style="color: white;" aria-hidden="true">✓</span>
+                                    <span class="tb-check-ico" style="#color: white;" aria-hidden="true">✓</span>
                                     <span>{{ $point }}</span>
                                 </div>
                             @endforeach
