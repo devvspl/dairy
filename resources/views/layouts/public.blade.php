@@ -985,7 +985,7 @@
       <!-- Bottom bar -->
       <div class="tb-foot-bottom">
         <div class="container">
-          <p>© {{ date('Y') }} {{ config('app.name') }}. All rights reserved. Designed and Developed by Ap Web World
+          <p>© {{ date('Y') }} {{ config('app.name') }}. All rights reserved. Designed and Developed by <a href="https://www.apwebworld.com/"  style="text-decoration: none;">Ap Web World</a>
 </p>
         </div>
       </div>

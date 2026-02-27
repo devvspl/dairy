@@ -1037,6 +1037,23 @@
                     </div>
                 </div>
             </div>
+            
+            <style>
+                
+             .abpg-why-grid{
+    display: grid;
+}
+
+.abpg-why-card{
+    order: 2;
+}
+
+.abpg-why-side{
+    order: 1;
+}
+            </style>
+            
+            
         </section>
         <!-- TEAM -->
         <!--<section class="abpg-team" id="abpgTeam">-->
