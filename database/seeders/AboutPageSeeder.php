@@ -9,6 +9,9 @@ class AboutPageSeeder extends Seeder
 {
     public function run(): void
     {
+        // Delete existing about page records
+        AboutPage::truncate();
+        
         AboutPage::create([
             'section_key' => 'main',
             
