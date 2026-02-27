@@ -1,4 +1,4 @@
-@extends('layouts.public')
+﻿@extends('layouts.public')
 @section('title', 'About Us')
 @section('meta_description', 'Learn more about our company')
 @section('content')
@@ -951,29 +951,19 @@
                     <h2>What makes us different</h2>
                     <p>Simple promises, delivered consistently—premium experience without the noise.</p>
                 </div>
-                <div class="abpg-usps-grid">
-                    <div class="abpg-usp-card">
-                        <div class="abpg-usp-ico"><i class="fa-solid fa-location-dot"></i></div>
-                        <h3>Transparent Sourcing</h3>
-                        <p>Clear inputs and clear standards so you always know what you’re buying.</p>
+                @if ($aboutPage->usps && count($aboutPage->usps) > 0)
+                    <div class="abpg-usps-grid">
+                        @foreach ($aboutPage->usps as $usp)
+                            <div class="abpg-usp-card">
+                                <div class="abpg-usp-ico"><i class="{{ $usp['icon'] ?? 'fa-solid fa-star' }}"></i></div>
+                                <h3>{{ $usp['title'] }}</h3>
+                                <p>{{ $usp['description'] }}</p>
+                            </div>
+                        @endforeach
                     </div>
-                    <div class="abpg-usp-card">
-                        <div class="abpg-usp-ico"><i class="fa-solid fa-certificate"></i></div>
-                        <h3>Consistency</h3>
-                        <p>Quality that remains reliable across batches—taste, freshness and results.</p>
-                    </div>
-                    <div class="abpg-usp-card">
-                        <div class="abpg-usp-ico"><i class="fa-solid fa-sparkles"></i></div>
-                        <h3>Premium Feel</h3>
-                        <p>From packaging to experience—everything is designed to feel refined.</p>
-                    </div>
-                    <div class="abpg-usp-card">
-                        <div class="abpg-usp-ico"><i class="fa-solid fa-headset"></i></div>
-                        <h3>Responsive Support</h3>
-                        <p>Quick help, clear communication, and smooth purchase experience.</p>
-                    </div>
-                </div>
+                @endif
             </div>
+        </section>
         </section>
         <!-- COUNTERS -->
         <section class="abpg-counters" id="abpgCounters">
@@ -1180,12 +1170,14 @@
                         </div>
 
                         <!-- Success Message -->
-                        <div style="grid-column: 1/-1; display: none; padding: 12px; background: #d1fae5; border: 1px solid #10b981; border-radius: 12px; color: #065f46; font-weight: 650;" id="aboutSuccessMessage">
+                        <div style="grid-column: 1/-1; display: none; padding: 12px; background: #d1fae5; border: 1px solid #10b981; border-radius: 12px; color: #065f46; font-weight: 650;"
+                            id="aboutSuccessMessage">
                             <i class="fa-solid fa-circle-check"></i> <span id="aboutSuccessText"></span>
                         </div>
 
                         <!-- Error Message -->
-                        <div style="grid-column: 1/-1; display: none; padding: 12px; background: #fee2e2; border: 1px solid #ef4444; border-radius: 12px; color: #991b1b; font-weight: 650;" id="aboutErrorMessage">
+                        <div style="grid-column: 1/-1; display: none; padding: 12px; background: #fee2e2; border: 1px solid #ef4444; border-radius: 12px; color: #991b1b; font-weight: 650;"
+                            id="aboutErrorMessage">
                             <i class="fa-solid fa-circle-xmark"></i> <span id="aboutErrorText"></span>
                         </div>
 
@@ -1279,69 +1271,80 @@
 
                     // Send AJAX request
                     fetch(aboutForm.action, {
-                        method: 'POST',
-                        body: formData,
-                        headers: {
-                            'X-Requested-With': 'XMLHttpRequest',
-                            'Accept': 'application/json'
-                        }
-                    })
-                    .then(response => {
-                        if (!response.ok) {
-                            return response.json().then(data => {
-                                throw data;
-                            });
-                        }
-                        return response.json();
-                    })
-                    .then(data => {
-                        if (data.success) {
-                            // Show success message
-                            successText.textContent = data.message;
-                            successMessage.style.display = 'block';
+                            method: 'POST',
+                            body: formData,
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest',
+                                'Accept': 'application/json'
+                            }
+                        })
+                        .then(response => {
+                            if (!response.ok) {
+                                return response.json().then(data => {
+                                    throw data;
+                                });
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            if (data.success) {
+                                // Show success message
+                                successText.textContent = data.message;
+                                successMessage.style.display = 'block';
 
-                            // Reset form
-                            aboutForm.reset();
+                                // Reset form
+                                aboutForm.reset();
 
-                            // Scroll to success message
-                            successMessage.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                // Scroll to success message
+                                successMessage.scrollIntoView({
+                                    behavior: 'smooth',
+                                    block: 'center'
+                                });
 
-                            // Hide success message after 5 seconds
-                            setTimeout(() => {
-                                successMessage.style.display = 'none';
-                            }, 5000);
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
-                        
-                        // Handle validation errors
-                        if (error.errors) {
-                            // Display field-specific errors
-                            Object.keys(error.errors).forEach(field => {
-                                const errorElement = document.getElementById('about-error-' + field);
-                                if (errorElement) {
-                                    errorElement.textContent = error.errors[field][0];
-                                    errorElement.style.display = 'block';
-                                }
-                            });
+                                // Hide success message after 5 seconds
+                                setTimeout(() => {
+                                    successMessage.style.display = 'none';
+                                }, 5000);
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
 
-                            // Show general error message
-                            errorText.textContent = error.message || 'Please fix the errors below.';
-                            errorMessage.style.display = 'block';
-                            errorMessage.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        } else {
-                            // Show generic error message
-                            errorText.textContent = error.message || 'Something went wrong. Please try again.';
-                            errorMessage.style.display = 'block';
-                            errorMessage.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        }
-                    })
-                    .finally(() => {
-                        // Re-enable submit button
-                        submitBtn.disabled = false;
-                        btnText.textContent = 'Submit';
-                    });
+                            // Handle validation errors
+                            if (error.errors) {
+                                // Display field-specific errors
+                                Object.keys(error.errors).forEach(field => {
+                                    const errorElement = document.getElementById('about-error-' +
+                                        field);
+                                    if (errorElement) {
+                                        errorElement.textContent = error.errors[field][0];
+                                        errorElement.style.display = 'block';
+                                    }
+                                });
+
+                                // Show general error message
+                                errorText.textContent = error.message || 'Please fix the errors below.';
+                                errorMessage.style.display = 'block';
+                                errorMessage.scrollIntoView({
+                                    behavior: 'smooth',
+                                    block: 'center'
+                                });
+                            } else {
+                                // Show generic error message
+                                errorText.textContent = error.message ||
+                                    'Something went wrong. Please try again.';
+                                errorMessage.style.display = 'block';
+                                errorMessage.scrollIntoView({
+                                    behavior: 'smooth',
+                                    block: 'center'
+                                });
+                            }
+                        })
+                        .finally(() => {
+                            // Re-enable submit button
+                            submitBtn.disabled = false;
+                            btnText.textContent = 'Submit';
+                        });
                 });
             }
         })();
