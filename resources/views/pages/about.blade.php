@@ -965,6 +965,140 @@
             </div>
         </section>
         </section>
+        
+        
+        <section class="nulac-mv-section">
+    <div class="nulac-container">
+        <div class="nulac-header">
+            <h2>Mission & Vision</h2>
+            <div class="nulac-line"></div>
+        </div>
+        
+        <div class="nulac-grid">
+            <div class="nulac-card">
+                <div class="nulac-content">
+                    <div class="nulac-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#F1CC24" stroke-width="1.5">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                        </svg>
+                    </div>
+                    <h3>Mission</h3>
+                    <p>To redefine everyday dairy by building a transparent, plastic-free ecosystem that delivers pure, nourishing food to every kitchen.</p>
+                </div>
+            </div>
+
+            <div class="nulac-card">
+                <div class="nulac-content">
+                    <div class="nulac-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#F1CC24" stroke-width="1.5">
+                            <path d="M12 2v20M2 12h20M4.93 4.93l14.14 14.14M19.07 4.93L4.93 19.07"/>
+                        </svg>
+                    </div>
+                    <h3>Vision</h3>
+                    <p>To nourish and empower future generations in our cities by providing the finest dairy through responsible and sustainable systems.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+/* Reset and Container */
+.nulac-mv-section {
+    width: 100%;
+    padding: clamp(40px, 6vw, 80px) 0;
+    background-color: #FAF9F6;
+    overflow-x: hidden; /* Important to stop horizontal scroll */
+    box-sizing: border-box;
+}
+
+.nulac-container {
+    width: 100%;
+    max-width: 1250px; 
+    margin: 0 auto;
+    padding: 0 20px;
+    box-sizing: border-box;
+}
+
+.nulac-header {
+    text-align: center;
+    margin-bottom: 40px;
+    width: 100%;
+}
+
+.nulac-header h2 {
+    
+    font-size: clamp(24px, 4vw, 36px);
+    font-weight: 700;
+    margin: 0;
+    color: #14261C;
+}
+
+.nulac-line {
+    width: 50px;
+    height: 2px;
+    background: #F1CC24;
+    margin: 12px auto 0;
+}
+
+
+.nulac-grid {
+    display: grid;
+    /* This makes it 1 column on mobile and 2 on desktop automatically */
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+    gap: 20px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.nulac-card {
+    background: #ffffff;
+    border: 1px solid #e6dfd2;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    box-sizing: border-box;
+    transition: transform 0.3s ease;
+}
+
+.nulac-content {
+    padding: clamp(25px, 5vw, 40px);
+    text-align: center;
+    box-sizing: border-box;
+}
+
+.nulac-icon {
+    width: 45px;
+    height: 45px;
+    margin: 0 auto 15px;
+}
+
+.nulac-card h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    margin-bottom: 12px;
+    font-style: italic;
+}
+
+.nulac-card p {
+    font-size: 15px;
+    line-height: 1.6;
+    color: #4A554F;
+    margin: 0;
+}
+
+/* Specific Mobile Fix */
+@media (max-width: 768px) {
+    .nulac-grid {
+        grid-template-columns: 1fr; /* Force single column */
+    }
+    .nulac-container {
+        padding: 0 15px;
+    }
+}
+</style>
+        
+        
         <!-- COUNTERS -->
         <section class="abpg-counters" id="abpgCounters">
             <div class="container">

@@ -1654,7 +1654,7 @@
 
             .tb-splitcoll-point span {
                 font-weight: 750;
-                color: black;
+               
                 line-height: 1.55;
                 font-size: 16px;
             }
@@ -1913,6 +1913,21 @@
             }
         </style>
     @endpush
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     <!-- Content Section -->
     @if ($whyItWorks)
         <section class="tb-splitcoll-sec" id="tbSplitCollSec">

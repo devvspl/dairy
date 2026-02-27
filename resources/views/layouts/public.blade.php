@@ -905,7 +905,21 @@
       </ul>
     </div>
   </nav>
-    
+    <a href="https://wa.me/919999787973?text=Hello"
+   target="_blank"
+   style="position:fixed;
+          bottom:20px;
+          right:20px;
+          background:#25D366;
+          color:#fff;
+          padding:14px 16px;
+          border-radius:50%;
+          font-size:22px;
+          text-decoration:none;
+          box-shadow:0 4px 10px rgba(0,0,0,0.3);
+          z-index:999;">
+    <i class="fa-brands fa-whatsapp"></i>
+</a>
     <!-- Main Content -->
     <main>
         @yield('content')
@@ -921,15 +935,14 @@
           <!--<h3>{{ config('app.name') }}</h3>-->
           <h3>Nulac</h3>
           
-          
           <p>Pure, clean, and ethically sourced food products crafted for modern Indian families.</p>
 
-          <div class="tb-foot-social">
-            <a href="#" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
-            <a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
-            <a href="#" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
-            <a href="#" aria-label="LinkedIn"><i class="fab fa-linkedin-in"></i></a>
-          </div>
+          <!--<div class="tb-foot-social">-->
+          <!--  <a href="#" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>-->
+          <!--  <a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a>-->
+          <!--  <a href="#" aria-label="YouTube"><i class="fab fa-youtube"></i></a>-->
+          <!--  <a href="#" aria-label="LinkedIn"><i class="fab fa-linkedin-in"></i></a>-->
+          <!--</div>-->
         </div>
 
         <!-- Links -->
