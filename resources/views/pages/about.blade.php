@@ -975,27 +975,37 @@
         </div>
         
         <div class="nulac-grid">
+            <!-- Mission Card -->
             <div class="nulac-card">
                 <div class="nulac-content">
                     <div class="nulac-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="#F1CC24" stroke-width="1.5">
-                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                        </svg>
+                        @if($aboutPage->mission_icon && str_starts_with($aboutPage->mission_icon, 'fa-'))
+                            <i class="{{ $aboutPage->mission_icon }}" style="font-size: 45px; color: #F1CC24;"></i>
+                        @else
+                            <svg viewBox="0 0 24 24" fill="none" stroke="#F1CC24" stroke-width="1.5">
+                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                            </svg>
+                        @endif
                     </div>
-                    <h3>Mission</h3>
-                    <p>To redefine everyday dairy by building a transparent, plastic-free ecosystem that delivers pure, nourishing food to every kitchen.</p>
+                    <h3>{{ $aboutPage->mission_title ?? 'Mission' }}</h3>
+                    <p>{{ $aboutPage->mission_description ?? 'To redefine everyday dairy by building a transparent, plastic-free ecosystem that delivers pure, nourishing food to every kitchen.' }}</p>
                 </div>
             </div>
 
+            <!-- Vision Card -->
             <div class="nulac-card">
                 <div class="nulac-content">
                     <div class="nulac-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="#F1CC24" stroke-width="1.5">
-                            <path d="M12 2v20M2 12h20M4.93 4.93l14.14 14.14M19.07 4.93L4.93 19.07"/>
-                        </svg>
+                        @if($aboutPage->vision_icon && str_starts_with($aboutPage->vision_icon, 'fa-'))
+                            <i class="{{ $aboutPage->vision_icon }}" style="font-size: 45px; color: #F1CC24;"></i>
+                        @else
+                            <svg viewBox="0 0 24 24" fill="none" stroke="#F1CC24" stroke-width="1.5">
+                                <path d="M12 2v20M2 12h20M4.93 4.93l14.14 14.14M19.07 4.93L4.93 19.07"/>
+                            </svg>
+                        @endif
                     </div>
-                    <h3>Vision</h3>
-                    <p>To nourish and empower future generations in our cities by providing the finest dairy through responsible and sustainable systems.</p>
+                    <h3>{{ $aboutPage->vision_title ?? 'Vision' }}</h3>
+                    <p>{{ $aboutPage->vision_description ?? 'To nourish and empower future generations in our cities by providing the finest dairy through responsible and sustainable systems.' }}</p>
                 </div>
             </div>
         </div>

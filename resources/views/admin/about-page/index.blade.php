@@ -193,6 +193,54 @@
             </div>
         </div>
 
+        <!-- Mission & Vision Section -->
+        <div class="bg-white rounded-xl shadow-sm p-4 lg:p-6 border" style="border-color: var(--border);">
+            <div class="flex items-center justify-between mb-4 pb-4 border-b" style="border-color: var(--border);">
+                <div>
+                    <h2 class="text-xl font-bold" style="color: var(--text);">Mission & Vision Section</h2>
+                    <p class="text-sm mt-1" style="color: var(--muted);">Company mission and vision statements</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Mission -->
+                <div class="space-y-3">
+                    <h3 class="font-semibold text-lg" style="color: var(--text);">Mission</h3>
+                    <div>
+                        <label class="block text-sm font-medium mb-2" style="color: var(--text);">Title</label>
+                        <input type="text" name="mission_title" value="{{ old('mission_title', $aboutPage->mission_title) }}" placeholder="Mission" class="w-full px-3 py-2 border rounded-lg" style="border-color: var(--border);">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2" style="color: var(--text);">Icon (SVG path or Font Awesome class)</label>
+                        <input type="text" name="mission_icon" value="{{ old('mission_icon', $aboutPage->mission_icon) }}" placeholder="e.g., fa-solid fa-shield or SVG path" class="w-full px-3 py-2 border rounded-lg" style="border-color: var(--border);">
+                        <p class="text-xs mt-1" style="color: var(--muted);">Use Font Awesome class (e.g., fa-solid fa-shield) or leave for default SVG</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2" style="color: var(--text);">Description</label>
+                        <textarea name="mission_description" rows="4" placeholder="Mission description" class="w-full px-3 py-2 border rounded-lg" style="border-color: var(--border);">{{ old('mission_description', $aboutPage->mission_description) }}</textarea>
+                    </div>
+                </div>
+
+                <!-- Vision -->
+                <div class="space-y-3">
+                    <h3 class="font-semibold text-lg" style="color: var(--text);">Vision</h3>
+                    <div>
+                        <label class="block text-sm font-medium mb-2" style="color: var(--text);">Title</label>
+                        <input type="text" name="vision_title" value="{{ old('vision_title', $aboutPage->vision_title) }}" placeholder="Vision" class="w-full px-3 py-2 border rounded-lg" style="border-color: var(--border);">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2" style="color: var(--text);">Icon (SVG path or Font Awesome class)</label>
+                        <input type="text" name="vision_icon" value="{{ old('vision_icon', $aboutPage->vision_icon) }}" placeholder="e.g., fa-solid fa-eye or SVG path" class="w-full px-3 py-2 border rounded-lg" style="border-color: var(--border);">
+                        <p class="text-xs mt-1" style="color: var(--muted);">Use Font Awesome class (e.g., fa-solid fa-eye) or leave for default SVG</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2" style="color: var(--text);">Description</label>
+                        <textarea name="vision_description" rows="4" placeholder="Vision description" class="w-full px-3 py-2 border rounded-lg" style="border-color: var(--border);">{{ old('vision_description', $aboutPage->vision_description) }}</textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Counters Section -->
         <div class="bg-white rounded-xl shadow-sm p-4 lg:p-6 border" style="border-color: var(--border);">
             <div class="flex items-center justify-between mb-4 pb-4 border-b" style="border-color: var(--border);">

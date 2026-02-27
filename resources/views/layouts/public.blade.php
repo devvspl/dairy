@@ -998,7 +998,7 @@
       <!-- Bottom bar -->
       <div class="tb-foot-bottom">
         <div class="container">
-          <p>© {{ date('Y') }} {{ config('app.name') }}. All rights reserved. Designed and Developed by <a href="https://www.apwebworld.com/"  style="text-decoration: none; color:white;">Ap Web World</a>
+          <p>© {{ date('Y') }} {{ config('app.name') }}. All rights reserved. Designed and Developed by <a target="_blank" href="https://www.apwebworld.com/"  style="text-decoration: none; color:white;">Ap Web World</a>
 </p>
         </div>
       </div>

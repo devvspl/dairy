@@ -43,6 +43,13 @@ class AboutPageController extends Controller
             'overview_button_text' => ['nullable', 'string'],
             'overview_button_link' => ['nullable', 'string'],
             
+            'mission_title' => ['nullable', 'string'],
+            'mission_icon' => ['nullable', 'string'],
+            'mission_description' => ['nullable', 'string'],
+            'vision_title' => ['nullable', 'string'],
+            'vision_icon' => ['nullable', 'string'],
+            'vision_description' => ['nullable', 'string'],
+            
             'why_promise_title' => ['nullable', 'string'],
             'why_promise_description' => ['nullable', 'string'],
             'why_promise_button_text' => ['nullable', 'string'],

@@ -79,6 +79,14 @@ class AboutPageSeeder extends Seeder
                 ],
             ],
             
+            // Mission & Vision
+            'mission_title' => 'Mission',
+            'mission_icon' => null, // Will use default SVG
+            'mission_description' => 'To redefine everyday dairy by building a transparent, plastic-free ecosystem that delivers pure, nourishing food to every kitchen.',
+            'vision_title' => 'Vision',
+            'vision_icon' => null, // Will use default SVG
+            'vision_description' => 'To nourish and empower future generations in our cities by providing the finest dairy through responsible and sustainable systems.',
+            
             // Counters
             'counters' => [
                 ['icon' => 'fa-users', 'number' => '50000', 'text' => 'Happy Customers'],

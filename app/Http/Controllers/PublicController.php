@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\ContactInquiryMail;
 use App\Models\AboutPage;
 use App\Models\AboutSection;
 use App\Models\Blog;
@@ -17,6 +18,7 @@ use App\Models\Type;
 use App\Models\Usp;
 use App\Models\WhyChooseUs;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 
 class PublicController extends Controller
 {
@@ -297,6 +299,11 @@ class PublicController extends Controller
 
     public function submitContactInquiry(Request $request)
     {
+        \Log::info('Contact inquiry submission started', [
+            'ip' => $request->ip(),
+            'user_agent' => $request->userAgent()
+        ]);
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255',
@@ -306,7 +313,74 @@ class PublicController extends Controller
             'message' => 'required|string',
         ]);
 
-        \App\Models\ContactInquiry::create($validated);
+        \Log::info('Contact inquiry validation passed', ['data' => $validated]);
+
+        $inquiry = \App\Models\ContactInquiry::create($validated);
+
+        \Log::info('Contact inquiry created', [
+            'inquiry_id' => $inquiry->id,
+            'customer_email' => $inquiry->email
+        ]);
+
+        // Send confirmation email to customer
+        try {
+            \Log::info('Attempting to send customer confirmation email', [
+                'to' => $inquiry->email,
+                'inquiry_id' => $inquiry->id
+            ]);
+
+            Mail::to($inquiry->email)->send(new ContactInquiryMail($inquiry, false));
+
+            \Log::info('Customer confirmation email sent successfully', [
+                'to' => $inquiry->email,
+                'inquiry_id' => $inquiry->id
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Failed to send customer confirmation email', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'to' => $inquiry->email,
+                'inquiry_id' => $inquiry->id
+            ]);
+        }
+
+        // Send notification email to admin
+        $adminEmail = env('MAIL_ADMIN_ADDRESS', env('MAIL_FROM_ADDRESS'));
+        
+        \Log::info('Admin email configuration', [
+            'admin_email' => $adminEmail,
+            'from_address' => env('MAIL_FROM_ADDRESS')
+        ]);
+
+        if ($adminEmail) {
+            try {
+                \Log::info('Attempting to send admin notification email', [
+                    'to' => $adminEmail,
+                    'inquiry_id' => $inquiry->id
+                ]);
+
+                Mail::to($adminEmail)->send(new ContactInquiryMail($inquiry, true));
+
+                \Log::info('Admin notification email sent successfully', [
+                    'to' => $adminEmail,
+                    'inquiry_id' => $inquiry->id
+                ]);
+            } catch (\Exception $e) {
+                \Log::error('Failed to send admin notification email', [
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString(),
+                    'to' => $adminEmail,
+                    'inquiry_id' => $inquiry->id
+                ]);
+            }
+        } else {
+            \Log::warning('Admin email not configured, skipping admin notification');
+        }
+
+        \Log::info('Contact inquiry submission completed', [
+            'inquiry_id' => $inquiry->id,
+            'is_ajax' => $request->wantsJson() || $request->ajax()
+        ]);
 
         // Check if it's an AJAX request
         if ($request->wantsJson() || $request->ajax()) {
