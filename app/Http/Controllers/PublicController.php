@@ -203,9 +203,7 @@ class PublicController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q
-                    ->where('name', 'like', "%{$search}%")
-                    ->orWhere('short_description', 'like', "%{$search}%")
-                    ->orWhere('description', 'like', "%{$search}%");
+                    ->where('name', 'like', "%{$search}%");
             });
         }
 
@@ -296,11 +294,6 @@ class PublicController extends Controller
 
     public function submitContactInquiry(Request $request)
     {
-        \Log::info('Contact inquiry submission started', [
-            'ip' => $request->ip(),
-            'user_agent' => $request->userAgent()
-        ]);
-
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255',
@@ -310,74 +303,25 @@ class PublicController extends Controller
             'message' => 'required|string',
         ]);
 
-        \Log::info('Contact inquiry validation passed', ['data' => $validated]);
-
         $inquiry = \App\Models\ContactInquiry::create($validated);
-
-        \Log::info('Contact inquiry created', [
-            'inquiry_id' => $inquiry->id,
-            'customer_email' => $inquiry->email
-        ]);
 
         // Send confirmation email to customer
         try {
-            \Log::info('Attempting to send customer confirmation email', [
-                'to' => $inquiry->email,
-                'inquiry_id' => $inquiry->id
-            ]);
-
             Mail::to($inquiry->email)->send(new ContactInquiryMail($inquiry, false));
-
-            \Log::info('Customer confirmation email sent successfully', [
-                'to' => $inquiry->email,
-                'inquiry_id' => $inquiry->id
-            ]);
         } catch (\Exception $e) {
-            \Log::error('Failed to send customer confirmation email', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-                'to' => $inquiry->email,
-                'inquiry_id' => $inquiry->id
-            ]);
+            // optionally handle error
         }
 
         // Send notification email to admin
         $adminEmail = env('MAIL_ADMIN_ADDRESS', env('MAIL_FROM_ADDRESS'));
 
-        \Log::info('Admin email configuration', [
-            'admin_email' => $adminEmail,
-            'from_address' => env('MAIL_FROM_ADDRESS')
-        ]);
-
         if ($adminEmail) {
             try {
-                \Log::info('Attempting to send admin notification email', [
-                    'to' => $adminEmail,
-                    'inquiry_id' => $inquiry->id
-                ]);
-
                 Mail::to($adminEmail)->send(new ContactInquiryMail($inquiry, true));
-
-                \Log::info('Admin notification email sent successfully', [
-                    'to' => $adminEmail,
-                    'inquiry_id' => $inquiry->id
-                ]);
             } catch (\Exception $e) {
-                \Log::error('Failed to send admin notification email', [
-                    'error' => $e->getMessage(),
-                    'trace' => $e->getTraceAsString(),
-                    'to' => $adminEmail,
-                    'inquiry_id' => $inquiry->id
-                ]);
+                // optionally handle error
             }
-        } else {
-            \Log::warning('Admin email not configured, skipping admin notification');
         }
-
-        \Log::info('Contact inquiry submission completed', [
-            'inquiry_id' => $inquiry->id,
-            'is_ajax' => $request->wantsJson() || $request->ajax()
-        ]);
 
         // Check if it's an AJAX request
         if ($request->wantsJson() || $request->ajax()) {
@@ -387,7 +331,10 @@ class PublicController extends Controller
             ]);
         }
 
-        return redirect()->back()->with('success', 'Thank you for contacting us! We will get back to you shortly.');
+        return redirect()->back()->with(
+            'success',
+            'Thank you for contacting us! We will get back to you shortly.'
+        );
     }
 
     public function privacyPolicy()
