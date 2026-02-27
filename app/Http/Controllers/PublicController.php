@@ -156,8 +156,6 @@ class PublicController extends Controller
             ->where(function ($q) use ($query) {
                 $q
                     ->where('name', 'like', "%{$query}%")
-                    ->orWhere('short_description', 'like', "%{$query}%")
-                    ->orWhere('description', 'like', "%{$query}%")
                     ->orWhere('category', 'like', "%{$query}%");
             })
             ->limit(8)
