@@ -1,5 +1,5 @@
 @extends('layouts.public')
-@section('title', 'Home')
+@section('title', 'Nulac')
 @section('meta_description',
     'Welcome to our home page - Premium essentials delivering purity, quality, and trust
     daily')
@@ -1975,6 +1975,18 @@
                 @endforeach
             </div>
         </div>
+        
+        
+       <style>
+    .tb-ms-play {
+        display: none !important;
+    }
+    
+    .tb-ms-overlay {
+        background: linear-gradient(180deg, rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.3)) !important;
+    }
+</style>
+        
     </section>
     <!-- Video/Media Section -->
     @if ($videoSection)

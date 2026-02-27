@@ -824,7 +824,7 @@
 
         <!-- Search -->
         <form action="{{ route('products') }}" method="GET" class="search">
-          <input type="text" name="search" id="searchInput" placeholder="Search products... (Ctrl+K)" value="{{ request('search') }}" autocomplete="off" />
+          <input type="text" name="search" id="searchInput" placeholder="Search products..." value="{{ request('search') }}" autocomplete="off" />
           @if(request('search'))
           <button type="button" class="search-clear" aria-label="Clear search" title="Clear">
             <i class="fa-solid fa-xmark"></i>
@@ -918,7 +918,10 @@
 
         <!-- Brand -->
         <div class="tb-foot-brand">
-          <h3>{{ config('app.name') }}</h3>
+          <!--<h3>{{ config('app.name') }}</h3>-->
+          <h3>Nulac</h3>
+          
+          
           <p>Pure, clean, and ethically sourced food products crafted for modern Indian families.</p>
 
           <div class="tb-foot-social">
@@ -941,15 +944,15 @@
 
         <div class="tb-foot-links">
           <h4>Products</h4>
-          <a href="{{ route('products') }}">Milks</a>
-          <a href="{{ route('products') }}">Curd</a>
-          <a href="{{ route('products') }}">Paneer</a>
+          <a href="{{ route('products') }}">Milk</a>
+          <a href="{{ route('products') }}">Ghee</a>
+          <!--<a href="{{ route('products') }}">Paneer</a>-->
         </div>
 
         <div class="tb-foot-links">
           <h4>Support</h4>
           <a href="{{ route('terms-conditions') }}">Terms & Conditions</a>
-          <a href="{{ route('contact') }}">FAQs</a>
+          <a href="{{ route('contact') }}">Contact Us</a>
           <a href="{{ route('privacy-policy') }}">Privacy Policy</a>
         </div>
 
@@ -982,7 +985,8 @@
       <!-- Bottom bar -->
       <div class="tb-foot-bottom">
         <div class="container">
-          <p>© {{ date('Y') }} {{ config('app.name') }}. All rights reserved.</p>
+          <p>© {{ date('Y') }} {{ config('app.name') }}. All rights reserved. Designed and Developed by Ap Web World
+</p>
         </div>
       </div>
 
