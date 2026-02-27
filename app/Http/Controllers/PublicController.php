@@ -89,10 +89,7 @@ class PublicController extends Controller
         if ($request->has('search') && $request->search) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
-                $q
-                    ->where('name', 'like', "%{$search}%")
-                    ->orWhere('short_description', 'like', "%{$search}%")
-                    ->orWhere('description', 'like', "%{$search}%");
+                $q->where('name', 'like', "%{$search}%");
             });
         }
 
@@ -346,7 +343,7 @@ class PublicController extends Controller
 
         // Send notification email to admin
         $adminEmail = env('MAIL_ADMIN_ADDRESS', env('MAIL_FROM_ADDRESS'));
-        
+
         \Log::info('Admin email configuration', [
             'admin_email' => $adminEmail,
             'from_address' => env('MAIL_FROM_ADDRESS')
