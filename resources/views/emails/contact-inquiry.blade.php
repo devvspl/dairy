@@ -26,10 +26,17 @@
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
         }
         .email-header {
-            background: linear-gradient(135deg, #293879 0%, #1e2a5a 100%);
+            background: linear-gradient(135deg, #2f4a1e 0%, #263d18 100%);
             padding: 40px 30px;
             text-align: center;
             color: #ffffff;
+        }
+        .email-logo {
+            margin-bottom: 20px;
+        }
+        .email-logo img {
+            height: 50px;
+            width: auto;
         }
         .email-header h1 {
             font-size: 28px;
@@ -48,18 +55,18 @@
         .greeting {
             font-size: 18px;
             font-weight: 600;
-            color: #293879;
+            color: #2f4a1e;
             margin-bottom: 20px;
         }
         .message-text {
             font-size: 15px;
-            color: #5c6b55;
+            color: #6a7a63;
             line-height: 1.8;
             margin-bottom: 30px;
         }
         .info-card {
             background: linear-gradient(180deg, #ffffff, #f6f8f2);
-            border: 1px solid rgba(0, 0, 0, 0.08);
+            border: 1px solid #e7e7e7;
             border-radius: 12px;
             padding: 24px;
             margin-bottom: 24px;
@@ -67,10 +74,10 @@
         .info-card h2 {
             font-size: 16px;
             font-weight: 700;
-            color: #293879;
+            color: #2f4a1e;
             margin-bottom: 16px;
             padding-bottom: 12px;
-            border-bottom: 2px solid #f1cc24;
+            border-bottom: 2px solid #2f4a1e;
         }
         .info-row {
             display: flex;
@@ -82,25 +89,25 @@
         }
         .info-label {
             font-weight: 600;
-            color: #293879;
+            color: #2f4a1e;
             min-width: 120px;
             font-size: 14px;
         }
         .info-value {
-            color: #5c6b55;
+            color: #6a7a63;
             flex: 1;
             font-size: 14px;
             word-break: break-word;
         }
         .message-box {
             background: #fbfcf8;
-            border-left: 4px solid #f1cc24;
+            border-left: 4px solid #2f4a1e;
             padding: 20px;
             border-radius: 8px;
             margin: 20px 0;
         }
         .message-box p {
-            color: #5c6b55;
+            color: #6a7a63;
             font-size: 14px;
             line-height: 1.7;
             margin: 0;
@@ -108,7 +115,7 @@
         }
         .cta-button {
             display: inline-block;
-            background: #d85f0f;
+            background: #2f4a1e;
             color: #ffffff !important;
             text-decoration: none;
             padding: 14px 32px;
@@ -119,29 +126,28 @@
             transition: all 0.3s ease;
         }
         .cta-button:hover {
-            background: #f1cc24;
-            color: #1f2a1a !important;
+            background: #263d18;
             transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(216, 95, 15, 0.3);
+            box-shadow: 0 8px 20px rgba(47, 74, 30, 0.3);
         }
         .email-footer {
             background: #f6f8f2;
             padding: 30px;
             text-align: center;
-            border-top: 1px solid rgba(0, 0, 0, 0.08);
+            border-top: 1px solid #e7e7e7;
         }
         .email-footer p {
             font-size: 13px;
-            color: #5c6b55;
+            color: #6a7a63;
             margin: 8px 0;
         }
         .email-footer a {
-            color: #293879;
+            color: #2f4a1e;
             text-decoration: none;
             font-weight: 600;
         }
         .email-footer a:hover {
-            color: #d85f0f;
+            color: #263d18;
         }
         .divider {
             height: 1px;
@@ -150,8 +156,8 @@
         }
         .badge {
             display: inline-block;
-            background: rgba(241, 204, 36, 0.15);
-            color: #7a5b00;
+            background: rgba(47, 74, 30, 0.15);
+            color: #2f4a1e;
             padding: 6px 12px;
             border-radius: 6px;
             font-size: 12px;
@@ -185,6 +191,9 @@
     <div class="email-container">
         <!-- Header -->
         <div class="email-header">
+            <div class="email-logo">
+                <img src="https://nulac.in/images/new.png" alt="{{ config('app.name') }}" />
+            </div>
             <h1>{{ $isAdminNotification ? '📬 New Contact Inquiry' : '✓ Message Received' }}</h1>
             <p>{{ $isAdminNotification ? 'A new inquiry has been submitted' : 'Thank you for reaching out to us' }}</p>
         </div>
@@ -207,11 +216,11 @@
                     </div>
                     <div class="info-row">
                         <span class="info-label">Email:</span>
-                        <span class="info-value"><a href="mailto:{{ $inquiry->email }}" style="color: #293879; text-decoration: none;">{{ $inquiry->email }}</a></span>
+                        <span class="info-value"><a href="mailto:{{ $inquiry->email }}" style="color: #2f4a1e; text-decoration: none;">{{ $inquiry->email }}</a></span>
                     </div>
                     <div class="info-row">
                         <span class="info-label">Phone:</span>
-                        <span class="info-value"><a href="tel:{{ $inquiry->phone }}" style="color: #293879; text-decoration: none;">{{ $inquiry->phone }}</a></span>
+                        <span class="info-value"><a href="tel:{{ $inquiry->phone }}" style="color: #2f4a1e; text-decoration: none;">{{ $inquiry->phone }}</a></span>
                     </div>
                     @if($inquiry->subject)
                         <div class="info-row">
