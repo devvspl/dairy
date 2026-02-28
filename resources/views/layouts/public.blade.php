@@ -5,27 +5,61 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   
   <!-- SEO Meta Tags -->
-  <title>@yield('title', 'Home') - {{ config('app.name') }}</title>
-  <meta name="description" content="@yield('meta_description', 'Welcome to ' . config('app.name'))">
-  <meta name="keywords" content="@yield('meta_keywords', '')">
+  @php
+    $currentPath = request()->path() === '/' ? '/' : '/' . request()->path();
+    $seoMeta = \App\Models\SeoMeta::getByPageUrl($currentPath);
+  @endphp
+  
+  @if($seoMeta)
+    <title>{{ $seoMeta->meta_title }}</title>
+    <meta name="description" content="{{ $seoMeta->meta_description }}">
+    @if($seoMeta->meta_keywords)
+      <meta name="keywords" content="{{ $seoMeta->meta_keywords }}">
+    @endif
+    @if($seoMeta->canonical_url)
+      <link rel="canonical" href="{{ $seoMeta->canonical_url }}">
+    @else
+      <link rel="canonical" href="{{ url()->current() }}">
+    @endif
+    <meta name="robots" content="{{ $seoMeta->robots }}">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{{ url()->current() }}">
+    <meta property="og:title" content="{{ $seoMeta->meta_title }}">
+    <meta property="og:description" content="{{ $seoMeta->meta_description }}">
+    <meta property="og:image" content="@yield('og_image', asset('images/og-image.jpg'))">
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="{{ url()->current() }}">
+    <meta property="twitter:title" content="{{ $seoMeta->meta_title }}">
+    <meta property="twitter:description" content="{{ $seoMeta->meta_description }}">
+    <meta property="twitter:image" content="@yield('twitter_image', asset('images/og-image.jpg'))">
+  @else
+    <!-- Fallback SEO Meta Tags -->
+    <title>@yield('title', 'Home') - {{ config('app.name') }}</title>
+    <meta name="description" content="@yield('meta_description', 'Welcome to ' . config('app.name'))">
+    <meta name="keywords" content="@yield('meta_keywords', '')">
+    <link rel="canonical" href="{{ url()->current() }}">
+    <meta name="robots" content="index,follow">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{{ url()->current() }}">
+    <meta property="og:title" content="@yield('og_title', config('app.name'))">
+    <meta property="og:description" content="@yield('og_description', 'Welcome to ' . config('app.name'))">
+    <meta property="og:image" content="@yield('og_image', asset('images/og-image.jpg'))">
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="{{ url()->current() }}">
+    <meta property="twitter:title" content="@yield('twitter_title', config('app.name'))">
+    <meta property="twitter:description" content="@yield('twitter_description', 'Welcome to ' . config('app.name'))">
+    <meta property="twitter:image" content="@yield('twitter_image', asset('images/og-image.jpg'))">
+  @endif
+  
   <meta name="author" content="{{ config('app.name') }}">
-  
-  <!-- Open Graph / Facebook -->
-  <meta property="og:type" content="website">
-  <meta property="og:url" content="{{ url()->current() }}">
-  <meta property="og:title" content="@yield('og_title', config('app.name'))">
-  <meta property="og:description" content="@yield('og_description', 'Welcome to ' . config('app.name'))">
-  <meta property="og:image" content="@yield('og_image', asset('images/og-image.jpg'))">
-  
-  <!-- Twitter -->
-  <meta property="twitter:card" content="summary_large_image">
-  <meta property="twitter:url" content="{{ url()->current() }}">
-  <meta property="twitter:title" content="@yield('twitter_title', config('app.name'))">
-  <meta property="twitter:description" content="@yield('twitter_description', 'Welcome to ' . config('app.name'))">
-  <meta property="twitter:image" content="@yield('twitter_image', asset('images/og-image.jpg'))">
-  
-  <!-- Canonical URL -->
-  <link rel="canonical" href="{{ url()->current() }}">
   
   <!-- Favicon -->
   <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">

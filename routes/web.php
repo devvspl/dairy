@@ -76,5 +76,7 @@ Route::middleware('auth')->group(function () {
         Route::get('contact-inquiries/{contactInquiry}', [App\Http\Controllers\Admin\ContactInquiryController::class, 'show'])->name('contact-inquiries.show');
         Route::post('contact-inquiries/{contactInquiry}/status', [App\Http\Controllers\Admin\ContactInquiryController::class, 'updateStatus'])->name('contact-inquiries.update-status');
         Route::delete('contact-inquiries/{contactInquiry}', [App\Http\Controllers\Admin\ContactInquiryController::class, 'destroy'])->name('contact-inquiries.destroy');
+        
+        Route::resource('seo-metas', App\Http\Controllers\Admin\SeoMetaController::class);
     });
 });
