@@ -472,6 +472,19 @@
                 </div>
 
                 <div class="flex items-center space-x-3 lg:space-x-4">
+                    <!-- Visit Website Button -->
+                    <a href="{{ route('home') }}" target="_blank"
+                        class="flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors text-sm font-medium"
+                        style="color: var(--green);"
+                        title="Visit Main Website">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9">
+                            </path>
+                        </svg>
+                        <span class="hidden lg:inline">Visit Website</span>
+                    </a>
+
                     <!-- User Dropdown -->
                     <div class="relative" x-data="{ open: false }">
                         <button @click="open = !open"
