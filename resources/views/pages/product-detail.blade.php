@@ -437,10 +437,12 @@
           @endif
         </div>
 
-        @if($product->features && count($product->features) > 0)
+        @if($product->features && is_array($product->features) && count($product->features) > 0)
         <div class="apw-pd-badges">
           @foreach(array_slice($product->features, 0, 3) as $feature)
-          <span class="apw-pd-badge"><span class="apw-pd-dot"></span> {{ $feature['title'] ?? '' }}</span>
+          @if(isset($feature['title']) && $feature['title'])
+          <span class="apw-pd-badge"><span class="apw-pd-dot"></span> {{ $feature['title'] }}</span>
+          @endif
           @endforeach
         </div>
         @endif
@@ -463,6 +465,7 @@
             <span>Delivery in 2–6 hours (area wise)</span>
           </div>
 
+          @if($product->storage_temp || $product->shelf_life || $product->best_for)
           <div class="apw-pd-quick">
             @if($product->storage_temp)
             <div class="apw-pd-q apw-pd-bgGreen"><b>Storage</b><span>{{ $product->storage_temp }}</span></div>
@@ -474,27 +477,32 @@
             <div class="apw-pd-q apw-pd-bgGreen"><b>Best For</b><span>{{ $product->best_for }}</span></div>
             @endif
           </div>
+          @endif
 
-          @if($product->pack_sizes && count($product->pack_sizes) > 0)
+          @if($product->pack_sizes && is_array($product->pack_sizes) && count($product->pack_sizes) > 0)
           <div class="apw-pd-opts">
             <div class="apw-pd-optRow">
               <div class="apw-pd-label">Pack Size</div>
               <div class="apw-pd-chips" role="list">
                 @foreach($product->pack_sizes as $index => $size)
+                @if($size)
                 <button class="apw-pd-chip {{ $index == 0 ? 'is-active' : '' }}" type="button">{{ $size }}</button>
+                @endif
                 @endforeach
               </div>
             </div>
           </div>
           @endif
 
-          @if($product->delivery_slots && count($product->delivery_slots) > 0)
+          @if($product->delivery_slots && is_array($product->delivery_slots) && count($product->delivery_slots) > 0)
           <div class="apw-pd-opts">
             <div class="apw-pd-optRow">
               <div class="apw-pd-label">Delivery Slot</div>
               <div class="apw-pd-chips" role="list">
                 @foreach($product->delivery_slots as $index => $slot)
+                @if($slot)
                 <button class="apw-pd-chip {{ $index == 0 ? 'is-active' : '' }}" type="button">{{ $slot }}</button>
+                @endif
                 @endforeach
               </div>
             </div>
@@ -524,13 +532,13 @@
       <div class="apw-pd-card apw-pd-pad apw-pd-boxbg">
         <div class="apw-pd-tabs" role="tablist">
           <button class="apw-pd-tab is-active" type="button" data-tab="desc">About</button>
-          @if($product->nutrition_info && count($product->nutrition_info) > 0)
+          @if($product->nutrition_info && is_array($product->nutrition_info) && count($product->nutrition_info) > 0)
           <button class="apw-pd-tab" type="button" data-tab="nutrition">Nutrition</button>
           @endif
-          @if($product->storage_instructions && count($product->storage_instructions) > 0)
+          @if($product->storage_instructions && is_array($product->storage_instructions) && count($product->storage_instructions) > 0)
           <button class="apw-pd-tab" type="button" data-tab="storage">Storage</button>
           @endif
-          @if($product->specifications && count($product->specifications) > 0)
+          @if($product->specifications && is_array($product->specifications) && count($product->specifications) > 0)
           <button class="apw-pd-tab" type="button" data-tab="specs">Specifications</button>
           @endif
         </div>
@@ -541,52 +549,64 @@
             <p class="apw-pd-p">{{ $product->description }}</p>
             @endif
 
-            @if($product->features && count($product->features) > 0)
+            @if($product->features && is_array($product->features) && count($product->features) > 0)
             <div class="apw-pd-points">
               @foreach($product->features as $feature)
+              @if(isset($feature['title']) && $feature['title'])
               <div class="apw-pd-point">
                 <div class="apw-pd-tick">{{ $feature['icon'] ?? '✓' }}</div>
                 <div>
-                  <b>{{ $feature['title'] ?? '' }}</b>
-                  <span>{{ $feature['description'] ?? '' }}</span>
+                  <b>{{ $feature['title'] }}</b>
+                  @if(isset($feature['description']) && $feature['description'])
+                  <span>{{ $feature['description'] }}</span>
+                  @endif
                 </div>
               </div>
+              @endif
               @endforeach
             </div>
             @endif
           </div>
 
-          @if($product->nutrition_info && count($product->nutrition_info) > 0)
+          @if($product->nutrition_info && is_array($product->nutrition_info) && count($product->nutrition_info) > 0)
           <div class="apw-pd-panel" id="apwPdPanelNutrition">
             <table class="apw-pd-spec" aria-label="Nutrition table">
               @foreach($product->nutrition_info as $key => $value)
+              @if($key && $value)
               <tr><th>{{ $key }}</th><td>{{ $value }}</td></tr>
+              @endif
               @endforeach
             </table>
           </div>
           @endif
 
-          @if($product->storage_instructions && count($product->storage_instructions) > 0)
+          @if($product->storage_instructions && is_array($product->storage_instructions) && count($product->storage_instructions) > 0)
           <div class="apw-pd-panel" id="apwPdPanelStorage">
             <div class="apw-pd-points">
               @foreach($product->storage_instructions as $instruction)
+              @if(isset($instruction['title']) && $instruction['title'])
               <div class="apw-pd-point">
                 <div class="apw-pd-tick">{{ $instruction['icon'] ?? '🧊' }}</div>
                 <div>
-                  <b>{{ $instruction['title'] ?? '' }}</b>
-                  <span>{{ $instruction['description'] ?? '' }}</span>
+                  <b>{{ $instruction['title'] }}</b>
+                  @if(isset($instruction['description']) && $instruction['description'])
+                  <span>{{ $instruction['description'] }}</span>
+                  @endif
                 </div>
               </div>
+              @endif
               @endforeach
             </div>
           </div>
           @endif
 
-          @if($product->specifications && count($product->specifications) > 0)
+          @if($product->specifications && is_array($product->specifications) && count($product->specifications) > 0)
           <div class="apw-pd-panel" id="apwPdPanelSpecs">
             <table class="apw-pd-spec" aria-label="Specifications table">
               @foreach($product->specifications as $key => $value)
+              @if($key && $value)
               <tr><th>{{ $key }}</th><td>{{ $value }}</td></tr>
+              @endif
               @endforeach
             </table>
           </div>
@@ -683,6 +703,7 @@
       desc: document.getElementById('apwPdPanelDesc'),
       nutrition: document.getElementById('apwPdPanelNutrition'),
       storage: document.getElementById('apwPdPanelStorage'),
+      specs: document.getElementById('apwPdPanelSpecs'),
     };
 
     tabs.forEach(t=>{
