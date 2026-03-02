@@ -35,6 +35,10 @@ Route::middleware('guest')->group(function () {
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/member/dashboard', [DashboardController::class, 'index'])->name('member.dashboard');
+    
+    // Membership Subscription
+    Route::post('/membership/subscribe', [App\Http\Controllers\MembershipController::class, 'subscribe'])->name('membership.subscribe');
+    
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
     Route::get('/profile', [App\Http\Controllers\ProfileController::class, 'edit'])->name('profile.edit');
     Route::put('/profile', [App\Http\Controllers\ProfileController::class, 'update'])->name('profile.update');
@@ -76,6 +80,21 @@ Route::middleware('auth')->group(function () {
         Route::get('contact-inquiries/{contactInquiry}', [App\Http\Controllers\Admin\ContactInquiryController::class, 'show'])->name('contact-inquiries.show');
         Route::post('contact-inquiries/{contactInquiry}/status', [App\Http\Controllers\Admin\ContactInquiryController::class, 'updateStatus'])->name('contact-inquiries.update-status');
         Route::delete('contact-inquiries/{contactInquiry}', [App\Http\Controllers\Admin\ContactInquiryController::class, 'destroy'])->name('contact-inquiries.destroy');
+        
+        // User Subscriptions Management
+        Route::get('subscriptions', [App\Http\Controllers\Admin\UserSubscriptionController::class, 'index'])->name('subscriptions.index');
+        Route::get('subscriptions/{subscription}', [App\Http\Controllers\Admin\UserSubscriptionController::class, 'show'])->name('subscriptions.show');
+        Route::post('subscriptions/{subscription}/status', [App\Http\Controllers\Admin\UserSubscriptionController::class, 'updateStatus'])->name('subscriptions.update-status');
+        Route::post('subscriptions/{subscription}/payment', [App\Http\Controllers\Admin\UserSubscriptionController::class, 'updatePaymentStatus'])->name('subscriptions.update-payment');
+        Route::post('subscriptions/{subscription}/note', [App\Http\Controllers\Admin\UserSubscriptionController::class, 'addNote'])->name('subscriptions.add-note');
+        
+        // Delivery Logs Management
+        Route::get('subscriptions/{subscription}/deliveries', [App\Http\Controllers\Admin\DeliveryLogController::class, 'index'])->name('deliveries.index');
+        Route::post('subscriptions/{subscription}/deliveries/generate', [App\Http\Controllers\Admin\DeliveryLogController::class, 'generateSchedule'])->name('deliveries.generate');
+        Route::post('deliveries/{delivery}/status', [App\Http\Controllers\Admin\DeliveryLogController::class, 'updateStatus'])->name('deliveries.update-status');
+        Route::post('deliveries/{delivery}/forward', [App\Http\Controllers\Admin\DeliveryLogController::class, 'forwardToNextDay'])->name('deliveries.forward');
+        Route::get('deliveries/today', [App\Http\Controllers\Admin\DeliveryLogController::class, 'todayDeliveries'])->name('deliveries.today');
+        Route::post('deliveries/bulk-update', [App\Http\Controllers\Admin\DeliveryLogController::class, 'bulkUpdateToday'])->name('deliveries.bulk-update');
         
         Route::resource('seo-metas', App\Http\Controllers\Admin\SeoMetaController::class);
     });

@@ -80,4 +80,31 @@ class User extends Authenticatable
     {
         return $this->user_type === 'Member';
     }
+
+    /**
+     * Get all subscriptions for this user
+     */
+    public function subscriptions()
+    {
+        return $this->hasMany(UserSubscription::class);
+    }
+
+    /**
+     * Get the active subscription for this user
+     */
+    public function activeSubscription()
+    {
+        return $this->hasOne(UserSubscription::class)
+                    ->active()
+                    ->with('membershipPlan')
+                    ->latest('start_date');
+    }
+
+    /**
+     * Check if user has an active subscription
+     */
+    public function hasActiveSubscription(): bool
+    {
+        return $this->activeSubscription()->exists();
+    }
 }

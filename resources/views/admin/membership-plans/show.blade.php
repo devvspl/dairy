@@ -122,6 +122,92 @@
             </ul>
         </div>
         @endif
+
+        @if($plan->day_wise_schedule && count($plan->day_wise_schedule) > 0)
+        <div class="md:col-span-2 p-4 rounded-lg border" style="border-color: var(--border); background-color: #f9fdf7;">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-2">
+                    <svg class="w-5 h-5" style="color: var(--green);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                    </svg>
+                    <p class="text-sm font-bold" style="color: var(--text);">Day-Wise Delivery Schedule</p>
+                </div>
+                <div class="flex items-center gap-4 text-xs" style="color: var(--muted);">
+                    <span><strong>{{ $plan->getDeliveryDaysCount() }}</strong> delivery days</span>
+                    <span><strong>{{ $plan->getTotalWeeklyQuantity() }}</strong> L/week</span>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
+                @php
+                    $days = [
+                        'Mon' => 'Monday',
+                        'Tue' => 'Tuesday',
+                        'Wed' => 'Wednesday',
+                        'Thu' => 'Thursday',
+                        'Fri' => 'Friday',
+                        'Sat' => 'Saturday',
+                        'Sun' => 'Sunday'
+                    ];
+                @endphp
+
+                @foreach($days as $key => $label)
+                    @php
+                        $daySchedule = $plan->day_wise_schedule[$key] ?? null;
+                        $hasDelivery = $daySchedule && isset($daySchedule['delivery']) && $daySchedule['delivery'];
+                        $quantity = $daySchedule['qty'] ?? 0;
+                    @endphp
+                    
+                    <div class="p-3 rounded-lg border {{ $hasDelivery ? 'bg-white' : 'bg-gray-50' }}" style="border-color: {{ $hasDelivery ? 'var(--green)' : 'var(--border)' }};">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-bold" style="color: var(--text);">{{ $key }}</span>
+                            @if($hasDelivery)
+                                <svg class="w-4 h-4" style="color: var(--green);" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                </svg>
+                            @else
+                                <svg class="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                                </svg>
+                            @endif
+                        </div>
+                        <div class="text-center">
+                            @if($hasDelivery)
+                                <p class="text-lg font-bold" style="color: var(--green);">{{ $quantity }}</p>
+                                <p class="text-xs" style="color: var(--muted);">liters</p>
+                            @else
+                                <p class="text-sm text-gray-400">No delivery</p>
+                            @endif
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+
+            <!-- Weekly Summary Card -->
+            <div class="mt-4 p-4 rounded-lg" style="background-color: rgba(47, 74, 30, 0.1); border: 1px solid rgba(47, 74, 30, 0.2);">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                    <div>
+                        <p class="text-xs font-medium mb-1" style="color: var(--muted);">Total Delivery Days</p>
+                        <p class="text-2xl font-bold" style="color: var(--green);">{{ $plan->getDeliveryDaysCount() }}</p>
+                    </div>
+                    <div>
+                        <p class="text-xs font-medium mb-1" style="color: var(--muted);">Weekly Quantity</p>
+                        <p class="text-2xl font-bold" style="color: var(--green);">{{ $plan->getTotalWeeklyQuantity() }} L</p>
+                    </div>
+                    <div>
+                        <p class="text-xs font-medium mb-1" style="color: var(--muted);">Avg Per Day</p>
+                        <p class="text-2xl font-bold" style="color: var(--green);">
+                            {{ $plan->getDeliveryDaysCount() > 0 ? number_format($plan->getTotalWeeklyQuantity() / $plan->getDeliveryDaysCount(), 1) : 0 }} L
+                        </p>
+                    </div>
+                    <div>
+                        <p class="text-xs font-medium mb-1" style="color: var(--muted);">Monthly Est.</p>
+                        <p class="text-2xl font-bold" style="color: var(--green);">{{ number_format($plan->getTotalWeeklyQuantity() * 4, 0) }} L</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @endif
     </div>
 
     <div class="mt-6 pt-6 border-t grid grid-cols-1 md:grid-cols-2 gap-4" style="border-color: var(--border);">

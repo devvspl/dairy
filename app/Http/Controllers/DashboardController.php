@@ -13,7 +13,17 @@ class DashboardController extends Controller
 {
     public function index()
     {
+        // Check if user is a member and redirect to member dashboard
+        if (auth()->user()->isMember()) {
+            return view('member-dashboard');
+        }
+        
         return view('dashboard');
+    }
+
+    public function member()
+    {
+        return view('member-dashboard');
     }
 
     public function admin()

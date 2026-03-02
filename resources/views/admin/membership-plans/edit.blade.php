@@ -73,6 +73,70 @@
                 @error('description')<p class="text-red-600 text-sm mt-1">{{ $message }}</p>@enderror
             </div>
 
+            <!-- Day-Wise Delivery Schedule -->
+            <div class="border rounded-lg p-4" style="border-color: var(--border); background-color: #f9fdf7;">
+                <h3 class="text-lg font-bold mb-4" style="color: var(--green);">📅 Day-Wise Delivery Schedule</h3>
+                <p class="text-sm mb-4" style="color: var(--muted);">Set milk quantity (in liters) and delivery status for each day of the week</p>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    @php
+                        $days = [
+                            'Mon' => 'Monday',
+                            'Tue' => 'Tuesday',
+                            'Wed' => 'Wednesday',
+                            'Thu' => 'Thursday',
+                            'Fri' => 'Friday',
+                            'Sat' => 'Saturday',
+                            'Sun' => 'Sunday'
+                        ];
+                        $schedule = old('day_wise_schedule', $plan->day_wise_schedule ?? []);
+                    @endphp
+
+                    @foreach($days as $key => $label)
+                    <div class="border rounded-lg p-3 bg-white" style="border-color: var(--border);">
+                        <div class="flex items-center justify-between mb-2">
+                            <label class="font-bold text-sm" style="color: var(--text);">{{ $label }}</label>
+                            <label class="flex items-center cursor-pointer">
+                                <input type="hidden" name="day_wise_schedule[{{ $key }}][delivery]" value="0">
+                                <input type="checkbox" 
+                                       name="day_wise_schedule[{{ $key }}][delivery]" 
+                                       value="1" 
+                                       {{ isset($schedule[$key]['delivery']) && $schedule[$key]['delivery'] ? 'checked' : '' }}
+                                       class="mr-2 delivery-toggle" 
+                                       data-day="{{ $key }}">
+                                <span class="text-xs" style="color: var(--muted);">Deliver</span>
+                            </label>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <input type="number" 
+                                   name="day_wise_schedule[{{ $key }}][qty]" 
+                                   value="{{ $schedule[$key]['qty'] ?? 1 }}" 
+                                   step="0.5" 
+                                   min="0" 
+                                   max="10" 
+                                   class="flex-1 px-3 py-2 border rounded-lg text-sm qty-input" 
+                                   style="border-color: var(--border);"
+                                   id="qty-{{ $key }}">
+                            <span class="text-sm font-medium" style="color: var(--muted);">L</span>
+                        </div>
+                        @error("day_wise_schedule.{$key}.qty")
+                            <p class="text-red-600 text-xs mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
+                    @endforeach
+                </div>
+
+                <div class="mt-4 p-3 rounded-lg" style="background-color: rgba(47, 74, 30, 0.1); border: 1px solid rgba(47, 74, 30, 0.2);">
+                    <div class="flex items-center justify-between text-sm">
+                        <span style="color: var(--text);">📊 Weekly Summary:</span>
+                        <div class="flex gap-4">
+                            <span style="color: var(--text);"><strong id="total-days">0</strong> delivery days</span>
+                            <span style="color: var(--text);"><strong id="total-qty">0.0</strong> liters/week</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div>
                 <label class="block text-sm font-medium mb-2" style="color: var(--text);">Features</label>
                 <div id="features-container" class="space-y-2">
@@ -132,6 +196,38 @@ document.addEventListener('click', function(e) {
     if (e.target.classList.contains('remove-feature')) {
         e.target.closest('.flex').remove();
     }
+});
+
+// Day-wise schedule calculations
+function updateScheduleSummary() {
+    let totalDays = 0;
+    let totalQty = 0;
+
+    document.querySelectorAll('.delivery-toggle').forEach(checkbox => {
+        const day = checkbox.dataset.day;
+        const qtyInput = document.getElementById('qty-' + day);
+        
+        if (checkbox.checked) {
+            totalDays++;
+            totalQty += parseFloat(qtyInput.value) || 0;
+        }
+
+        // Disable/enable quantity input based on delivery checkbox
+        qtyInput.disabled = !checkbox.checked;
+        qtyInput.style.opacity = checkbox.checked ? '1' : '0.5';
+    });
+
+    document.getElementById('total-days').textContent = totalDays;
+    document.getElementById('total-qty').textContent = totalQty.toFixed(1);
+}
+
+// Initialize
+updateScheduleSummary();
+
+// Listen for changes
+document.querySelectorAll('.delivery-toggle, .qty-input').forEach(el => {
+    el.addEventListener('change', updateScheduleSummary);
+    el.addEventListener('input', updateScheduleSummary);
 });
 </script>
 @endsection
