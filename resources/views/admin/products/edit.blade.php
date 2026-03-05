@@ -156,9 +156,18 @@
             @if($product->images && count($product->images) > 0)
             <div class="mb-4">
                 <label class="block text-sm font-medium mb-2" style="color: var(--text);">Current Images</label>
-                <div class="grid grid-cols-5 gap-2">
-                    @foreach($product->images as $img)
-                    <img src="{{ asset($img) }}" alt="Product" class="w-full h-24 object-cover rounded border">
+                <p class="text-xs mb-2" style="color: var(--muted);">Drag to reorder. First image is the main image.</p>
+                <div id="imageContainer" class="grid grid-cols-5 gap-2">
+                    @foreach($product->images as $index => $img)
+                    <div class="image-item relative group cursor-move border-2 border-transparent hover:border-blue-400 rounded" data-image="{{ $img }}" draggable="true">
+                        <img src="{{ asset($img) }}" alt="Product" class="w-full h-24 object-cover rounded">
+                        @if($index === 0)
+                        <span class="absolute top-1 left-1 bg-green-500 text-white text-xs px-2 py-0.5 rounded z-10">Main</span>
+                        @endif
+                        <button type="button" onclick="removeImage('{{ $img }}')" class="absolute top-1 right-1 bg-red-500 hover:bg-red-600 text-white rounded-full w-7 h-7 flex items-center justify-center shadow-lg z-10 transition-all" title="Remove image">
+                            X
+                        </button>
+                    </div>
                     @endforeach
                 </div>
             </div>
@@ -321,6 +330,145 @@
 
 <script>
 let featureIndex = {{ $product->features ? count($product->features) : 1 }};
+let draggedElement = null;
+
+// Image drag and drop functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const imageContainer = document.getElementById('imageContainer');
+    if (!imageContainer) return;
+
+    const imageItems = imageContainer.querySelectorAll('.image-item');
+    
+    imageItems.forEach(item => {
+        item.addEventListener('dragstart', handleDragStart);
+        item.addEventListener('dragover', handleDragOver);
+        item.addEventListener('drop', handleDrop);
+        item.addEventListener('dragend', handleDragEnd);
+    });
+});
+
+function handleDragStart(e) {
+    draggedElement = this;
+    this.style.opacity = '0.4';
+    e.dataTransfer.effectAllowed = 'move';
+}
+
+function handleDragOver(e) {
+    if (e.preventDefault) {
+        e.preventDefault();
+    }
+    e.dataTransfer.dropEffect = 'move';
+    return false;
+}
+
+function handleDrop(e) {
+    if (e.stopPropagation) {
+        e.stopPropagation();
+    }
+    
+    if (draggedElement !== this) {
+        const container = document.getElementById('imageContainer');
+        const allItems = [...container.children];
+        const draggedIndex = allItems.indexOf(draggedElement);
+        const targetIndex = allItems.indexOf(this);
+        
+        if (draggedIndex < targetIndex) {
+            this.parentNode.insertBefore(draggedElement, this.nextSibling);
+        } else {
+            this.parentNode.insertBefore(draggedElement, this);
+        }
+        
+        saveImageOrder();
+    }
+    
+    return false;
+}
+
+function handleDragEnd(e) {
+    this.style.opacity = '1';
+}
+
+function saveImageOrder() {
+    const container = document.getElementById('imageContainer');
+    const items = container.querySelectorAll('.image-item');
+    const images = Array.from(items).map(item => item.dataset.image);
+    
+    fetch('{{ route("admin.products.reorder-images", $product) }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({ images: images })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update main badge
+            const items = container.querySelectorAll('.image-item');
+            items.forEach((item, index) => {
+                const badge = item.querySelector('.bg-green-500');
+                if (index === 0) {
+                    if (!badge) {
+                        const newBadge = document.createElement('span');
+                        newBadge.className = 'absolute top-1 left-1 bg-green-500 text-white text-xs px-2 py-0.5 rounded';
+                        newBadge.textContent = 'Main';
+                        item.appendChild(newBadge);
+                    }
+                } else if (badge) {
+                    badge.remove();
+                }
+            });
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}
+
+function removeImage(imagePath) {
+    if (!confirm('Are you sure you want to remove this image?')) {
+        return;
+    }
+    
+    fetch('{{ route("admin.products.remove-image", $product) }}', {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({ image_path: imagePath })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Remove the image element from DOM
+            const container = document.getElementById('imageContainer');
+            const item = container.querySelector(`[data-image="${imagePath}"]`);
+            if (item) {
+                item.remove();
+            }
+            
+            // If no images left, hide the container
+            if (container.children.length === 0) {
+                container.parentElement.style.display = 'none';
+            } else {
+                // Update main badge for first image
+                const items = container.querySelectorAll('.image-item');
+                items.forEach((item, index) => {
+                    const badge = item.querySelector('.bg-green-500');
+                    if (index === 0 && !badge) {
+                        const newBadge = document.createElement('span');
+                        newBadge.className = 'absolute top-1 left-1 bg-green-500 text-white text-xs px-2 py-0.5 rounded';
+                        newBadge.textContent = 'Main';
+                        item.appendChild(newBadge);
+                    } else if (index !== 0 && badge) {
+                        badge.remove();
+                    }
+                });
+            }
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}
 
 function addPackSize() {
     const container = document.getElementById('packSizesContainer');

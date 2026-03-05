@@ -791,6 +791,18 @@
             </div>
           </div>
 
+          <div class="plpg-block" style="display: none">
+            <div class="plpg-block-title">
+              <span><i class="fa-solid fa-tags"></i> Category</span>
+              <small>Choose</small>
+            </div>
+            <div class="plpg-block-content">
+              @foreach($categories as $category)
+              <label class="plpg-opt"><input type="checkbox" class="plpgCategory" value="{{ $category->id }}"> {{ $category->title }}</label>
+              @endforeach
+            </div>
+          </div>
+
           <div class="plpg-block">
             <div class="plpg-block-title">
               <span><i class="fa-solid fa-indian-rupee-sign"></i> Price Range</span>
@@ -944,6 +956,15 @@
         </div>
 
         <div class="plpg-block">
+          <div class="plpg-block-title"><span><i class="fa-solid fa-tags"></i> Category</span><small>Choose</small></div>
+          <div class="plpg-block-content">
+            @foreach($categories as $category)
+            <label class="plpg-opt"><input type="checkbox" class="plpgCategoryM" value="{{ $category->id }}"> {{ $category->title }}</label>
+            @endforeach
+          </div>
+        </div>
+
+        <div class="plpg-block">
           <div class="plpg-block-title"><span><i class="fa-solid fa-indian-rupee-sign"></i> Price Range</span><small>Min/Max</small></div>
           <div class="plpg-block-content">
             <div class="plpg-priceRange">
@@ -1031,6 +1052,7 @@
   // Desktop inputs
   const q = root.querySelector("#plpgSearch");
   const types = () => Array.from(root.querySelectorAll(".plpgType:checked")).map(i=>i.value);
+  const categories = () => Array.from(root.querySelectorAll(".plpgCategory:checked")).map(i=>i.value);
   const minEl = root.querySelector("#plpgMin");
   const maxEl = root.querySelector("#plpgMax");
   const rateEl = () => root.querySelector(".plpgRate:checked")?.value || "0";
@@ -1039,6 +1061,7 @@
   // Mobile inputs
   const qM = root.querySelector("#plpgSearchM");
   const typesM = () => Array.from(root.querySelectorAll(".plpgTypeM:checked")).map(i=>i.value);
+  const categoriesM = () => Array.from(root.querySelectorAll(".plpgCategoryM:checked")).map(i=>i.value);
   const minM = root.querySelector("#plpgMinM");
   const maxM = root.querySelector("#plpgMaxM");
   const rateM = () => root.querySelector(".plpgRateM:checked")?.value || "0";
@@ -1152,6 +1175,7 @@
 
     const query = (opts.query || "").trim();
     const selectedTypes = opts.types || [];
+    const selectedCategories = opts.categories || [];
     const min = Number(opts.min || 0);
     const max = Number(opts.max || 0);
     const minRating = Number(opts.rating || 0);
@@ -1161,6 +1185,7 @@
     const params = new URLSearchParams();
     if(query) params.set('search', query);
     if(selectedTypes.length > 0) params.set('type', selectedTypes.join(','));
+    if(selectedCategories.length > 0) params.set('category', selectedCategories.join(','));
     if(min > 0) params.set('min_price', min);
     if(max > 0) params.set('max_price', max);
     if(minRating > 0) params.set('min_rating', minRating);
@@ -1201,6 +1226,11 @@
     root.querySelectorAll(".plpgType").forEach(i=> i.checked = typeSlugs.includes(i.value));
     root.querySelectorAll(".plpgTypeM").forEach(i=> i.checked = typeSlugs.includes(i.value));
 
+    // Set categories (using IDs)
+    const categoryIds = params.get('category') ? params.get('category').split(',') : [];
+    root.querySelectorAll(".plpgCategory").forEach(i=> i.checked = categoryIds.includes(i.value));
+    root.querySelectorAll(".plpgCategoryM").forEach(i=> i.checked = categoryIds.includes(i.value));
+
     // Set price range
     const minPrice = params.get('min_price') || '';
     const maxPrice = params.get('max_price') || '';
@@ -1222,7 +1252,8 @@
     if(params.toString()){
       applyFilters({ 
         query: search, 
-        types: typeSlugs, 
+        types: typeSlugs,
+        categories: categoryIds,
         min: minPrice, 
         max: maxPrice, 
         rating: minRating,
@@ -1235,7 +1266,8 @@
   root.querySelector("#plpgApply")?.addEventListener("click", ()=>{
     applyFilters({ 
       query: q.value, 
-      types: types(), 
+      types: types(),
+      categories: categories(),
       min: minEl.value, 
       max: maxEl.value, 
       rating: rateEl(),
@@ -1249,16 +1281,18 @@
     minEl.value = "";
     maxEl.value = "";
     root.querySelectorAll(".plpgType").forEach(i=> i.checked = false);
+    root.querySelectorAll(".plpgCategory").forEach(i=> i.checked = false);
     root.querySelectorAll(".plpgRate").forEach(i=> i.checked = (i.value==="0"));
     sortEl.value = "featured";
-    applyFilters({ query: "", types: [], min: 0, max: 0, rating: 0, sort: "featured" });
+    applyFilters({ query: "", types: [], categories: [], min: 0, max: 0, rating: 0, sort: "featured" });
   });
 
   // Sort change
   sortEl?.addEventListener("change", ()=>{
     applyFilters({ 
       query: q.value, 
-      types: types(), 
+      types: types(),
+      categories: categories(),
       min: minEl.value, 
       max: maxEl.value, 
       rating: rateEl(),
@@ -1270,7 +1304,8 @@
   root.querySelector("#plpgApplyM")?.addEventListener("click", ()=>{
     applyFilters({ 
       query: qM.value, 
-      types: typesM(), 
+      types: typesM(),
+      categories: categoriesM(),
       min: minM.value, 
       max: maxM.value, 
       rating: rateM(),
@@ -1285,8 +1320,9 @@
     minM.value = "";
     maxM.value = "";
     root.querySelectorAll(".plpgTypeM").forEach(i=> i.checked = false);
+    root.querySelectorAll(".plpgCategoryM").forEach(i=> i.checked = false);
     root.querySelectorAll(".plpgRateM").forEach(i=> i.checked = (i.value==="0"));
-    applyFilters({ query: "", types: [], min: 0, max: 0, rating: 0, sort: sortEl.value });
+    applyFilters({ query: "", types: [], categories: [], min: 0, max: 0, rating: 0, sort: sortEl.value });
   });
 
   // Initialize from URL on page load

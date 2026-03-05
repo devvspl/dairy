@@ -54,6 +54,8 @@ Route::middleware('auth')->group(function () {
         Route::resource('types', App\Http\Controllers\Admin\TypeController::class);
         Route::resource('announcements', App\Http\Controllers\Admin\AnnouncementController::class);
         Route::resource('products', App\Http\Controllers\Admin\ProductController::class);
+        Route::delete('products/{product}/images', [App\Http\Controllers\Admin\ProductController::class, 'removeImage'])->name('products.remove-image');
+        Route::post('products/{product}/images/reorder', [App\Http\Controllers\Admin\ProductController::class, 'reorderImages'])->name('products.reorder-images');
         Route::resource('testimonials', App\Http\Controllers\Admin\TestimonialController::class);
         Route::resource('blogs', App\Http\Controllers\Admin\BlogController::class);
         Route::post('blogs/upload-image', [App\Http\Controllers\Admin\BlogController::class, 'uploadImage'])->name('blogs.upload-image');

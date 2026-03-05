@@ -206,4 +206,50 @@ class ProductController extends Controller
 
         return redirect()->route('admin.products.index')->with('success', 'Product deleted successfully!');
     }
+
+    public function removeImage(Request $request, Product $product)
+    {
+        $validated = $request->validate([
+            'image_path' => ['required', 'string']
+        ]);
+
+        $images = $product->images ?? [];
+        $imageToRemove = $validated['image_path'];
+
+        // Remove from array
+        $images = array_values(array_filter($images, function($img) use ($imageToRemove) {
+            return $img !== $imageToRemove;
+        }));
+
+        // Delete physical file
+        $filePath = public_path($imageToRemove);
+        if (file_exists($filePath)) {
+            unlink($filePath);
+        }
+
+        // Update product
+        $product->update(['images' => $images]);
+
+        // If main image was removed, set first available image as main
+        if ($product->image === $imageToRemove) {
+            $product->update(['image' => !empty($images) ? $images[0] : null]);
+        }
+
+        return response()->json(['success' => true, 'images' => $images]);
+    }
+
+    public function reorderImages(Request $request, Product $product)
+    {
+        $validated = $request->validate([
+            'images' => ['required', 'array']
+        ]);
+
+        $product->update([
+            'images' => $validated['images'],
+            'image' => $validated['images'][0] ?? $product->image
+        ]);
+
+        return response()->json(['success' => true]);
+    }
+
 }
