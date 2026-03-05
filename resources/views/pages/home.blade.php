@@ -891,30 +891,13 @@
             .tb-img {
                 height: 100%;
                 width: 100%;
-                background-size: cover;
-                background-position: center;
+                object-fit: cover;
                 transform: scale(1);
                 transition: 300ms ease;
             }
 
             .tb-card:hover .tb-img {
                 transform: scale(1.03);
-            }
-
-            .ph1 {
-                background-image: url("{{ asset('images/products-1.png') }}");
-            }
-
-            .ph2 {
-                background-image: url("{{ asset('images/products-2.png') }}");
-            }
-
-            .ph3 {
-                background-image: url("{{ asset('images/products-3.png') }}");
-            }
-
-            .ph4 {
-                background-image: url("{{ asset('images/products-4.png') }}");
             }
 
             .tb-badge {
@@ -1160,7 +1143,7 @@
                         @foreach ($products as $product)
                             <article class="tb-card" data-product-id="{{ $product->id }}"
                                 data-product-name="{{ $product->name }}" data-product-price="{{ $product->price }}"
-                                data-product-image="{{ asset($product->image) }}"
+                                data-product-image="{{ asset($product->main_image) }}"
                                 data-product-slug="{{ $product->slug }}">
                                 <div class="tb-card-media">
                                     @if ($product->badge)
@@ -1170,8 +1153,7 @@
                                         data-product-id="{{ $product->id }}">
                                         <i class="fa-regular fa-heart"></i>
                                     </button>
-                                    <div class="tb-img" style="background-image: url('{{ asset($product->image) }}');">
-                                    </div>
+                                    <img class="tb-img" src="{{ asset($product->main_image) }}" alt="{{ $product->name }}">
                                 </div>
                                 <div class="tb-card-body">
                                     <div class="tb-name-price">
