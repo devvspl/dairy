@@ -198,8 +198,14 @@
     return cart.reduce((total, item) => total + (item.price * item.quantity), 0);
   }
 
-  // Get cart item count
+  // Get cart item count (number of unique products)
   function getCartCount() {
+    const cart = getCart();
+    return cart.length; // Count unique products instead of total quantity
+  }
+  
+  // Get total quantity of all items
+  function getCartTotalQuantity() {
     const cart = getCart();
     return cart.reduce((count, item) => count + item.quantity, 0);
   }
@@ -319,6 +325,7 @@
     clearCart,
     getCartTotal,
     getCartCount,
+    getCartTotalQuantity,
     
     // Wishlist methods
     getWishlist,
@@ -333,6 +340,7 @@
     debugCart: function() {
       console.log('Cart:', getCart());
       console.log('Cart Count:', getCartCount());
+      console.log('Cart Total Quantity:', getCartTotalQuantity());
       console.log('Cart Total:', getCartTotal());
     },
     debugWishlist: function() {

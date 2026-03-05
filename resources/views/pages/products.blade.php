@@ -1090,6 +1090,7 @@
 
   const openQuick = (productData)=>{
     currentModalProduct = productData;
+    window.currentModalProductId = productData.id; // Store globally for sync
     const rating = parseFloat(productData.rating) || 0;
     modalName.textContent = productData.name || "Product";
     modalCat.textContent = "Type: " + (productData.category || "type");
@@ -1123,9 +1124,16 @@
     };
 
     const isAdded = window.DairyCart.toggleWishlist(product);
-    const icon = modalWishlist.querySelector('i');
-    if (icon) {
-      icon.className = isAdded ? 'fa-solid fa-heart' : 'fa-regular fa-heart';
+    
+    // Update all wishlist buttons (modal + product cards)
+    if(window.updateAllWishlistButtons){
+      window.updateAllWishlistButtons(currentModalProduct.id, isAdded);
+    } else {
+      // Fallback if global function not available yet
+      const icon = modalWishlist.querySelector('i');
+      if (icon) {
+        icon.className = isAdded ? 'fa-solid fa-heart' : 'fa-regular fa-heart';
+      }
     }
   });
 
@@ -1416,31 +1424,55 @@
 
     console.log('DairyCart loaded on products page, initializing wishlist');
 
-    // Wishlist buttons
-    document.querySelectorAll('.wishlist-btn').forEach(btn => {
-      btn.addEventListener('click', function() {
-        // Find the parent card (article element)
-        const card = this.closest('article.plpg-card');
-        if (!card) {
-          console.error('Card not found for wishlist button:', this);
-          return;
-        }
-
-        const productId = parseInt(card.getAttribute('data-product-id'));
-        const product = {
-          id: productId,
-          name: card.getAttribute('data-product-name'),
-          price: parseFloat(card.getAttribute('data-product-price')),
-          image: card.getAttribute('data-product-image'),
-          slug: card.getAttribute('data-product-slug')
-        };
-
-        const isAdded = window.DairyCart.toggleWishlist(product);
-        const icon = this.querySelector('i');
+    // Function to update all wishlist buttons for a product
+    const updateAllWishlistButtons = (productId, isAdded) => {
+      // Update in product cards
+      document.querySelectorAll(`.wishlist-btn[data-product-id="${productId}"]`).forEach(btn => {
+        const icon = btn.querySelector('i');
         if (icon) {
           icon.className = isAdded ? 'fa-solid fa-heart' : 'fa-regular fa-heart';
         }
       });
+
+      // Update in modal if it's the current product
+      const modal = document.getElementById('plpgModal');
+      const modalWishlist = document.getElementById('plpgModalWishlist');
+      if(modal && modal.classList.contains('open') && modalWishlist){
+        const modalProductId = window.currentModalProductId;
+        if(modalProductId === productId){
+          const icon = modalWishlist.querySelector('i');
+          if(icon){
+            icon.className = isAdded ? 'fa-solid fa-heart' : 'fa-regular fa-heart';
+          }
+        }
+      }
+    };
+
+    // Wishlist buttons
+    document.addEventListener('click', function(e) {
+      const btn = e.target.closest('.wishlist-btn');
+      if (!btn) return;
+
+      // Find the parent card (article element)
+      const card = btn.closest('article.plpg-card');
+      if (!card) {
+        console.error('Card not found for wishlist button:', btn);
+        return;
+      }
+
+      const productId = parseInt(card.getAttribute('data-product-id'));
+      const product = {
+        id: productId,
+        name: card.getAttribute('data-product-name'),
+        price: parseFloat(card.getAttribute('data-product-price')),
+        image: card.getAttribute('data-product-image'),
+        slug: card.getAttribute('data-product-slug')
+      };
+
+      const isAdded = window.DairyCart.toggleWishlist(product);
+      
+      // Update all wishlist buttons for this product
+      updateAllWishlistButtons(productId, isAdded);
     });
 
     // Update wishlist button states on page load
@@ -1456,6 +1488,9 @@
         }
       }
     });
+
+    // Store function globally for modal to use
+    window.updateAllWishlistButtons = updateAllWishlistButtons;
   }
 
   // Start initialization
