@@ -301,7 +301,7 @@
 
             .tb-cats-grid {
                 display: grid;
-                grid-template-columns: repeat(6, 1fr);
+                grid-template-columns: repeat(5, 1fr);
                 gap: 16px;
             }
 
@@ -1745,7 +1745,7 @@
             }
 
             .tb-splitcoll-img.big {
-                height: 380px;
+                height: 444px;
                 background-image: url("{{ asset('images/milk-vans.webp') }}");
             }
 
