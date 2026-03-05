@@ -487,7 +487,7 @@
         <div class="container">
             <div class="tb-cats-grid">
                 @foreach ($categories as $category)
-                    <a href="{{ $category->link ?: route('products', ['category' => $category->id]) }}" class="tb-cat">
+                    <a href="{{ $category->link ?: route('products', ['category' => $category->slug]) }}" class="tb-cat">
                         <span class="tb-cat-ico bg-{{ $category->bg_color }}">
                             @if ($category->icon_type === 'svg')
                                 <svg class="tb-cat-svg" viewBox="0 0 64 64" aria-hidden="true">

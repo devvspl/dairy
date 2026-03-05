@@ -79,10 +79,12 @@ class PublicController extends Controller
             });
         }
 
-        // Filter by category
+        // Filter by category (using slug)
         if ($request->has('category') && $request->category) {
-            $categoryIds = explode(',', $request->category);
-            $query->whereIn('category_id', $categoryIds);
+            $categorySlugs = explode(',', $request->category);
+            $query->whereHas('category', function ($q) use ($categorySlugs) {
+                $q->whereIn('slug', $categorySlugs);
+            });
         }
 
         // Search
@@ -190,10 +192,12 @@ class PublicController extends Controller
             });
         }
 
-        // Filter by category
+        // Filter by category (using slug)
         if ($request->has('category') && $request->category) {
-            $categoryIds = explode(',', $request->category);
-            $query->whereIn('category_id', $categoryIds);
+            $categorySlugs = explode(',', $request->category);
+            $query->whereHas('category', function ($q) use ($categorySlugs) {
+                $q->whereIn('slug', $categorySlugs);
+            });
         }
 
         // Search
@@ -251,6 +255,7 @@ class PublicController extends Controller
                 'badge_color' => $product->badge_color,
                 'rating' => $product->rating,
                 'category' => $product->category ? $product->category->title : null,
+                'category_slug' => $product->category ? $product->category->slug : null,
                 'category_id' => $product->category_id,
                 'type' => $product->type ? $product->type->name : null,
                 'type_slug' => $product->type ? $product->type->slug : null,

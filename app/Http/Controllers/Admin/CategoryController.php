@@ -31,6 +31,7 @@ class CategoryController extends Controller
     {
         $validated = $request->validate([
             'title' => ['required', 'string', 'max:255'],
+            'slug' => ['nullable', 'string', 'max:255', 'unique:categories,slug'],
             'icon_type' => ['required', 'in:svg,price'],
             'svg_path' => ['nullable', 'string'],
             'price_text' => ['nullable', 'string', 'max:255'],
@@ -61,6 +62,7 @@ class CategoryController extends Controller
     {
         $validated = $request->validate([
             'title' => ['required', 'string', 'max:255'],
+            'slug' => ['nullable', 'string', 'max:255', 'unique:categories,slug,' . $category->id],
             'icon_type' => ['required', 'in:svg,price'],
             'svg_path' => ['nullable', 'string'],
             'price_text' => ['nullable', 'string', 'max:255'],

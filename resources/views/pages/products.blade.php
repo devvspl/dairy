@@ -798,7 +798,7 @@
             </div>
             <div class="plpg-block-content">
               @foreach($categories as $category)
-              <label class="plpg-opt"><input type="checkbox" class="plpgCategory" value="{{ $category->id }}"> {{ $category->title }}</label>
+              <label class="plpg-opt"><input type="checkbox" class="plpgCategory" value="{{ $category->slug }}"> {{ $category->title }}</label>
               @endforeach
             </div>
           </div>
@@ -865,7 +865,8 @@
             data-product-name="{{ $product->name }}"
             data-product-price="{{ $product->price }}"
             data-product-image="{{ asset($product->main_image) }}"
-            data-product-slug="{{ $product->slug }}">
+            data-product-slug="{{ $product->slug }}"
+            data-product='{"id":{{ $product->id }},"name":"{{ addslashes($product->name) }}","slug":"{{ $product->slug }}","short_description":"{{ addslashes($product->short_description ?? $product->meta) }}","price":{{ $product->price }},"mrp":{{ $product->mrp ?? 'null' }},"image":"{{ asset($product->main_image) }}","url":"{{ route('product.detail', $product->slug) }}","badge":"{{ $product->badge ?? '' }}","badge_color":"{{ $product->badge_color ?? '' }}","rating":{{ $product->rating }},"category":"{{ $product->type ? addslashes($product->type->name) : '' }}"}'>
             @if($product->badge)
             <div class="plpg-badges">
               <span class="plpg-tag plpg-tag-{{ $product->badge_color }}">
@@ -875,7 +876,7 @@
             @endif
             <div class="plpg-media">
               <img src="{{ asset($product->main_image) }}" alt="{{ $product->name }}">
-              <button class="plpg-quick" type="button" data-quick="{{ $product->name }}"><i class="fa-solid fa-eye"></i> Quick View</button>
+              <button class="plpg-quick" type="button" data-quick="true"><i class="fa-solid fa-eye"></i> Quick View</button>
             </div>
             <div class="plpg-info">
               <div class="plpg-title">
@@ -959,7 +960,7 @@
           <div class="plpg-block-title"><span><i class="fa-solid fa-tags"></i> Category</span><small>Choose</small></div>
           <div class="plpg-block-content">
             @foreach($categories as $category)
-            <label class="plpg-opt"><input type="checkbox" class="plpgCategoryM" value="{{ $category->id }}"> {{ $category->title }}</label>
+            <label class="plpg-opt"><input type="checkbox" class="plpgCategoryM" value="{{ $category->slug }}"> {{ $category->title }}</label>
             @endforeach
           </div>
         </div>
@@ -1029,8 +1030,8 @@
               <span class="plpg-mrp" id="plpgModalMrp">₹0</span>
             </div>
             <div style="display:flex; gap:10px; flex-wrap:wrap;">
-              <button class="plpg-iconbtn" type="button" title="Wishlist"><i class="fa-regular fa-heart"></i></button>
-              <a class="plpg-btn plpg-btn-primary" href="#"><i class="fa-solid fa-cart-shopping"></i> Add to Cart</a>
+              <button class="plpg-iconbtn" type="button" title="Wishlist" id="plpgModalWishlist"><i class="fa-regular fa-heart"></i></button>
+              <button class="plpg-btn plpg-btn-primary" type="button" id="plpgModalAddCart"><i class="fa-solid fa-cart-shopping"></i> Add to Cart</button>
             </div>
           </div>
 
@@ -1082,8 +1083,13 @@
   const modalDesc = root.querySelector("#plpgModalDesc");
   const modalPrice = root.querySelector("#plpgModalPrice");
   const modalMrp = root.querySelector("#plpgModalMrp");
+  const modalWishlist = root.querySelector("#plpgModalWishlist");
+  const modalAddCart = root.querySelector("#plpgModalAddCart");
+
+  let currentModalProduct = null;
 
   const openQuick = (productData)=>{
+    currentModalProduct = productData;
     const rating = parseFloat(productData.rating) || 0;
     modalName.textContent = productData.name || "Product";
     modalCat.textContent = "Type: " + (productData.category || "type");
@@ -1093,9 +1099,55 @@
     modalPrice.textContent = "₹" + Math.round(productData.price || 0);
     modalMrp.textContent = productData.mrp ? "₹" + Math.round(productData.mrp) : "";
 
+    // Update wishlist button state
+    if(window.DairyCart && window.DairyCart.isInWishlist(productData.id)){
+      modalWishlist.querySelector('i').className = 'fa-solid fa-heart';
+    } else {
+      modalWishlist.querySelector('i').className = 'fa-regular fa-heart';
+    }
+
     modal.classList.add("open");
     modal.setAttribute("aria-hidden","false");
   };
+
+  // Modal wishlist button
+  modalWishlist?.addEventListener("click", ()=>{
+    if(!currentModalProduct || !window.DairyCart) return;
+    
+    const product = {
+      id: currentModalProduct.id,
+      name: currentModalProduct.name,
+      price: parseFloat(currentModalProduct.price),
+      image: currentModalProduct.image,
+      slug: currentModalProduct.slug
+    };
+
+    const isAdded = window.DairyCart.toggleWishlist(product);
+    const icon = modalWishlist.querySelector('i');
+    if (icon) {
+      icon.className = isAdded ? 'fa-solid fa-heart' : 'fa-regular fa-heart';
+    }
+  });
+
+  // Modal add to cart button
+  modalAddCart?.addEventListener("click", ()=>{
+    if(!currentModalProduct || !window.DairyCart) return;
+    
+    const product = {
+      id: currentModalProduct.id,
+      name: currentModalProduct.name,
+      price: parseFloat(currentModalProduct.price),
+      image: currentModalProduct.image,
+      slug: currentModalProduct.slug,
+      quantity: 1
+    };
+
+    window.DairyCart.addToCart(product);
+    
+    // Close modal after adding to cart
+    modal.classList.remove("open");
+    modal.setAttribute("aria-hidden","true");
+  });
 
   closeModal?.addEventListener("click", ()=>{
     modal.classList.remove("open");
@@ -1146,7 +1198,7 @@
                 ${mrpHtml}
               </div>
               <div class="plpg-actions">
-                <button class="plpg-iconbtn" type="button" title="Wishlist"><i class="fa-regular fa-heart"></i></button>
+                <button class="plpg-iconbtn wishlist-btn" type="button" title="Wishlist" data-product-id="${product.id}"><i class="fa-regular fa-heart"></i></button>
                 <a class="plpg-btn plpg-btn-primary" href="${product.url || '#'}"><i class="fa-solid fa-eye"></i> View</a>
               </div>
             </div>
@@ -1156,12 +1208,32 @@
     }).join('');
 
     // Attach quick view handlers
+    attachQuickViewHandlers();
+  };
+
+  // Function to attach quick view handlers to all quick view buttons
+  const attachQuickViewHandlers = ()=>{
     cardsWrap.querySelectorAll("[data-quick]").forEach(btn=>{
       btn.addEventListener("click", ()=>{
         const card = btn.closest(".plpg-card");
         if(card){
-          const productData = JSON.parse(card.dataset.product);
-          openQuick(productData);
+          const productDataStr = card.dataset.product;
+          if(productDataStr){
+            const productData = JSON.parse(productDataStr);
+            openQuick(productData);
+          } else {
+            // Fallback for server-rendered cards
+            const productData = {
+              name: card.getAttribute('data-product-name'),
+              category: card.getAttribute('data-type'),
+              image: card.getAttribute('data-product-image'),
+              rating: card.getAttribute('data-rating'),
+              short_description: card.querySelector('.plpg-desc')?.textContent || '',
+              price: card.getAttribute('data-price'),
+              mrp: card.querySelector('.plpg-mrp')?.textContent.replace('₹', '').replace(',', '') || null
+            };
+            openQuick(productData);
+          }
         }
       });
     });
@@ -1226,10 +1298,10 @@
     root.querySelectorAll(".plpgType").forEach(i=> i.checked = typeSlugs.includes(i.value));
     root.querySelectorAll(".plpgTypeM").forEach(i=> i.checked = typeSlugs.includes(i.value));
 
-    // Set categories (using IDs)
-    const categoryIds = params.get('category') ? params.get('category').split(',') : [];
-    root.querySelectorAll(".plpgCategory").forEach(i=> i.checked = categoryIds.includes(i.value));
-    root.querySelectorAll(".plpgCategoryM").forEach(i=> i.checked = categoryIds.includes(i.value));
+    // Set categories (using slugs)
+    const categorySlugs = params.get('category') ? params.get('category').split(',') : [];
+    root.querySelectorAll(".plpgCategory").forEach(i=> i.checked = categorySlugs.includes(i.value));
+    root.querySelectorAll(".plpgCategoryM").forEach(i=> i.checked = categorySlugs.includes(i.value));
 
     // Set price range
     const minPrice = params.get('min_price') || '';
@@ -1253,7 +1325,7 @@
       applyFilters({ 
         query: search, 
         types: typeSlugs,
-        categories: categoryIds,
+        categories: categorySlugs,
         min: minPrice, 
         max: maxPrice, 
         rating: minRating,
@@ -1327,6 +1399,9 @@
 
   // Initialize from URL on page load
   initFromUrl();
+
+  // Attach quick view handlers to initial server-rendered products
+  attachQuickViewHandlers();
 })();
 
 // Cart and Wishlist Event Listeners for Products Page
