@@ -967,7 +967,7 @@
         <!-- Brand -->
         <div class="tb-foot-brand">
           <!--<h3>{{ config('app.name') }}</h3>-->
-          <h3>Nulac</h3>
+          <h3 style="font-size:21.28px;">Nulac Dairy Pvt. Ltd.</h3>
           
           <p>Pure, clean, and ethically sourced food products crafted for modern Indian families.</p>
 
@@ -1030,9 +1030,17 @@
       </div>
 
       <!-- Bottom bar -->
+<!--      <div class="tb-foot-bottom">-->
+<!--        <div class="container">-->
+<!--          <p>© {{ date('Y') }} {{ config('app.name') }}. All rights reserved. Designed and Developed by <a target="_blank" href="https://www.apwebworld.com/"  style="text-decoration: none; color:white;">Ap Web World</a>-->
+<!--</p>-->
+<!--        </div>-->
+<!--      </div>-->
+
+<!-- Bottom bar -->
       <div class="tb-foot-bottom">
         <div class="container">
-          <p>© {{ date('Y') }} {{ config('app.name') }}. All rights reserved. Designed and Developed by <a target="_blank" href="https://www.apwebworld.com/"  style="text-decoration: none; color:white;">Ap Web World</a>
+          <p>© {{ date('Y') }} Nulac Dairy Private Limited. All rights reserved. Designed and Developed by <a target="" href="https://www.apwebworld.com/"  style="text-decoration: none; color:white;">Ap Web World</a>
 </p>
         </div>
       </div>

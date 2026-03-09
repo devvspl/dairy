@@ -27,6 +27,7 @@
                 padding: 5px 0 26px;
             }
 
+
             .tb-slider {
                 position: relative;
                 border-radius: 18px;
@@ -252,8 +253,17 @@
                 .tb-subtitle {
                     max-width: 100%;
                 }
+                
+                .tb-media-card img {
+                    
+                    object-fit: none !important;
+                    
+                }
             }
-
+ 
+     
+     
+ 
             @media (max-width: 560px) {
                 .tb-hero {
                     padding: 12px 0 18px;
@@ -438,6 +448,23 @@
                 }
             }
         </style>
+        
+        <style>
+              @media (max-width: 768px){
+                  
+                  
+                  
+                  
+              }
+            
+            
+        </style>
+        
+        
+        
+        
+        
+        
     @endpush
     <!---Banner start -->
     <section class="tb-hero">
@@ -840,6 +867,7 @@
                 font-weight: 900;
                 transition: 200ms ease;
                 border: 1px solid rgba(0, 0, 0, 0.06);
+                
             }
 
             .tb-shopmore:hover {
@@ -1074,12 +1102,20 @@
 
             @media (max-width: 1100px) {
                 .tb-card {
-                    flex: 0 0 calc((100% - 16px)/2);
+                    flex: 0 0 calc((100% - 19px)/3);
                 }
 
                 .tb-prod-title h2 {
                     font-size: 36px;
                 }
+                
+                .tb-splitcoll-img.big{
+                    
+
+                }
+                
+                
+                
             }
 
             @media (max-width: 700px) {
@@ -1093,6 +1129,7 @@
                 }
 
                 .tb-card {
+                    
                     flex: 0 0 100%;
                     min-width: 0;
                 }
@@ -1122,8 +1159,21 @@
 
                 .tb-shopmore {
                     padding: 10px 14px;
+                    white-space: nowrap;
+                  
                 }
             }
+            
+              @media (min-width:700px) and (max-width: 992px){
+                  .tb-card{
+        flex: 0 0 calc((100% - 18px)/2);
+    }
+                
+                  
+                  
+              }
+            
+            
         </style>
     @endpush
     <!--- product section -->
@@ -1764,7 +1814,7 @@
                 }
 
                 .tb-splitcoll-img.big {
-                    height: 320px;
+                    
                 }
             }
 
@@ -1878,7 +1928,17 @@
                 .tb-usps-grid {
                     grid-template-columns: repeat(2, 1fr);
                 }
+                
+                
+                
             }
+            
+            
+            
+            
+            
+            
+            
 
             @media (max-width: 640px) {
                 .tb-usps-head h2 {
@@ -2370,6 +2430,8 @@
             .tb-ms-left {
                 grid-template-columns: 1fr 1fr;
                 grid-template-rows: auto;
+                height: 262px !important;
+                width: 100% !important;
             }
 
             .tb-ms-video {
