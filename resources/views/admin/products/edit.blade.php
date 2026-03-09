@@ -82,7 +82,7 @@
         <!-- Pricing -->
         <div class="mb-6">
             <h3 class="text-lg font-bold mb-4" style="color: var(--text);">Pricing</h3>
-            <div class="grid grid-cols-3 gap-4">
+            <div class="grid grid-cols-2 gap-4">
                 <div>
                     <label class="block text-sm font-medium mb-2" style="color: var(--text);">Price *</label>
                     <input type="number" name="price" value="{{ old('price', $product->price) }}" required min="0" step="0.01" class="w-full px-3 py-2 border rounded-lg" style="border-color: var(--border);">
@@ -93,12 +93,6 @@
                     <label class="block text-sm font-medium mb-2" style="color: var(--text);">MRP</label>
                     <input type="number" name="mrp" value="{{ old('mrp', $product->mrp) }}" min="0" step="0.01" class="w-full px-3 py-2 border rounded-lg" style="border-color: var(--border);">
                     @error('mrp')<p class="text-red-600 text-sm mt-1">{{ $message }}</p>@enderror
-                </div>
-
-                <div>
-                    <label class="block text-sm font-medium mb-2" style="color: var(--text);">Discount %</label>
-                    <input type="number" name="discount_percent" value="{{ old('discount_percent', $product->discount_percent) }}" min="0" max="100" class="w-full px-3 py-2 border rounded-lg" style="border-color: var(--border);">
-                    @error('discount_percent')<p class="text-red-600 text-sm mt-1">{{ $message }}</p>@enderror
                 </div>
             </div>
         </div>

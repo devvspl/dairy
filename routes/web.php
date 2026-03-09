@@ -36,9 +36,19 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/member/dashboard', [DashboardController::class, 'index'])->name('member.dashboard');
     
+    // Member Support Tickets
+    Route::prefix('member')->name('member.')->group(function () {
+        Route::resource('support-tickets', App\Http\Controllers\Member\SupportTicketController::class)->only(['index', 'create', 'store', 'show']);
+        
+        // Referrals
+        Route::get('referrals', [App\Http\Controllers\Member\ReferralController::class, 'index'])->name('referrals.index');
+        
+        // Loyalty Points
+        Route::get('loyalty-points', [App\Http\Controllers\Member\LoyaltyPointController::class, 'index'])->name('loyalty-points.index');
+    });
+    
     // Membership Subscription
     Route::post('/membership/subscribe', [App\Http\Controllers\MembershipController::class, 'subscribe'])->name('membership.subscribe');
-    
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
     Route::get('/profile', [App\Http\Controllers\ProfileController::class, 'edit'])->name('profile.edit');
     Route::put('/profile', [App\Http\Controllers\ProfileController::class, 'update'])->name('profile.update');
@@ -97,6 +107,14 @@ Route::middleware('auth')->group(function () {
         Route::post('deliveries/{delivery}/forward', [App\Http\Controllers\Admin\DeliveryLogController::class, 'forwardToNextDay'])->name('deliveries.forward');
         Route::get('deliveries/today', [App\Http\Controllers\Admin\DeliveryLogController::class, 'todayDeliveries'])->name('deliveries.today');
         Route::post('deliveries/bulk-update', [App\Http\Controllers\Admin\DeliveryLogController::class, 'bulkUpdateToday'])->name('deliveries.bulk-update');
+        
+        // Support Tickets Management
+        Route::resource('support-tickets', App\Http\Controllers\Admin\SupportTicketController::class)->except(['create', 'store']);
+        
+        // Offers & Customer Engagement
+        Route::resource('coupons', App\Http\Controllers\Admin\CouponController::class);
+        Route::resource('referral-codes', App\Http\Controllers\Admin\ReferralCodeController::class);
+        Route::resource('loyalty-points', App\Http\Controllers\Admin\LoyaltyPointController::class);
         
         Route::resource('seo-metas', App\Http\Controllers\Admin\SeoMetaController::class);
     });

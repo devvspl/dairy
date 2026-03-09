@@ -107,4 +107,30 @@ class User extends Authenticatable
     {
         return $this->activeSubscription()->exists();
     }
+
+    /**
+     * Get the referral code for this user
+     */
+    public function referralCode()
+    {
+        return $this->hasOne(ReferralCode::class);
+    }
+
+    /**
+     * Get all loyalty points for this user
+     */
+    public function loyaltyPoints()
+    {
+        return $this->hasMany(LoyaltyPoint::class);
+    }
+
+    /**
+     * Get available loyalty points balance
+     */
+    public function getLoyaltyPointsBalanceAttribute()
+    {
+        $earned = $this->loyaltyPoints()->where('type', 'earned')->sum('points');
+        $redeemed = $this->loyaltyPoints()->where('type', 'redeemed')->sum('points');
+        return $earned - $redeemed;
+    }
 }

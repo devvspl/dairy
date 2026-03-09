@@ -13,7 +13,6 @@ class Product extends Model
         'sku',
         'price',
         'mrp',
-        'discount_percent',
         'badge',
         'badge_color',
         'meta',
