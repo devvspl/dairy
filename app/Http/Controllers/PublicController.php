@@ -353,4 +353,11 @@ class PublicController extends Controller
 
         return view('pages.terms-and-conditions', compact('legalPage'));
     }
+
+    public function locationDetail($slug)
+    {
+        $location = \App\Models\Location::active()->where('slug', $slug)->firstOrFail();
+
+        return view('pages.location', compact('location'));
+    }
 }

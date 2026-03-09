@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'Discount Coupons')
-@section('page-title', 'Discount Coupons')
+@section('title', 'Locations')
+@section('page-title', 'Locations')
 
 @section('content')
 <div class="space-y-4 lg:space-y-6">
@@ -24,16 +24,16 @@
     @endif
 
     <!-- Stats Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div class="bg-white rounded-xl shadow-sm p-4 border" style="border-color: var(--border);">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-sm font-medium" style="color: var(--muted);">Total Coupons</p>
+                    <p class="text-sm font-medium" style="color: var(--muted);">Total Locations</p>
                     <p class="text-2xl font-bold mt-1" style="color: var(--text);">{{ $stats['total'] }}</p>
                 </div>
                 <div class="w-12 h-12 rounded-lg flex items-center justify-center" style="background-color: rgba(47, 74, 30, 0.1);">
                     <svg class="w-6 h-6" style="color: var(--green);" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M2 6a2 2 0 012-2h12a2 2 0 012 2v2a2 2 0 100 4v2a2 2 0 01-2 2H4a2 2 0 01-2-2v-2a2 2 0 100-4V6z"/>
+                        <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/>
                     </svg>
                 </div>
             </div>
@@ -42,7 +42,7 @@
         <div class="bg-white rounded-xl shadow-sm p-4 border" style="border-color: var(--border);">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-sm font-medium" style="color: var(--muted);">Active Coupons</p>
+                    <p class="text-sm font-medium" style="color: var(--muted);">Active</p>
                     <p class="text-2xl font-bold mt-1 text-green-600">{{ $stats['active'] }}</p>
                 </div>
                 <div class="w-12 h-12 rounded-lg flex items-center justify-center bg-green-100">
@@ -56,26 +56,12 @@
         <div class="bg-white rounded-xl shadow-sm p-4 border" style="border-color: var(--border);">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-sm font-medium" style="color: var(--muted);">Expired</p>
-                    <p class="text-2xl font-bold mt-1 text-red-600">{{ $stats['expired'] }}</p>
+                    <p class="text-sm font-medium" style="color: var(--muted);">Inactive</p>
+                    <p class="text-2xl font-bold mt-1 text-gray-600">{{ $stats['inactive'] }}</p>
                 </div>
-                <div class="w-12 h-12 rounded-lg flex items-center justify-center bg-red-100">
-                    <svg class="w-6 h-6 text-red-600" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/>
-                    </svg>
-                </div>
-            </div>
-        </div>
-
-        <div class="bg-white rounded-xl shadow-sm p-4 border" style="border-color: var(--border);">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-sm font-medium" style="color: var(--muted);">Total Usage</p>
-                    <p class="text-2xl font-bold mt-1 text-blue-600">{{ $stats['total_usage'] }}</p>
-                </div>
-                <div class="w-12 h-12 rounded-lg flex items-center justify-center bg-blue-100">
-                    <svg class="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M3 3a1 1 0 000 2v8a2 2 0 002 2h2.586l-1.293 1.293a1 1 0 101.414 1.414L10 15.414l2.293 2.293a1 1 0 001.414-1.414L12.414 15H15a2 2 0 002-2V5a1 1 0 100-2H3zm11.707 4.707a1 1 0 00-1.414-1.414L10 9.586 8.707 8.293a1 1 0 00-1.414 0l-2 2a1 1 0 101.414 1.414L8 10.414l1.293 1.293a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                <div class="w-12 h-12 rounded-lg flex items-center justify-center bg-gray-100">
+                    <svg class="w-6 h-6 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M13.477 14.89A6 6 0 015.11 6.524l8.367 8.368zm1.414-1.414L6.524 5.11a6 6 0 018.367 8.367zM18 10a8 8 0 11-16 0 8 8 0 0116 0z" clip-rule="evenodd"/>
                     </svg>
                 </div>
             </div>
@@ -88,93 +74,76 @@
             <div>
                 <h1 class="text-xl lg:text-2xl font-bold flex items-center" style="color: var(--text);">
                     <svg class="w-6 h-6 mr-2" style="color: var(--green);" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M2 6a2 2 0 012-2h12a2 2 0 012 2v2a2 2 0 100 4v2a2 2 0 01-2 2H4a2 2 0 01-2-2v-2a2 2 0 100-4V6z"/>
+                        <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/>
                     </svg>
-                    Manage Coupons
+                    Manage Locations
                 </h1>
                 <p class="text-sm lg:text-base mt-1" style="color: var(--muted);">
-                    Create and manage discount coupons for your customers
+                    Create and manage location-specific delivery pages
                 </p>
             </div>
-            <a href="{{ route('admin.coupons.create') }}" 
+            <a href="{{ route('admin.locations.create') }}" 
                class="inline-flex items-center px-4 py-2 rounded-lg text-sm font-semibold transition-colors hover:opacity-90"
                style="background-color: var(--green); color: #fff;">
                 <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
                     <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"/>
                 </svg>
-                Create Coupon
+                Add Location
             </a>
         </div>
     </div>
 
-    <!-- Coupons List -->
+    <!-- Locations List -->
     <div class="bg-white rounded-xl shadow-sm border" style="border-color: var(--border);">
-        @if($coupons->count() > 0)
+        @if($locations->count() > 0)
             <div class="overflow-x-auto">
                 <table class="w-full">
                     <thead>
                         <tr style="border-bottom: 2px solid var(--border); background-color: rgba(47, 74, 30, 0.02);">
-                            <th class="px-4 lg:px-6 py-3 text-left text-xs font-bold uppercase tracking-wider" style="color: var(--text);">Code</th>
-                            <th class="px-4 lg:px-6 py-3 text-left text-xs font-bold uppercase tracking-wider" style="color: var(--text);">Name</th>
-                            <th class="px-4 lg:px-6 py-3 text-left text-xs font-bold uppercase tracking-wider" style="color: var(--text);">Type</th>
-                            <th class="px-4 lg:px-6 py-3 text-left text-xs font-bold uppercase tracking-wider" style="color: var(--text);">Value</th>
-                            <th class="px-4 lg:px-6 py-3 text-left text-xs font-bold uppercase tracking-wider" style="color: var(--text);">Usage</th>
-                            <th class="px-4 lg:px-6 py-3 text-left text-xs font-bold uppercase tracking-wider" style="color: var(--text);">Valid Until</th>
+                            <th class="px-4 lg:px-6 py-3 text-left text-xs font-bold uppercase tracking-wider" style="color: var(--text);">Location</th>
+                            <th class="px-4 lg:px-6 py-3 text-left text-xs font-bold uppercase tracking-wider" style="color: var(--text);">Area</th>
+                            <th class="px-4 lg:px-6 py-3 text-left text-xs font-bold uppercase tracking-wider" style="color: var(--text);">Building</th>
                             <th class="px-4 lg:px-6 py-3 text-left text-xs font-bold uppercase tracking-wider" style="color: var(--text);">Status</th>
                             <th class="px-4 lg:px-6 py-3 text-left text-xs font-bold uppercase tracking-wider" style="color: var(--text);">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach($coupons as $coupon)
+                        @foreach($locations as $location)
                         <tr class="hover:bg-gray-50 transition-colors" style="border-bottom: 1px solid var(--border);">
                             <td class="px-4 lg:px-6 py-4">
-                                <span class="font-bold text-sm px-2 py-1 rounded" style="background-color: rgba(47, 74, 30, 0.1); color: var(--green);">{{ $coupon->code }}</span>
-                            </td>
-                            <td class="px-4 lg:px-6 py-4">
-                                <span class="text-sm font-medium" style="color: var(--text);">{{ $coupon->name }}</span>
-                            </td>
-                            <td class="px-4 lg:px-6 py-4">
-                                <span class="text-xs px-2 py-1 rounded" style="background-color: #f3f4f6; color: var(--text);">
-                                    {{ ucfirst($coupon->type) }}
-                                </span>
-                                @if($coupon->apply_to_specific_items)
-                                <br>
-                                <span class="text-xs mt-1" style="color: var(--muted);">
-                                    @if($coupon->membershipPlans->count() > 0)
-                                        {{ $coupon->membershipPlans->count() }} plan(s)
-                                    @endif
-                                    @if($coupon->products->count() > 0)
-                                        {{ $coupon->products->count() }} product(s)
-                                    @endif
-                                </span>
-                                @endif
-                            </td>
-                            <td class="px-4 lg:px-6 py-4">
-                                <span class="text-sm font-bold" style="color: var(--green);">
-                                    @if($coupon->type === 'percentage')
-                                        {{ $coupon->value }}%
-                                    @else
-                                        ₹{{ number_format($coupon->value, 0) }}
-                                    @endif
-                                </span>
+                                <div>
+                                    <span class="text-sm font-bold" style="color: var(--text);">{{ $location->name }}</span>
+                                    <p class="text-xs mt-1" style="color: var(--muted);">/location/{{ $location->slug }}</p>
+                                </div>
                             </td>
                             <td class="px-4 lg:px-6 py-4">
                                 <span class="text-sm" style="color: var(--text);">
-                                    {{ $coupon->times_used }}
-                                    @if($coupon->usage_limit)
-                                        / {{ $coupon->usage_limit }}
-                                    @endif
+                                    @if($location->sector)Sector {{ $location->sector }}, @endif
+                                    {{ $location->area ?? 'N/A' }}
                                 </span>
                             </td>
                             <td class="px-4 lg:px-6 py-4">
-                                <span class="text-sm" style="color: var(--muted);">{{ $coupon->valid_until->format('M d, Y') }}</span>
+                                <span class="text-sm" style="color: var(--text);">{{ $location->building_name ?? 'N/A' }}</span>
                             </td>
                             <td class="px-4 lg:px-6 py-4">
-                                {!! $coupon->status_badge !!}
+                                @if($location->is_active)
+                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">Active</span>
+                                @else
+                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">Inactive</span>
+                                @endif
                             </td>
                             <td class="px-4 lg:px-6 py-4">
                                 <div class="flex items-center gap-2">
-                                    <a href="{{ route('admin.coupons.edit', $coupon) }}" 
+                                    <a href="{{ route('location.detail', $location->slug) }}" target="_blank"
+                                       class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-medium transition-colors hover:bg-gray-100"
+                                       style="color: var(--text); border: 1px solid var(--border);">
+                                        <svg class="w-3.5 h-3.5 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                            <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/>
+                                            <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"/>
+                                        </svg>
+                                        View
+                                    </a>
+                                    <a href="{{ route('admin.locations.edit', $location) }}" 
                                        class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-medium transition-colors hover:bg-gray-100"
                                        style="color: var(--green); border: 1px solid var(--border);">
                                         <svg class="w-3.5 h-3.5 mr-1" fill="currentColor" viewBox="0 0 20 20">
@@ -182,7 +151,7 @@
                                         </svg>
                                         Edit
                                     </a>
-                                    <form action="{{ route('admin.coupons.destroy', $coupon) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this coupon?');">
+                                    <form action="{{ route('admin.locations.destroy', $location) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this location?');">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-medium transition-colors hover:bg-red-50"
@@ -201,27 +170,27 @@
                 </table>
             </div>
 
-            @if($coupons->hasPages())
+            @if($locations->hasPages())
             <div class="px-4 lg:px-6 py-4 border-t" style="border-color: var(--border);">
-                {{ $coupons->links() }}
+                {{ $locations->links() }}
             </div>
             @endif
         @else
             <div class="text-center py-12 px-4">
                 <div class="w-20 h-20 rounded-full mx-auto mb-4 flex items-center justify-center" style="background-color: rgba(47, 74, 30, 0.1);">
                     <svg class="w-10 h-10" style="color: var(--green);" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M2 6a2 2 0 012-2h12a2 2 0 012 2v2a2 2 0 100 4v2a2 2 0 01-2 2H4a2 2 0 01-2-2v-2a2 2 0 100-4V6z"/>
+                        <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/>
                     </svg>
                 </div>
-                <h3 class="text-lg font-bold mb-2" style="color: var(--text);">No Coupons Yet</h3>
-                <p class="text-sm mb-6" style="color: var(--muted);">Create your first discount coupon to attract customers.</p>
-                <a href="{{ route('admin.coupons.create') }}" 
+                <h3 class="text-lg font-bold mb-2" style="color: var(--text);">No Locations Yet</h3>
+                <p class="text-sm mb-6" style="color: var(--muted);">Create your first location page to showcase delivery areas.</p>
+                <a href="{{ route('admin.locations.create') }}" 
                    class="inline-flex items-center px-6 py-3 rounded-lg text-sm font-semibold transition-colors hover:opacity-90"
                    style="background-color: var(--green); color: #fff;">
                     <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
                         <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"/>
                     </svg>
-                    Create First Coupon
+                    Add First Location
                 </a>
             </div>
         @endif

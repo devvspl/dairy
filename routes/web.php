@@ -20,6 +20,7 @@ Route::get('/contact', [PublicController::class, 'contact'])->name('contact');
 Route::post('/contact', [PublicController::class, 'submitContactInquiry'])->name('contact.submit');
 Route::get('/privacy-policy', [PublicController::class, 'privacyPolicy'])->name('privacy-policy');
 Route::get('/terms-and-conditions', [PublicController::class, 'termsConditions'])->name('terms-conditions');
+Route::get('/location/{slug}', [PublicController::class, 'locationDetail'])->name('location.detail');
 // Guest routes (redirect to dashboard if authenticated)
 Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
@@ -115,6 +116,9 @@ Route::middleware('auth')->group(function () {
         Route::resource('coupons', App\Http\Controllers\Admin\CouponController::class);
         Route::resource('referral-codes', App\Http\Controllers\Admin\ReferralCodeController::class);
         Route::resource('loyalty-points', App\Http\Controllers\Admin\LoyaltyPointController::class);
+        
+        // Locations
+        Route::resource('locations', App\Http\Controllers\Admin\LocationController::class);
         
         Route::resource('seo-metas', App\Http\Controllers\Admin\SeoMetaController::class);
     });
