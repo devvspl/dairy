@@ -18,7 +18,7 @@
             </a>
         </div>
 
-        <form method="POST" action="{{ route('admin.users.update', $user) }}" x-data="{ loading: false, showPassword: false, showPasswordConfirmation: false }" @submit="loading = true">
+        <form method="POST" action="{{ route('admin.users.update', $user) }}" x-data="{ loading: false, showPassword: false, showPasswordConfirmation: false, userType: '{{ old('user_type', $user->user_type) }}' }" @submit="loading = true">
             @csrf
             @method('PUT')
 
@@ -73,6 +73,52 @@
                         onblur="this.style.borderColor='var(--border)'; this.style.boxShadow='none'"
                     >
                     @error('phone')
+                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div>
+                    <label for="user_type" class="block text-sm font-medium mb-2" style="color: var(--text);">User Type <span class="text-red-600">*</span></label>
+                    <select 
+                        id="user_type" 
+                        name="user_type"
+                        x-model="userType"
+                        class="w-full px-4 py-3 border rounded-lg focus:outline-none transition-all @error('user_type') border-red-500 @enderror"
+                        style="border-color: var(--border); color: var(--text);"
+                        onfocus="this.style.borderColor='var(--green)'; this.style.boxShadow='0 0 0 3px rgba(47, 74, 30, 0.1)'"
+                        onblur="this.style.borderColor='var(--border)'; this.style.boxShadow='none'"
+                        required
+                    >
+                        <option value="">Select User Type</option>
+                        <option value="Admin" {{ old('user_type', $user->user_type) == 'Admin' ? 'selected' : '' }}>Admin</option>
+                        <option value="Member" {{ old('user_type', $user->user_type) == 'Member' ? 'selected' : '' }}>Member</option>
+                        <option value="Delivery Person" {{ old('user_type', $user->user_type) == 'Delivery Person' ? 'selected' : '' }}>Delivery Person</option>
+                    </select>
+                    @error('user_type')
+                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div x-show="userType === 'Delivery Person'" style="display: none;">
+                    <label class="block text-sm font-medium mb-2" style="color: var(--text);">Assign Locations</label>
+                    <div class="border rounded-lg p-4 max-h-60 overflow-y-auto" style="border-color: var(--border);">
+                        @forelse($locations as $location)
+                            <label class="flex items-center space-x-3 py-2 hover:bg-gray-50 px-2 rounded cursor-pointer">
+                                <input 
+                                    type="checkbox" 
+                                    name="locations[]" 
+                                    value="{{ $location->id }}"
+                                    {{ in_array($location->id, old('locations', $user->locations->pluck('id')->toArray())) ? 'checked' : '' }}
+                                    class="w-4 h-4 rounded border-gray-300 focus:ring-2"
+                                    style="color: var(--green); focus:ring-color: var(--green);"
+                                >
+                                <span class="text-sm" style="color: var(--text);">{{ $location->name }} - {{ $location->area }}</span>
+                            </label>
+                        @empty
+                            <p class="text-sm text-center py-4" style="color: var(--muted);">No locations available</p>
+                        @endforelse
+                    </div>
+                    @error('locations')
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                     @enderror
                 </div>

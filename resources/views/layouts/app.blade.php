@@ -79,11 +79,11 @@
                     <!-- Logo -->
                     <div class="flex items-center justify-center h-16 border-b px-4"
                         style="background-color: #ffffff; border-color: var(--border);">
-                        <a href="{{ auth()->user()->isAdmin() ? route('admin.dashboard') : route('member.dashboard') }}"
+                        <a href="{{ auth()->user()->isAdmin() ? route('admin.dashboard') : (auth()->user()->isDeliveryPerson() ? route('delivery.dashboard') : route('member.dashboard')) }}"
                             class="flex items-center" x-show="!sidebarCollapsed">
                             <img src="{{ asset('images/new.png') }}" alt="{{ config('app.name') }}" class="h-10 w-auto">
                         </a>
-                        <a href="{{ auth()->user()->isAdmin() ? route('admin.dashboard') : route('member.dashboard') }}"
+                        <a href="{{ auth()->user()->isAdmin() ? route('admin.dashboard') : (auth()->user()->isDeliveryPerson() ? route('delivery.dashboard') : route('member.dashboard')) }}"
                             class="flex items-center" x-show="sidebarCollapsed" style="display: none;">
                             <img src="{{ asset('images/new.png') }}" alt="{{ config('app.name') }}" class="h-8 w-auto">
                         </a>
@@ -99,10 +99,10 @@
                     <!-- Navigation -->
                     <nav class="flex-1 py-6 space-y-1 overflow-y-auto" :class="sidebarCollapsed ? 'px-2' : 'px-4'">
                         <!-- Dashboard -->
-                        <a href="{{ auth()->user()->isAdmin() ? route('admin.dashboard') : route('member.dashboard') }}"
-                            class="sidebar-link {{ request()->routeIs('dashboard') || request()->routeIs('admin.dashboard') || request()->routeIs('member.dashboard') ? 'active' : '' }} flex items-center rounded-lg transition-all text-sm"
+                        <a href="{{ auth()->user()->isAdmin() ? route('admin.dashboard') : (auth()->user()->isDeliveryPerson() ? route('delivery.dashboard') : route('member.dashboard')) }}"
+                            class="sidebar-link {{ request()->routeIs('dashboard') || request()->routeIs('admin.dashboard') || request()->routeIs('member.dashboard') || request()->routeIs('delivery.dashboard') ? 'active' : '' }} flex items-center rounded-lg transition-all text-sm"
                             :class="sidebarCollapsed ? 'justify-center p-3' : 'px-3 py-2'"
-                            style="{{ request()->routeIs('dashboard') || request()->routeIs('admin.dashboard') || request()->routeIs('member.dashboard') ? '' : 'color: var(--muted);' }}"
+                            style="{{ request()->routeIs('dashboard') || request()->routeIs('admin.dashboard') || request()->routeIs('member.dashboard') || request()->routeIs('delivery.dashboard') ? '' : 'color: var(--muted);' }}"
                             :title="sidebarCollapsed ? 'Dashboard' : ''">
                             <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -614,8 +614,8 @@
                             </svg>
                         </button>
                     @else
-                        <!-- Logo for Members -->
-                        <a href="{{ route('member.dashboard') }}" class="flex items-center">
+                        <!-- Logo for Members/Delivery Persons -->
+                        <a href="{{ auth()->user()->isDeliveryPerson() ? route('delivery.dashboard') : route('member.dashboard') }}" class="flex items-center">
                             <img src="{{ asset('images/new.png') }}" alt="{{ config('app.name') }}"
                                 class="h-10 w-auto">
                         </a>

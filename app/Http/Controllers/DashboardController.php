@@ -13,17 +13,31 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        // Check if user is a member and redirect to member dashboard
-        if (auth()->user()->isMember()) {
-            return view('member-dashboard');
+        // Check if user is a delivery person and redirect to delivery dashboard
+        if (auth()->user()->isDeliveryPerson()) {
+            return redirect()->route('delivery.dashboard');
         }
         
+        // Check if user is a member and redirect to member dashboard
+        if (auth()->user()->isMember()) {
+            return redirect()->route('member.dashboard');
+        }
+        
+        // Admin users see the default dashboard
         return view('dashboard');
     }
 
     public function member()
     {
         return view('member-dashboard');
+    }
+
+    public function delivery()
+    {
+        $user = auth()->user();
+        $user->load('locations');
+        
+        return view('delivery-dashboard', compact('user'));
     }
 
     public function admin()

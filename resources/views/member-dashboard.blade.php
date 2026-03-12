@@ -54,7 +54,7 @@
     </div>
 
     <!-- Quick Actions -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
         <!-- Referrals Card -->
         <a href="{{ route('member.referrals.index') }}" class="bg-white rounded-xl shadow-sm p-6 border hover:shadow-lg transition-all" style="border-color: var(--border);">
             <div class="flex items-center justify-between mb-4">
@@ -85,6 +85,22 @@
             </div>
             <h3 class="text-lg font-bold mb-1" style="color: var(--text);">Loyalty Points</h3>
             <p class="text-sm" style="color: var(--muted);">View and redeem your points</p>
+        </a>
+
+        <!-- Payment History Card -->
+        <a href="{{ route('payment.history') }}" class="bg-white rounded-xl shadow-sm p-6 border hover:shadow-lg transition-all" style="border-color: var(--border);">
+            <div class="flex items-center justify-between mb-4">
+                <div class="w-12 h-12 rounded-lg flex items-center justify-center" style="background-color: rgba(234, 179, 8, 0.1);">
+                    <svg class="w-6 h-6" style="color: #eab308;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
+                    </svg>
+                </div>
+                <svg class="w-5 h-5" style="color: var(--muted);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                </svg>
+            </div>
+            <h3 class="text-lg font-bold mb-1" style="color: var(--text);">Payment History</h3>
+            <p class="text-sm" style="color: var(--muted);">View all your transactions</p>
         </a>
 
         <!-- Support Card -->
@@ -133,6 +149,17 @@
                     Valid until: {{ $activeSubscription->end_date->format('M d, Y') }} 
                     ({{ $activeSubscription->daysRemaining() }} days remaining)
                 </p>
+                @if($activeSubscription->location)
+                <p class="text-xs mt-1 flex items-center" style="color: var(--green);">
+                    <i class="fa-solid fa-map-marker-alt mr-1"></i>
+                    <span class="font-semibold">{{ $activeSubscription->location->name }}</span>
+                    @if($activeSubscription->location->area || $activeSubscription->location->city)
+                        <span class="ml-1" style="color: var(--muted);">
+                            ({{ collect([$activeSubscription->location->area, $activeSubscription->location->city])->filter()->implode(', ') }})
+                        </span>
+                    @endif
+                </p>
+                @endif
             </div>
             <div class="text-right">
                 <p class="text-2xl font-bold" style="color: var(--green);">₹{{ number_format($activePlan->price, 0) }}</p>
@@ -448,67 +475,111 @@
 
 <!-- Buy Plan Modal -->
 <div id="buyPlanModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center p-4" style="backdrop-filter: blur(4px);">
-    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 relative" onclick="event.stopPropagation()">
-        <button onclick="closeBuyModal()" class="absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto relative" onclick="event.stopPropagation()">
+        <button onclick="closeBuyModal()" class="absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors z-10">
             <i class="fa-solid fa-times" style="color: var(--muted);"></i>
         </button>
 
-        <div class="text-center mb-6">
-            <div class="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center" style="background-color: rgba(47, 74, 30, 0.1);">
-                <i class="fa-solid fa-shopping-cart text-2xl" style="color: var(--green);"></i>
+        <div class="p-6">
+            <!-- Header Section - Compact -->
+            <div class="text-center mb-4">
+                <div class="w-12 h-12 rounded-full mx-auto mb-3 flex items-center justify-center" style="background-color: rgba(47, 74, 30, 0.1);">
+                    <i class="fa-solid fa-shopping-cart text-xl" style="color: var(--green);"></i>
+                </div>
+                <h3 class="text-lg font-bold mb-1" style="color: var(--text);">Subscribe to Plan</h3>
+                <p class="text-xs" style="color: var(--muted);">You're about to subscribe to:</p>
             </div>
-            <h3 class="text-xl font-bold mb-2" style="color: var(--text);">Subscribe to Plan</h3>
-            <p class="text-sm" style="color: var(--muted);">You're about to subscribe to:</p>
+
+            <!-- Plan Details - Compact -->
+            <div class="bg-gray-50 rounded-lg p-3 mb-4 flex items-center justify-between">
+                <div>
+                    <h4 class="font-bold text-base" style="color: var(--text);" id="modalPlanName">-</h4>
+                    <div class="flex items-center gap-2 mt-1">
+                        <i class="fa-solid fa-check-circle text-xs" style="color: var(--green);"></i>
+                        <span class="text-xs" style="color: var(--muted);">Fresh milk • Flexible schedule • Secure payment</span>
+                    </div>
+                </div>
+                <p class="text-xl font-bold" style="color: var(--green);">₹<span id="modalPlanPrice">0</span></p>
+            </div>
+
+            <form id="buyPlanForm" method="POST" action="{{ route('payment.initiate') }}">
+                @csrf
+                <input type="hidden" name="plan_id" id="selectedPlanId">
+                <input type="hidden" name="payment_method" value="phonepe">
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <!-- Location Selection -->
+                    <div>
+                        <label class="block text-xs font-semibold mb-1.5" style="color: var(--text);">
+                            <i class="fa-solid fa-map-marker-alt mr-1" style="color: var(--green);"></i>Delivery Location
+                        </label>
+                        <div class="relative mb-2">
+                            <input type="text" 
+                                   id="locationSearch" 
+                                   placeholder="Search location..."
+                                   class="w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent" 
+                                   style="border-color: var(--border);">
+                            <i class="fa-solid fa-search absolute right-3 top-2.5 text-xs" style="color: var(--muted);"></i>
+                        </div>
+                        <select name="location_id" 
+                                id="locationSelect" 
+                                required 
+                                class="w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent" 
+                                style="border-color: var(--border);">
+                            <option value="">Select location</option>
+                            @php
+                                $locations = \App\Models\Location::active()->ordered()->get();
+                            @endphp
+                            @foreach($locations as $location)
+                            <option value="{{ $location->id }}" 
+                                    data-name="{{ strtolower($location->name) }}"
+                                    data-area="{{ strtolower($location->area ?? '') }}"
+                                    data-city="{{ strtolower($location->city ?? '') }}"
+                                    data-sector="{{ strtolower($location->sector ?? '') }}">
+                                {{ $location->name }}
+                                @if($location->area || $location->city)
+                                    - {{ collect([$location->area, $location->city])->filter()->implode(', ') }}
+                                @endif
+                            </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <!-- Delivery Address -->
+                    <div>
+                        <label class="block text-xs font-semibold mb-1.5" style="color: var(--text);">
+                            <i class="fa-solid fa-location-dot mr-1" style="color: var(--green);"></i>Delivery Address
+                        </label>
+                        <textarea name="delivery_address" rows="4" required 
+                                  class="w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none" 
+                                  style="border-color: var(--border);" 
+                                  placeholder="House/Flat No, Building, Street, Landmark"></textarea>
+                    </div>
+                </div>
+
+                <!-- Helper Text - Compact -->
+                <div class="bg-blue-50 rounded-lg p-2 mb-4">
+                    <p class="text-xs flex items-start" style="color: #1e40af;">
+                        <i class="fa-solid fa-info-circle mr-1.5 mt-0.5 flex-shrink-0"></i>
+                        <span>Select your delivery location and provide complete address for smooth milk delivery</span>
+                    </p>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex gap-3">
+                    <button type="button" onclick="closeBuyModal()" 
+                            class="flex-1 py-2.5 rounded-lg font-semibold border transition-colors hover:bg-gray-50 text-sm" 
+                            style="border-color: var(--border); color: var(--text);">
+                        Cancel
+                    </button>
+                    <button type="submit" 
+                            class="flex-1 py-2.5 rounded-lg font-semibold transition-all hover:shadow-lg text-sm" 
+                            style="background-color: var(--green); color: #fff;">
+                        <i class="fa-solid fa-lock mr-2"></i>Proceed to Pay
+                    </button>
+                </div>
+            </form>
         </div>
-
-        <div class="bg-gray-50 rounded-xl p-4 mb-6">
-            <h4 class="font-bold text-lg mb-1" style="color: var(--text);" id="modalPlanName">-</h4>
-            <p class="text-2xl font-bold" style="color: var(--green);">₹<span id="modalPlanPrice">0</span></p>
-        </div>
-
-        <div class="space-y-3 mb-6">
-            <div class="flex items-center gap-3 text-sm">
-                <i class="fa-solid fa-check-circle" style="color: var(--green);"></i>
-                <span style="color: var(--text);">Fresh milk delivered daily</span>
-            </div>
-            <div class="flex items-center gap-3 text-sm">
-                <i class="fa-solid fa-check-circle" style="color: var(--green);"></i>
-                <span style="color: var(--text);">Flexible delivery schedule</span>
-            </div>
-            <div class="flex items-center gap-3 text-sm">
-                <i class="fa-solid fa-check-circle" style="color: var(--green);"></i>
-                <span style="color: var(--text);">Cancel anytime</span>
-            </div>
-        </div>
-
-        <form id="buyPlanForm" method="POST" action="{{ route('membership.subscribe') }}">
-            @csrf
-            <input type="hidden" name="plan_id" id="selectedPlanId">
-            
-            <div class="mb-4">
-                <label class="block text-sm font-medium mb-2" style="color: var(--text);">Payment Method</label>
-                <select name="payment_method" required class="w-full px-3 py-2 border rounded-lg" style="border-color: var(--border);">
-                    <option value="">Select payment method</option>
-                    <option value="online">Online Payment (UPI/Card)</option>
-                    <option value="cod">Cash on Delivery</option>
-                    <option value="bank_transfer">Bank Transfer</option>
-                </select>
-            </div>
-
-            <div class="mb-4">
-                <label class="block text-sm font-medium mb-2" style="color: var(--text);">Delivery Address</label>
-                <textarea name="delivery_address" rows="2" required class="w-full px-3 py-2 border rounded-lg" style="border-color: var(--border);" placeholder="Enter your delivery address"></textarea>
-            </div>
-
-            <div class="flex gap-3">
-                <button type="button" onclick="closeBuyModal()" class="flex-1 py-3 rounded-lg font-bold border transition-colors hover:bg-gray-50" style="border-color: var(--border); color: var(--text);">
-                    Cancel
-                </button>
-                <button type="submit" class="flex-1 py-3 rounded-lg font-bold transition-all hover:shadow-lg" style="background-color: var(--green); color: #fff;">
-                    <i class="fa-solid fa-check mr-2"></i>Confirm
-                </button>
-            </div>
-        </form>
     </div>
 </div>
 
@@ -529,6 +600,10 @@ function closeBuyModal() {
     modal.classList.add('hidden');
     modal.classList.remove('flex');
     document.body.style.overflow = 'auto';
+    
+    // Reset form
+    document.getElementById('buyPlanForm').reset();
+    document.getElementById('locationSearch').value = '';
 }
 
 // Close modal on backdrop click
@@ -543,6 +618,52 @@ document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
         closeBuyModal();
     }
+});
+
+// Location search functionality
+document.getElementById('locationSearch')?.addEventListener('input', function(e) {
+    const searchTerm = e.target.value.toLowerCase();
+    const select = document.getElementById('locationSelect');
+    const options = select.querySelectorAll('option');
+    
+    options.forEach(option => {
+        if (option.value === '') {
+            option.style.display = 'block';
+            return;
+        }
+        
+        const name = option.getAttribute('data-name') || '';
+        const area = option.getAttribute('data-area') || '';
+        const city = option.getAttribute('data-city') || '';
+        const sector = option.getAttribute('data-sector') || '';
+        
+        const searchableText = `${name} ${area} ${city} ${sector}`;
+        
+        if (searchableText.includes(searchTerm)) {
+            option.style.display = 'block';
+        } else {
+            option.style.display = 'none';
+        }
+    });
+    
+    // Reset select if search is cleared
+    if (searchTerm === '') {
+        select.value = '';
+    }
+});
+
+// Auto-select if only one option is visible after search
+document.getElementById('locationSearch')?.addEventListener('input', function(e) {
+    setTimeout(() => {
+        const select = document.getElementById('locationSelect');
+        const visibleOptions = Array.from(select.querySelectorAll('option')).filter(opt => 
+            opt.value !== '' && opt.style.display !== 'none'
+        );
+        
+        if (visibleOptions.length === 1) {
+            select.value = visibleOptions[0].value;
+        }
+    }, 100);
 });
 </script>
 @endsection

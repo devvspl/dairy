@@ -4,38 +4,71 @@
 @section('page-title', 'Users Management')
 
 @section('content')
-<div class="space-y-4 lg:space-y-6">
-    <!-- Header with Search and Add Button -->
+<div class="space-y-4 lg:space-y-6" x-data="{ activeTab: '{{ request('tab', 'users') }}' }">
+    <!-- Header with Tabs -->
     <div class="bg-white rounded-xl shadow-sm p-4 lg:p-6 border" style="border-color: var(--border);">
-        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0 mb-4">
             <div>
-                <h2 class="text-xl font-bold" style="color: var(--text);">All Users</h2>
-                <p class="text-sm mt-1" style="color: var(--muted);">Manage and view all registered users</p>
-            </div>
-            
-            <div class="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3">
-                <form method="GET" action="{{ route('admin.users.index') }}" class="flex-1 sm:flex-initial">
-                    <input 
-                        type="text" 
-                        name="search" 
-                        value="{{ request('search') }}"
-                        placeholder="Search users..."
-                        class="w-full sm:w-64 px-3 py-2 border rounded-lg focus:outline-none transition-all text-sm"
-                        style="border-color: var(--border); color: var(--text);"
-                        onfocus="this.style.borderColor='var(--green)'; this.style.boxShadow='0 0 0 3px rgba(47, 74, 30, 0.1)'"
-                        onblur="this.style.borderColor='var(--border)'; this.style.boxShadow='none'"
-                    >
-                </form>
-                
-                <a href="{{ route('admin.users.create') }}" class="inline-flex items-center justify-center px-4 py-2 rounded-lg text-white text-sm font-medium hover:opacity-90 transition-opacity" style="background-color: var(--green);">
-                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                    </svg>
-                    Add User
-                </a>
+                <h2 class="text-xl font-bold" style="color: var(--text);">Users Management</h2>
+                <p class="text-sm mt-1" style="color: var(--muted);">Manage users and view assignment logs</p>
             </div>
         </div>
+
+        <!-- Tabs -->
+        <div class="border-b" style="border-color: var(--border);">
+            <nav class="flex space-x-8">
+                <button 
+                    @click="activeTab = 'users'; window.history.pushState({}, '', '{{ route('admin.users.index') }}?tab=users')"
+                    :class="activeTab === 'users' ? 'border-b-2 font-semibold' : ''"
+                    class="py-2 px-1 text-sm transition-colors"
+                    :style="activeTab === 'users' ? 'border-color: var(--green); color: var(--green);' : 'color: var(--muted);'"
+                >
+                    All Users
+                </button>
+                <button 
+                    @click="activeTab = 'logs'; window.history.pushState({}, '', '{{ route('admin.users.index') }}?tab=logs')"
+                    :class="activeTab === 'logs' ? 'border-b-2 font-semibold' : ''"
+                    class="py-2 px-1 text-sm transition-colors"
+                    :style="activeTab === 'logs' ? 'border-color: var(--green); color: var(--green);' : 'color: var(--muted);'"
+                >
+                    Assignment Logs
+                </button>
+            </nav>
+        </div>
     </div>
+
+    <!-- Users Tab Content -->
+    <div x-show="activeTab === 'users'">
+        <div class="bg-white rounded-xl shadow-sm p-4 lg:p-6 border" style="border-color: var(--border);">
+            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0 mb-6">
+                <div>
+                    <h3 class="text-lg font-bold" style="color: var(--text);">All Users</h3>
+                    <p class="text-sm mt-1" style="color: var(--muted);">Manage and view all registered users</p>
+                </div>
+                
+                <div class="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3">
+                    <form method="GET" action="{{ route('admin.users.index') }}" class="flex-1 sm:flex-initial">
+                        <input type="hidden" name="tab" value="users">
+                        <input 
+                            type="text" 
+                            name="search" 
+                            value="{{ request('search') }}"
+                            placeholder="Search users..."
+                            class="w-full sm:w-64 px-3 py-2 border rounded-lg focus:outline-none transition-all text-sm"
+                            style="border-color: var(--border); color: var(--text);"
+                            onfocus="this.style.borderColor='var(--green)'; this.style.boxShadow='0 0 0 3px rgba(47, 74, 30, 0.1)'"
+                            onblur="this.style.borderColor='var(--border)'; this.style.boxShadow='none'"
+                        >
+                    </form>
+                    
+                    <a href="{{ route('admin.users.create') }}" class="inline-flex items-center justify-center px-4 py-2 rounded-lg text-white text-sm font-medium hover:opacity-90 transition-opacity" style="background-color: var(--green);">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                        </svg>
+                        Add User
+                    </a>
+                </div>
+            </div>
 
     @if(session('error'))
         <div class="p-4 rounded-lg border" style="background-color: #fef2f2; border-color: #dc2626; color: #991b1b;">
@@ -56,6 +89,8 @@
                     <tr>
                         <th class="px-4 lg:px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider" style="color: var(--text);">User</th>
                         <th class="px-4 lg:px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider hidden md:table-cell" style="color: var(--text);">Phone</th>
+                        <th class="px-4 lg:px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider hidden sm:table-cell" style="color: var(--text);">Type</th>
+                        <th class="px-4 lg:px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider hidden xl:table-cell" style="color: var(--text);">Locations</th>
                         <th class="px-4 lg:px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider hidden lg:table-cell" style="color: var(--text);">Joined</th>
                         <th class="px-4 lg:px-6 py-4 text-right text-xs font-semibold uppercase tracking-wider" style="color: var(--text);">Actions</th>
                     </tr>
@@ -76,6 +111,33 @@
                             </td>
                             <td class="px-4 lg:px-6 py-4 hidden md:table-cell">
                                 <span class="text-sm" style="color: var(--text);">{{ $user->phone ?? 'N/A' }}</span>
+                            </td>
+                            <td class="px-4 lg:px-6 py-4 hidden sm:table-cell">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                    @if($user->user_type === 'Admin') bg-purple-100 text-purple-800
+                                    @elseif($user->user_type === 'Delivery Person') bg-blue-100 text-blue-800
+                                    @else bg-green-100 text-green-800
+                                    @endif">
+                                    {{ $user->user_type ?? 'Member' }}
+                                </span>
+                            </td>
+                            <td class="px-4 lg:px-6 py-4 hidden xl:table-cell">
+                                @if($user->user_type === 'Delivery Person' && $user->locations->count() > 0)
+                                    <div class="flex flex-wrap gap-1">
+                                        @foreach($user->locations->take(2) as $location)
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs" style="background-color: rgba(47, 74, 30, 0.1); color: var(--green);">
+                                                {{ $location->name }}
+                                            </span>
+                                        @endforeach
+                                        @if($user->locations->count() > 2)
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs" style="background-color: rgba(47, 74, 30, 0.1); color: var(--green);">
+                                                +{{ $user->locations->count() - 2 }} more
+                                            </span>
+                                        @endif
+                                    </div>
+                                @else
+                                    <span class="text-sm" style="color: var(--muted);">-</span>
+                                @endif
                             </td>
                             <td class="px-4 lg:px-6 py-4 hidden lg:table-cell">
                                 <span class="text-sm" style="color: var(--text);">{{ $user->created_at->format('M d, Y') }}</span>
@@ -109,7 +171,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="4" class="px-4 lg:px-6 py-12 text-center">
+                            <td colspan="6" class="px-4 lg:px-6 py-12 text-center">
                                 <div class="flex flex-col items-center">
                                     <svg class="w-16 h-16 mb-4" style="color: var(--muted);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
@@ -129,6 +191,13 @@
                 {{ $users->links() }}
             </div>
         @endif
+    </div>
+        </div>
+    </div>
+
+    <!-- Assignment Logs Tab Content -->
+    <div x-show="activeTab === 'logs'" style="display: none;">
+        @include('admin.users.partials.assignment-logs')
     </div>
 </div>
 @endsection

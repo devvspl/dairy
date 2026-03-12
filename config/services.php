@@ -35,4 +35,11 @@ return [
         ],
     ],
 
+    'phonepe' => [
+        'merchant_id' => env('PHONEPE_MERCHANT_ID'),
+        'salt_key' => env('PHONEPE_SALT_KEY'),
+        'salt_index' => env('PHONEPE_SALT_INDEX', 1),
+        'api_url' => env('PHONEPE_API_URL', 'https://api-preprod.phonepe.com/apis/pg-sandbox'),
+    ],
+
 ];

@@ -10,6 +10,7 @@ class UserSubscription extends Model
     protected $fillable = [
         'user_id',
         'membership_plan_id',
+        'location_id',
         'start_date',
         'end_date',
         'status',
@@ -41,6 +42,14 @@ class UserSubscription extends Model
     public function membershipPlan(): BelongsTo
     {
         return $this->belongsTo(MembershipPlan::class);
+    }
+
+    /**
+     * Get the location for this subscription
+     */
+    public function location(): BelongsTo
+    {
+        return $this->belongsTo(Location::class);
     }
 
     /**

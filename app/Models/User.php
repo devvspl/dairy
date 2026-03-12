@@ -82,6 +82,16 @@ class User extends Authenticatable
     }
 
     /**
+     * Check if user is a delivery person
+     *
+     * @return bool
+     */
+    public function isDeliveryPerson(): bool
+    {
+        return $this->user_type === 'Delivery Person';
+    }
+
+    /**
      * Get all subscriptions for this user
      */
     public function subscriptions()
@@ -132,5 +142,32 @@ class User extends Authenticatable
         $earned = $this->loyaltyPoints()->where('type', 'earned')->sum('points');
         $redeemed = $this->loyaltyPoints()->where('type', 'redeemed')->sum('points');
         return $earned - $redeemed;
+    }
+
+    /**
+     * Get all locations assigned to this delivery person
+     */
+    public function locations()
+    {
+        return $this->belongsToMany(Location::class, 'location_user')
+                    ->withTimestamps();
+    }
+
+    /**
+     * Get all location assignment logs for this user
+     */
+    public function locationLogs()
+    {
+        return $this->hasMany(LocationUserLog::class)
+                    ->with(['location', 'assignedBy'])
+                    ->latest();
+    }
+
+    /**
+     * Get all orders for this user
+     */
+    public function orders()
+    {
+        return $this->hasMany(Order::class);
     }
 }

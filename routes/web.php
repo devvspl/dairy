@@ -6,6 +6,7 @@ use App\Http\Controllers\Auth\ResetPasswordController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PublicController;
 use Illuminate\Support\Facades\Route;
+
 // Public routes
 Route::get('/', [PublicController::class, 'home'])->name('home');
 Route::get('/about', [PublicController::class, 'about'])->name('about');
@@ -35,21 +36,31 @@ Route::middleware('guest')->group(function () {
 // Authenticated routes
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-    Route::get('/member/dashboard', [DashboardController::class, 'index'])->name('member.dashboard');
-    
+    Route::get('/member/dashboard', [DashboardController::class, 'member'])->name('member.dashboard');
+    Route::get('/delivery/dashboard', [DashboardController::class, 'delivery'])->name('delivery.dashboard');
+
     // Member Support Tickets
     Route::prefix('member')->name('member.')->group(function () {
         Route::resource('support-tickets', App\Http\Controllers\Member\SupportTicketController::class)->only(['index', 'create', 'store', 'show']);
-        
+
         // Referrals
         Route::get('referrals', [App\Http\Controllers\Member\ReferralController::class, 'index'])->name('referrals.index');
-        
+
         // Loyalty Points
         Route::get('loyalty-points', [App\Http\Controllers\Member\LoyaltyPointController::class, 'index'])->name('loyalty-points.index');
     });
-    
+
     // Membership Subscription
     Route::post('/membership/subscribe', [App\Http\Controllers\MembershipController::class, 'subscribe'])->name('membership.subscribe');
+    
+    // Payment Routes
+    Route::post('/payment/initiate', [App\Http\Controllers\PaymentController::class, 'initiate'])->name('payment.initiate');
+    Route::any('/payment/callback', [App\Http\Controllers\PaymentController::class, 'callback'])->name('payment.callback');
+    Route::get('/payment/success/{order}', [App\Http\Controllers\PaymentController::class, 'success'])->name('payment.success');
+    Route::get('/payment/failure', [App\Http\Controllers\PaymentController::class, 'failure'])->name('payment.failure');
+    Route::get('/payment/history', [App\Http\Controllers\PaymentController::class, 'history'])->name('payment.history');
+    Route::get('/payment/invoice/{order}', [App\Http\Controllers\PaymentController::class, 'invoice'])->name('payment.invoice');
+    
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
     Route::get('/profile', [App\Http\Controllers\ProfileController::class, 'edit'])->name('profile.edit');
     Route::put('/profile', [App\Http\Controllers\ProfileController::class, 'update'])->name('profile.update');
@@ -74,33 +85,33 @@ Route::middleware('auth')->group(function () {
         Route::resource('usps', App\Http\Controllers\Admin\UspController::class);
         Route::resource('content-sections', App\Http\Controllers\Admin\ContentSectionController::class);
         Route::resource('about-sections', App\Http\Controllers\Admin\AboutSectionController::class);
-        
+
         Route::get('contact-page', [App\Http\Controllers\Admin\ContactPageController::class, 'index'])->name('contact-page.index');
         Route::post('contact-page', [App\Http\Controllers\Admin\ContactPageController::class, 'update'])->name('contact-page.update');
-        
+
         Route::get('about-page', [App\Http\Controllers\Admin\AboutPageController::class, 'index'])->name('about-page.index');
         Route::post('about-page', [App\Http\Controllers\Admin\AboutPageController::class, 'update'])->name('about-page.update');
-        
+
         Route::get('legal-pages/{pageKey}', [App\Http\Controllers\Admin\LegalPageController::class, 'index'])->name('legal-pages.index');
         Route::post('legal-pages/{pageKey}', [App\Http\Controllers\Admin\LegalPageController::class, 'update'])->name('legal-pages.update');
-        
+
         Route::resource('membership-plans', App\Http\Controllers\Admin\MembershipPlanController::class);
         Route::resource('membership-benefits', App\Http\Controllers\Admin\MembershipBenefitController::class);
         Route::resource('membership-faqs', App\Http\Controllers\Admin\MembershipFaqController::class);
         Route::resource('membership-steps', App\Http\Controllers\Admin\MembershipStepController::class);
-        
+
         Route::get('contact-inquiries', [App\Http\Controllers\Admin\ContactInquiryController::class, 'index'])->name('contact-inquiries.index');
         Route::get('contact-inquiries/{contactInquiry}', [App\Http\Controllers\Admin\ContactInquiryController::class, 'show'])->name('contact-inquiries.show');
         Route::post('contact-inquiries/{contactInquiry}/status', [App\Http\Controllers\Admin\ContactInquiryController::class, 'updateStatus'])->name('contact-inquiries.update-status');
         Route::delete('contact-inquiries/{contactInquiry}', [App\Http\Controllers\Admin\ContactInquiryController::class, 'destroy'])->name('contact-inquiries.destroy');
-        
+
         // User Subscriptions Management
         Route::get('subscriptions', [App\Http\Controllers\Admin\UserSubscriptionController::class, 'index'])->name('subscriptions.index');
         Route::get('subscriptions/{subscription}', [App\Http\Controllers\Admin\UserSubscriptionController::class, 'show'])->name('subscriptions.show');
         Route::post('subscriptions/{subscription}/status', [App\Http\Controllers\Admin\UserSubscriptionController::class, 'updateStatus'])->name('subscriptions.update-status');
         Route::post('subscriptions/{subscription}/payment', [App\Http\Controllers\Admin\UserSubscriptionController::class, 'updatePaymentStatus'])->name('subscriptions.update-payment');
         Route::post('subscriptions/{subscription}/note', [App\Http\Controllers\Admin\UserSubscriptionController::class, 'addNote'])->name('subscriptions.add-note');
-        
+
         // Delivery Logs Management
         Route::get('subscriptions/{subscription}/deliveries', [App\Http\Controllers\Admin\DeliveryLogController::class, 'index'])->name('deliveries.index');
         Route::post('subscriptions/{subscription}/deliveries/generate', [App\Http\Controllers\Admin\DeliveryLogController::class, 'generateSchedule'])->name('deliveries.generate');
@@ -108,18 +119,18 @@ Route::middleware('auth')->group(function () {
         Route::post('deliveries/{delivery}/forward', [App\Http\Controllers\Admin\DeliveryLogController::class, 'forwardToNextDay'])->name('deliveries.forward');
         Route::get('deliveries/today', [App\Http\Controllers\Admin\DeliveryLogController::class, 'todayDeliveries'])->name('deliveries.today');
         Route::post('deliveries/bulk-update', [App\Http\Controllers\Admin\DeliveryLogController::class, 'bulkUpdateToday'])->name('deliveries.bulk-update');
-        
+
         // Support Tickets Management
         Route::resource('support-tickets', App\Http\Controllers\Admin\SupportTicketController::class)->except(['create', 'store']);
-        
+
         // Offers & Customer Engagement
         Route::resource('coupons', App\Http\Controllers\Admin\CouponController::class);
         Route::resource('referral-codes', App\Http\Controllers\Admin\ReferralCodeController::class);
         Route::resource('loyalty-points', App\Http\Controllers\Admin\LoyaltyPointController::class);
-        
+
         // Locations
         Route::resource('locations', App\Http\Controllers\Admin\LocationController::class);
-        
+
         Route::resource('seo-metas', App\Http\Controllers\Admin\SeoMetaController::class);
     });
 });

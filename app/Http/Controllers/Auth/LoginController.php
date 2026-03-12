@@ -30,6 +30,8 @@ class LoginController extends Controller
             $user = Auth::user();
             if ($user->isAdmin()) {
                 return redirect()->intended(route('admin.dashboard'))->with('success', 'Welcome back, Admin!');
+            } elseif ($user->isDeliveryPerson()) {
+                return redirect()->intended(route('delivery.dashboard'))->with('success', 'Welcome back!');
             } else {
                 return redirect()->intended(route('member.dashboard'))->with('success', 'Welcome back!');
             }
