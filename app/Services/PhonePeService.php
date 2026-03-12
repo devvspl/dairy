@@ -49,6 +49,15 @@ class PhonePeService
         // Generate X-VERIFY header
         $xVerify = hash('sha256', $base64Payload . '/pg/v1/pay' . $this->saltKey) . '###' . $this->saltIndex;
 
+        // Debug logging
+        Log::info('PhonePe Payment Request Debug', [
+            'merchant_id' => $this->merchantId,
+            'salt_key_length' => strlen($this->saltKey),
+            'api_url' => $this->apiUrl,
+            'payload' => $payload,
+            'x_verify' => $xVerify
+        ]);
+
         try {
             $response = Http::withHeaders([
                 'Content-Type' => 'application/json',
