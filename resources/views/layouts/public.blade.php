@@ -851,6 +851,26 @@
   </div>
   @endif
 
+
+<style>
+    /* Sticky Header */
+.mainbar{
+  position: sticky;
+  top: 0;
+  z-index: 999;
+  background:#fff;
+}
+
+/* Sticky Navbar */
+.navbar{
+  position: sticky;
+  top: 70px; /* header height ke according adjust */
+  z-index: 998;
+  background:#fff;
+}
+  
+</style>
+
   <!-- MAIN HEADER -->
   <header class="mainbar">
     <div class="container">
@@ -992,7 +1012,7 @@
         <div class="tb-foot-links">
           <h4>Products</h4>
           <a href="{{ route('products') }}">Milk</a>
-          <a href="{{ route('products') }}">Ghee</a>
+          <!--<a href="{{ route('products') }}">Ghee</a>-->
           <!--<a href="{{ route('products') }}">Paneer</a>-->
         </div>
 
@@ -1228,6 +1248,11 @@
         padding:12px;
       }
     }
+    
+    
+    
+    
+ 
     </style>
     
     <!-- Cart Offcanvas -->

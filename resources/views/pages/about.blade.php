@@ -677,6 +677,8 @@
             align-items: center;
             justify-content: space-between;
             gap: 14px;
+            
+             font-size:18px;
         }
 
         #abpgAboutPage .abpg-faq-q:hover {
@@ -703,6 +705,7 @@
             font-weight: 650;
             line-height: 1.75;
             border-top: 1px solid rgba(0, 0, 0, .06);
+           
         }
 
         #abpgAboutPage .abpg-faq-item.abpg-open {
@@ -1084,14 +1087,15 @@
 }
 
 .nulac-card h3 {
-    font-family: 'Playfair Display', serif;
-    font-size: 22px;
+   
+    font-size: 18.72px;
     margin-bottom: 12px;
-    font-style: italic;
+    color:#293879;
+    font-weight: 950;
 }
 
 .nulac-card p {
-    font-size: 15px;
+    font-size: 16px;
     line-height: 1.6;
     color: #4A554F;
     margin: 0;
@@ -1173,6 +1177,8 @@
             </div>
             
             <style>
+                
+           
                 
              .abpg-why-grid{
     display: grid;

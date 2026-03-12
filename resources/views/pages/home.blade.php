@@ -510,26 +510,26 @@
         </div>
     </section>
     <!--- our features -->
-    <section class="tb-cats">
-        <div class="container">
-            <div class="tb-cats-grid">
-                @foreach ($categories as $category)
-                    <a href="{{ $category->link ?: route('products', ['category' => $category->slug]) }}" class="tb-cat">
-                        <span class="tb-cat-ico bg-{{ $category->bg_color }}">
-                            @if ($category->icon_type === 'svg')
-                                <svg class="tb-cat-svg" viewBox="0 0 64 64" aria-hidden="true">
-                                    {!! $category->svg_path !!}
-                                </svg>
-                            @else
-                                <span class="tb-price-chip">{!! $category->price_text !!}</span>
-                            @endif
-                        </span>
-                        <span class="tb-cat-title">{{ $category->title }}</span>
-                    </a>
-                @endforeach
-            </div>
-        </div>
-    </section>
+    <!--<section class="tb-cats">-->
+    <!--    <div class="container">-->
+    <!--        <div class="tb-cats-grid">-->
+    <!--            @foreach ($categories as $category)-->
+    <!--                <a href="{{ $category->link ?: route('products', ['category' => $category->slug]) }}" class="tb-cat">-->
+    <!--                    <span class="tb-cat-ico bg-{{ $category->bg_color }}">-->
+    <!--                        @if ($category->icon_type === 'svg')-->
+    <!--                            <svg class="tb-cat-svg" viewBox="0 0 64 64" aria-hidden="true">-->
+    <!--                                {!! $category->svg_path !!}-->
+    <!--                            </svg>-->
+    <!--                        @else-->
+    <!--                            <span class="tb-price-chip">{!! $category->price_text !!}</span>-->
+    <!--                        @endif-->
+    <!--                    </span>-->
+    <!--                    <span class="tb-cat-title">{{ $category->title }}</span>-->
+    <!--                </a>-->
+    <!--            @endforeach-->
+    <!--        </div>-->
+    <!--    </div>-->
+    <!--</section>-->
     @push('scripts')
         <script>
             (function() {
@@ -1217,15 +1217,18 @@
                                             {{ number_format($product->reviews_count) }} Reviews</span>
                                     </div>
                                     <div class="tb-variant">
-                                        <select aria-label="Select variant">
+                                        <select aria-label="Select variant"  >
                                             @if ($product->variants && is_array($product->variants))
                                                 @foreach ($product->variants as $variant)
-                                                    <option>{{ $variant }}</option>
+                                                    <option >{{ $variant }}</option>
                                                 @endforeach
                                             @else
-                                                <option>Standard</option>
+                                                <option style='background-color:navy!important;'>Standard</option>
                                             @endif
                                         </select>
+                                        
+                                 
+                                        
                                     </div>
                                     <button class="tb-add add-to-cart-btn" type="button"
                                         data-product-id="{{ $product->id }}">ADD TO CART</button>

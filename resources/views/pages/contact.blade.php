@@ -455,6 +455,7 @@
             align-items: center;
             justify-content: space-between;
             gap: 14px;
+            font-size: 18px;
         }
 
         #cpgContactPage .cpg-faq-q:hover {

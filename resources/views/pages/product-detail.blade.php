@@ -382,7 +382,7 @@
       <div class="apw-pd-banner__in">
         <div class="apw-pd-banner__copy">
           <small><span class="apw-pd-dot"></span> Today’s Fresh Dairy Drop</small>
-          <h2>Fresh Cow Milk, Curd, Paneer & More — Delivered Fast</h2>
+          <h2>Fresh Cow Milk — Delivered Fast</h2>
           <p>
             Hygienic packing, cold-chain handling, and same-day slots (area wise).
             Daily essentials ke liye premium dairy range explore karein.
