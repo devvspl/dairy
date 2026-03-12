@@ -44,12 +44,6 @@
                     {{ now()->format('l, F j, Y') }}
                 </p>
             </div>
-            <a href="{{ route('home') }}" 
-               class="inline-flex items-center px-4 py-2 rounded-lg text-sm font-semibold transition-colors hover:opacity-90"
-               style="background-color: var(--green); color: #fff;">
-                <i class="fa-solid fa-globe mr-2"></i>
-                Visit Website
-            </a>
         </div>
     </div>
 
