@@ -90,7 +90,6 @@
                         <th class="px-4 lg:px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider" style="color: var(--text);">User</th>
                         <th class="px-4 lg:px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider hidden md:table-cell" style="color: var(--text);">Phone</th>
                         <th class="px-4 lg:px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider hidden sm:table-cell" style="color: var(--text);">Type</th>
-                        <th class="px-4 lg:px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider hidden xl:table-cell" style="color: var(--text);">Locations</th>
                         <th class="px-4 lg:px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider hidden lg:table-cell" style="color: var(--text);">Joined</th>
                         <th class="px-4 lg:px-6 py-4 text-right text-xs font-semibold uppercase tracking-wider" style="color: var(--text);">Actions</th>
                     </tr>
@@ -120,24 +119,6 @@
                                     @endif">
                                     {{ $user->user_type ?? 'Member' }}
                                 </span>
-                            </td>
-                            <td class="px-4 lg:px-6 py-4 hidden xl:table-cell">
-                                @if($user->user_type === 'Delivery Person' && $user->locations->count() > 0)
-                                    <div class="flex flex-wrap gap-1">
-                                        @foreach($user->locations->take(2) as $location)
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs" style="background-color: rgba(47, 74, 30, 0.1); color: var(--green);">
-                                                {{ $location->name }}
-                                            </span>
-                                        @endforeach
-                                        @if($user->locations->count() > 2)
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs" style="background-color: rgba(47, 74, 30, 0.1); color: var(--green);">
-                                                +{{ $user->locations->count() - 2 }} more
-                                            </span>
-                                        @endif
-                                    </div>
-                                @else
-                                    <span class="text-sm" style="color: var(--muted);">-</span>
-                                @endif
                             </td>
                             <td class="px-4 lg:px-6 py-4 hidden lg:table-cell">
                                 <span class="text-sm" style="color: var(--text);">{{ $user->created_at->format('M d, Y') }}</span>
