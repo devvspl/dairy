@@ -685,7 +685,7 @@
                                 Account
                             </a>
                             <hr class="my-2" style="border-color: var(--border);">
-                            <form method="POST" action="{{ route('logout') }}">
+                            <form method="POST" action="{{ auth()->user()->isMember() ? route('member.logout') : route('logout') }}">
                                 @csrf
                                 <button type="submit"
                                     class="block w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors"
