@@ -11,9 +11,13 @@
         </a>
     </div>
 
+    <!-- Admin Login Label -->
     <div class="text-center mb-6 sm:mb-8">
+        <div class="inline-block px-4 py-2 rounded-lg mb-3" style="background-color: rgba(47, 74, 30, 0.1);">
+            <span class="text-sm font-bold" style="color: var(--green);">🔐 ADMIN LOGIN</span>
+        </div>
         <h2 class="text-2xl sm:text-3xl font-bold" style="color: var(--text);">Welcome Back</h2>
-        <p class="mt-2 text-sm sm:text-base" style="color: var(--muted);">Sign in to your account</p>
+        <p class="mt-2 text-sm sm:text-base" style="color: var(--muted);">Sign in to your admin account</p>
     </div>
 
     @if(session('success'))

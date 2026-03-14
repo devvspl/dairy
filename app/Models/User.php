@@ -25,6 +25,10 @@ class User extends Authenticatable
         'profile_image',
         'user_type',
         'password',
+        'otp',
+        'otp_expires_at',
+        'otp_verified_at',
+        'mobile_verified_at',
     ];
 
     /**
@@ -47,6 +51,9 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'otp_expires_at' => 'datetime',
+            'otp_verified_at' => 'datetime',
+            'mobile_verified_at' => 'datetime',
         ];
     }
 
@@ -169,5 +176,62 @@ class User extends Authenticatable
     public function orders()
     {
         return $this->hasMany(Order::class);
+    }
+
+    /**
+     * Generate and store OTP for user
+     */
+    public function generateOtp()
+    {
+        $otp = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+        
+        $this->update([
+            'otp' => $otp,
+            'otp_expires_at' => now()->addMinutes(10), // OTP valid for 10 minutes
+            'otp_verified_at' => null,
+        ]);
+
+        return $otp;
+    }
+
+    /**
+     * Verify OTP
+     */
+    public function verifyOtp($otp)
+    {
+        if ($this->otp !== $otp) {
+            return false;
+        }
+
+        if ($this->otp_expires_at && $this->otp_expires_at->isPast()) {
+            return false;
+        }
+
+        $this->update([
+            'otp_verified_at' => now(),
+            'mobile_verified_at' => now(),
+            'otp' => null,
+            'otp_expires_at' => null,
+        ]);
+
+        return true;
+    }
+
+    /**
+     * Check if OTP is valid
+     */
+    public function hasValidOtp()
+    {
+        return $this->otp && 
+               $this->otp_expires_at && 
+               $this->otp_expires_at->isFuture();
+    }
+
+    /**
+     * Check if mobile is verified
+     */
+    public function isMobileVerified()
+    {
+        return !is_null($this->mobile_verified_at);
     }
 }

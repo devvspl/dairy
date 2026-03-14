@@ -42,4 +42,11 @@ return [
         'api_url' => env('PHONEPE_API_URL', 'https://api-preprod.phonepe.com/apis/pg-sandbox'),
     ],
 
+    'otp' => [
+        'provider' => env('OTP_SERVICE_PROVIDER'), // msg91, fast2sms, twilio
+        'api_key' => env('OTP_API_KEY'),
+        'sender_id' => env('OTP_SENDER_ID'),
+        'template_id' => env('OTP_TEMPLATE_ID'),
+    ],
+
 ];
