@@ -921,7 +921,7 @@
               </a>
             @endif
           @else
-            <a href="{{ route('login') }}" class="icon-btn" title="Login">
+            <a href="{{ route('member.login') }}" class="icon-btn" title="Login">
               <i class="fa-solid fa-user"></i>
             </a>
           @endauth

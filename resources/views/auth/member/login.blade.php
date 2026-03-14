@@ -47,9 +47,6 @@
                 autofocus
             >
         </div>
-        <p class="mt-0.5 sm:mt-1 text-xs" style="color: var(--text-muted);">
-            <i class="fa-solid fa-info-circle mr-1"></i>Enter your registered mobile number
-        </p>
     </div>
 
     <button 
