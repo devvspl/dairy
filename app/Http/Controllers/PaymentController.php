@@ -105,55 +105,50 @@ class PaymentController extends Controller
     public function callback(Request $request)
     {
         try {
-            // Get the response from PhonePe
-            $base64Response = $request->input('response');
-            $xVerifyHeader = $request->header('X-VERIFY');
+            // New API sends merchantOrderId as query param on redirect
+            $merchantOrderId = $request->input('merchantOrderId')
+                ?? $request->input('transactionId');
 
-            // Verify signature (if provided)
-            if ($xVerifyHeader && !$this->phonePeService->verifyCallbackSignature($base64Response, $xVerifyHeader)) {
+            // Verify webhook signature if Authorization header present
+            $authHeader = $request->header('Authorization', '');
+            if ($authHeader && !$this->phonePeService->verifyWebhookToken($authHeader)) {
                 Log::warning('PhonePe Callback Signature Verification Failed');
             }
 
-            // Decode response
-            $response = json_decode(base64_decode($base64Response), true);
-            $merchantTransactionId = $response['data']['merchantTransactionId'] ?? null;
-
-            if (!$merchantTransactionId) {
+            if (!$merchantOrderId) {
                 return redirect()->route('payment.failure')
                     ->with('error', 'Invalid payment response.');
             }
 
             // Find order
-            $order = Order::where('order_id', $merchantTransactionId)->first();
+            $order = Order::where('order_id', $merchantOrderId)->first();
             if (!$order) {
                 return redirect()->route('payment.failure')
                     ->with('error', 'Order not found.');
             }
 
-            // Server-side verification
-            $verificationResponse = $this->phonePeService->verifyPayment($merchantTransactionId);
+            // Server-side status verification
+            $verificationResponse = $this->phonePeService->verifyPayment($merchantOrderId);
 
             DB::beginTransaction();
             try {
-                // Update order with payment response
                 $order->update([
                     'payment_response' => array_merge(
                         $order->payment_response ?? [],
-                        ['callback' => $response, 'verification' => $verificationResponse]
+                        ['verification' => $verificationResponse]
                     )
                 ]);
 
-                if ($verificationResponse['success'] && 
-                    ($verificationResponse['data']['state'] ?? '') === 'COMPLETED') {
-                    
-                    // Payment successful
+                if ($verificationResponse['success'] && ($verificationResponse['state'] ?? '') === 'COMPLETED') {
+
                     $order->update([
-                        'status' => 'success',
-                        'transaction_id' => $verificationResponse['data']['transactionId'] ?? $order->transaction_id,
-                        'paid_at' => now()
+                        'status'         => 'success',
+                        'transaction_id' => $verificationResponse['data']['transactionId']
+                                            ?? $verificationResponse['data']['orderId']
+                                            ?? $order->transaction_id,
+                        'paid_at'        => now(),
                     ]);
 
-                    // Activate membership
                     $this->activateMembership($order);
 
                     DB::commit();
@@ -161,11 +156,7 @@ class PaymentController extends Controller
                     return redirect()->route('payment.success', ['order' => $order->id]);
 
                 } else {
-                    // Payment failed
-                    $order->update([
-                        'status' => 'failed'
-                    ]);
-
+                    $order->update(['status' => 'failed']);
                     DB::commit();
 
                     return redirect()->route('payment.failure')
@@ -176,7 +167,7 @@ class PaymentController extends Controller
                 DB::rollBack();
                 Log::error('Payment Callback Processing Error', [
                     'order_id' => $order->id,
-                    'error' => $e->getMessage()
+                    'error'    => $e->getMessage(),
                 ]);
 
                 return redirect()->route('payment.failure')
@@ -184,9 +175,7 @@ class PaymentController extends Controller
             }
 
         } catch (\Exception $e) {
-            Log::error('Payment Callback Error', [
-                'error' => $e->getMessage()
-            ]);
+            Log::error('Payment Callback Error', ['error' => $e->getMessage()]);
 
             return redirect()->route('payment.failure')
                 ->with('error', 'Payment processing failed.');
