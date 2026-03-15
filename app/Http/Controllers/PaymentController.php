@@ -69,10 +69,10 @@ class PaymentController extends Controller
             );
 
             if ($paymentResponse['success']) {
-                // Update order with transaction details
+                // Update order with PhonePe's internal orderId (OMO...) from v2 response
                 $order->update([
-                    'transaction_id' => $paymentResponse['data']['merchantTransactionId'] ?? null,
-                    'payment_response' => $paymentResponse
+                    'transaction_id'   => $paymentResponse['data']['orderId'] ?? null,
+                    'payment_response' => $paymentResponse,
                 ]);
 
                 DB::commit();
@@ -104,30 +104,49 @@ class PaymentController extends Controller
      */
     public function callback(Request $request)
     {
+        // Log everything PhonePe sends back for debugging
+        Log::info('PhonePe: Callback received', [
+            'method'  => $request->method(),
+            'query'   => $request->query(),
+            'input'   => $request->input(),
+            'headers' => [
+                'Authorization' => $request->header('Authorization'),
+                'X-VERIFY'      => $request->header('X-VERIFY'),
+            ],
+        ]);
+
         try {
-            // v2 API redirects with merchantOrderId as query param
-            $merchantOrderId = $request->input('merchantOrderId')
+            // v2 API: merchantOrderId is embedded in the redirectUrl as a query param
+            $merchantOrderId = $request->query('merchantOrderId')
+                ?? $request->query('transactionId')
+                ?? $request->input('merchantOrderId')
                 ?? $request->input('transactionId');
 
-            // Verify webhook Authorization header if present
-            $authHeader = $request->header('Authorization', '');
-            if ($authHeader && !$this->phonePeService->verifyCallbackSignature($authHeader)) {
-                Log::warning('PhonePe: Callback signature mismatch');
-            }
-
             if (!$merchantOrderId) {
-                Log::error('PhonePe: Callback missing merchantOrderId', ['input' => $request->all()]);
+                Log::error('PhonePe: Callback missing merchantOrderId', [
+                    'all_input' => $request->all(),
+                    'all_query' => $request->query(),
+                ]);
                 return redirect()->route('payment.failure')->with('error', 'Invalid payment response.');
             }
 
-            $order = Order::where('order_id', $merchantOrderId)->first();
+            // Try our order_id first (ORD...), then PhonePe's orderId (OMO...) stored as transaction_id
+            $order = Order::where('order_id', $merchantOrderId)->first()
+                ?? Order::where('transaction_id', $merchantOrderId)->first();
+
             if (!$order) {
-                Log::error('PhonePe: Order not found', ['order_id' => $merchantOrderId]);
+                Log::error('PhonePe: Order not found', ['merchant_order_id' => $merchantOrderId]);
                 return redirect()->route('payment.failure')->with('error', 'Order not found.');
             }
 
-            // Server-side verification
-            $verification = $this->phonePeService->verifyPayment($merchantOrderId);
+            // Server-side verification using our original order_id
+            $verification = $this->phonePeService->verifyPayment($order->order_id);
+
+            Log::info('PhonePe: Callback verification result', [
+                'order_id'     => $order->order_id,
+                'state'        => $verification['state'] ?? null,
+                'success'      => $verification['success'],
+            ]);
 
             DB::beginTransaction();
             try {
@@ -141,7 +160,7 @@ class PaymentController extends Controller
                 if ($verification['success'] && ($verification['state'] ?? '') === 'COMPLETED') {
                     $order->update([
                         'status'         => 'success',
-                        'transaction_id' => $verification['data']['orderId'] ?? $order->transaction_id,
+                        'transaction_id' => $verification['data']['orderId'] ?? $merchantOrderId,
                         'paid_at'        => now(),
                     ]);
 

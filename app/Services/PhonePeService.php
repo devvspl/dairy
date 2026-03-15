@@ -158,6 +158,9 @@ class PhonePeService
         try {
             $token = $this->getAccessToken();
 
+            // Embed merchantOrderId in redirectUrl so PhonePe preserves it on redirect
+            $redirectUrl = route('payment.callback') . '?merchantOrderId=' . urlencode($orderId);
+
             $payload = [
                 'merchantOrderId' => $orderId,
                 'amount'          => (int) round($amount * 100), // paise
@@ -171,7 +174,7 @@ class PhonePeService
                     'type'         => 'PG_CHECKOUT',
                     'message'      => 'Membership Payment',
                     'merchantUrls' => [
-                        'redirectUrl' => route('payment.callback'),
+                        'redirectUrl' => $redirectUrl,
                     ],
                 ],
             ];
