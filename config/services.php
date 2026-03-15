@@ -36,14 +36,14 @@ return [
     ],
 
     'phonepe' => [
-        'client_id'      => env('PHONEPE_CLIENT_ID'),
-        'client_secret'  => env('PHONEPE_CLIENT_SECRET'),
-        'client_version' => env('PHONEPE_CLIENT_VERSION', 1),
-        'uat'            => env('PHONEPE_UAT', false),
+        'merchant_id' => env('PHONEPE_MERCHANT_ID'),
+        'salt_key'    => env('PHONEPE_SALT_KEY'),
+        'salt_index'  => env('PHONEPE_SALT_INDEX', 1),
+        'sandbox'     => env('PHONEPE_SANDBOX', true),
     ],
 
     'otp' => [
-        'provider' => env('OTP_SERVICE_PROVIDER'), // msg91, fast2sms, twilio
+        'provider' => env('OTP_SERVICE_PROVIDER'),
         'api_key' => env('OTP_API_KEY'),
         'sender_id' => env('OTP_SENDER_ID'),
         'template_id' => env('OTP_TEMPLATE_ID'),

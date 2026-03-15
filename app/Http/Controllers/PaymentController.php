@@ -105,80 +105,71 @@ class PaymentController extends Controller
     public function callback(Request $request)
     {
         try {
-            // New API sends merchantOrderId as query param on redirect
-            $merchantOrderId = $request->input('merchantOrderId')
-                ?? $request->input('transactionId');
+            $base64Response = $request->input('response');
+            $xVerifyHeader  = $request->header('X-VERIFY');
 
-            // Verify webhook signature if Authorization header present
-            $authHeader = $request->header('Authorization', '');
-            if ($authHeader && !$this->phonePeService->verifyWebhookToken($authHeader)) {
-                Log::warning('PhonePe Callback Signature Verification Failed');
+            // Verify signature
+            if ($xVerifyHeader && !$this->phonePeService->verifyCallbackSignature($base64Response, $xVerifyHeader)) {
+                Log::warning('PhonePe: Callback signature mismatch');
             }
 
-            if (!$merchantOrderId) {
-                return redirect()->route('payment.failure')
-                    ->with('error', 'Invalid payment response.');
+            // Decode response
+            $response              = json_decode(base64_decode($base64Response), true);
+            $merchantTransactionId = $response['data']['merchantTransactionId'] ?? null;
+
+            if (!$merchantTransactionId) {
+                Log::error('PhonePe: Callback missing merchantTransactionId', ['response' => $response]);
+                return redirect()->route('payment.failure')->with('error', 'Invalid payment response.');
             }
 
-            // Find order
-            $order = Order::where('order_id', $merchantOrderId)->first();
+            $order = Order::where('order_id', $merchantTransactionId)->first();
             if (!$order) {
-                return redirect()->route('payment.failure')
-                    ->with('error', 'Order not found.');
+                Log::error('PhonePe: Order not found', ['transaction_id' => $merchantTransactionId]);
+                return redirect()->route('payment.failure')->with('error', 'Order not found.');
             }
 
-            // Server-side status verification
-            $verificationResponse = $this->phonePeService->verifyPayment($merchantOrderId);
+            // Server-side verification
+            $verification = $this->phonePeService->verifyPayment($merchantTransactionId);
 
             DB::beginTransaction();
             try {
                 $order->update([
                     'payment_response' => array_merge(
                         $order->payment_response ?? [],
-                        ['verification' => $verificationResponse]
-                    )
+                        ['callback' => $response, 'verification' => $verification]
+                    ),
                 ]);
 
-                if ($verificationResponse['success'] && ($verificationResponse['state'] ?? '') === 'COMPLETED') {
-
+                if ($verification['success'] && ($verification['state'] ?? '') === 'COMPLETED') {
                     $order->update([
                         'status'         => 'success',
-                        'transaction_id' => $verificationResponse['data']['transactionId']
-                                            ?? $verificationResponse['data']['orderId']
-                                            ?? $order->transaction_id,
+                        'transaction_id' => $verification['data']['transactionId'] ?? $order->transaction_id,
                         'paid_at'        => now(),
                     ]);
 
                     $this->activateMembership($order);
-
                     DB::commit();
 
                     return redirect()->route('payment.success', ['order' => $order->id]);
-
-                } else {
-                    $order->update(['status' => 'failed']);
-                    DB::commit();
-
-                    return redirect()->route('payment.failure')
-                        ->with('error', 'Payment verification failed.');
                 }
+
+                $order->update(['status' => 'failed']);
+                DB::commit();
+
+                return redirect()->route('payment.failure')->with('error', 'Payment verification failed.');
 
             } catch (\Exception $e) {
                 DB::rollBack();
-                Log::error('Payment Callback Processing Error', [
+                Log::error('PhonePe: Callback processing error', [
                     'order_id' => $order->id,
                     'error'    => $e->getMessage(),
                 ]);
-
-                return redirect()->route('payment.failure')
-                    ->with('error', 'An error occurred while processing payment.');
+                return redirect()->route('payment.failure')->with('error', 'An error occurred while processing payment.');
             }
 
         } catch (\Exception $e) {
-            Log::error('Payment Callback Error', ['error' => $e->getMessage()]);
-
-            return redirect()->route('payment.failure')
-                ->with('error', 'Payment processing failed.');
+            Log::error('PhonePe: Callback error', ['error' => $e->getMessage()]);
+            return redirect()->route('payment.failure')->with('error', 'Payment processing failed.');
         }
     }
 
