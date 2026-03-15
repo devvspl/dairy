@@ -171,6 +171,9 @@ Route::middleware('auth')->group(function () {
         // Deliveries
         Route::prefix('deliveries')->name('deliveries.')->group(function () {
             Route::get('today', [App\Http\Controllers\Admin\DeliveryLogController::class, 'todayDeliveries'])->name('today');
+            Route::post('today/export', [App\Http\Controllers\Admin\DeliveryLogController::class, 'exportToday'])->name('today.export');
+            Route::get('exports', [App\Http\Controllers\Admin\DeliveryLogController::class, 'exportList'])->name('exports.list');
+            Route::delete('exports/{export}', [App\Http\Controllers\Admin\DeliveryLogController::class, 'exportDelete'])->name('exports.delete');
             Route::post('bulk-update', [App\Http\Controllers\Admin\DeliveryLogController::class, 'bulkUpdateToday'])->name('bulk-update');
             Route::post('{delivery}/status', [App\Http\Controllers\Admin\DeliveryLogController::class, 'updateStatus'])->name('update-status');
             Route::post('{delivery}/forward', [App\Http\Controllers\Admin\DeliveryLogController::class, 'forwardToNextDay'])->name('forward');

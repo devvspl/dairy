@@ -2,10 +2,14 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Exports\TodayDeliveriesExport;
 use App\Http\Controllers\Controller;
 use App\Models\DeliveryLog;
+use App\Models\ExportLog;
 use App\Models\UserSubscription;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Maatwebsite\Excel\Facades\Excel;
 
 class DeliveryLogController extends Controller
 {
@@ -212,5 +216,70 @@ class DeliveryLogController extends Controller
         
         return redirect()->back()->with('error', 
             'No scheduled delivery day found in the next 7 days.');
+    }
+
+    /**
+     * Export today's deliveries to Excel and store the file
+     */
+    public function exportToday(Request $request)
+    {
+        $status   = (string) ($request->get('status') ?? '');
+        $exporter = new TodayDeliveriesExport($status);
+
+        $filename = 'deliveries-' . now()->format('d-M-Y-His') . '.xlsx';
+        $path     = 'exports/deliveries/' . $filename;
+
+        Excel::store($exporter, $path, 'public');
+
+        ExportLog::create([
+            'type'          => 'delivery',
+            'filename'      => $filename,
+            'path'          => $path,
+            'filter_status' => $status ?: null,
+            'row_count'     => $exporter->rowCount,
+            'generated_by'  => auth()->id(),
+        ]);
+
+        return response()->json([
+            'success'      => true,
+            'message'      => 'Export generated successfully.',
+            'download_url' => Storage::url($path),
+            'filename'     => $filename,
+        ]);
+    }
+
+    /**
+     * List stored export files (AJAX)
+     */
+    public function exportList()
+    {
+        $exports = ExportLog::where('type', 'delivery')
+            ->with('generatedBy:id,name')
+            ->latest()
+            ->take(30)
+            ->get()
+            ->map(fn ($e) => [
+                'id'            => $e->id,
+                'filename'      => $e->filename,
+                'filter_status' => $e->filter_status ?? 'All',
+                'row_count'     => $e->row_count,
+                'file_size'     => $e->file_size,
+                'generated_by'  => $e->generatedBy->name ?? '-',
+                'created_at'    => $e->created_at->format('d M Y, h:i A'),
+                'download_url'  => $e->download_url,
+                'exists'        => Storage::disk('public')->exists($e->path),
+            ]);
+
+        return response()->json(['success' => true, 'exports' => $exports]);
+    }
+
+    /**
+     * Delete a stored export file
+     */
+    public function exportDelete(ExportLog $export)
+    {
+        Storage::disk('public')->delete($export->path);
+        $export->delete();
+        return response()->json(['success' => true]);
     }
 }
