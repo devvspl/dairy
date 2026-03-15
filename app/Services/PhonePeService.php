@@ -9,7 +9,7 @@ use Exception;
 class PhonePeService
 {
     private const SANDBOX_URL    = 'https://api-preprod.phonepe.com/apis/pg-sandbox';
-    private const PRODUCTION_URL = 'https://api.phonepe.com/apis/hermes';
+    private const PRODUCTION_URL = 'https://api.phonepe.com/apis/pg';
 
     private string $merchantId;
     private string $saltKey;
