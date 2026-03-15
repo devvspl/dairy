@@ -36,10 +36,10 @@ return [
     ],
 
     'phonepe' => [
-        'merchant_id' => env('PHONEPE_MERCHANT_ID'),
-        'salt_key'    => env('PHONEPE_SALT_KEY'),
-        'salt_index'  => env('PHONEPE_SALT_INDEX', 1),
-        'sandbox'     => env('PHONEPE_SANDBOX', true),
+        'client_id'      => env('PHONEPE_CLIENT_ID'),
+        'client_secret'  => env('PHONEPE_CLIENT_SECRET'),
+        'client_version' => env('PHONEPE_CLIENT_VERSION', 1),
+        'sandbox'        => env('PHONEPE_SANDBOX', true),
     ],
 
     'otp' => [

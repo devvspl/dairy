@@ -105,45 +105,43 @@ class PaymentController extends Controller
     public function callback(Request $request)
     {
         try {
-            $base64Response = $request->input('response');
-            $xVerifyHeader  = $request->header('X-VERIFY');
+            // v2 API redirects with merchantOrderId as query param
+            $merchantOrderId = $request->input('merchantOrderId')
+                ?? $request->input('transactionId');
 
-            // Verify signature
-            if ($xVerifyHeader && !$this->phonePeService->verifyCallbackSignature($base64Response, $xVerifyHeader)) {
+            // Verify webhook Authorization header if present
+            $authHeader = $request->header('Authorization', '');
+            if ($authHeader && !$this->phonePeService->verifyCallbackSignature($authHeader)) {
                 Log::warning('PhonePe: Callback signature mismatch');
             }
 
-            // Decode response
-            $response              = json_decode(base64_decode($base64Response), true);
-            $merchantTransactionId = $response['data']['merchantTransactionId'] ?? null;
-
-            if (!$merchantTransactionId) {
-                Log::error('PhonePe: Callback missing merchantTransactionId', ['response' => $response]);
+            if (!$merchantOrderId) {
+                Log::error('PhonePe: Callback missing merchantOrderId', ['input' => $request->all()]);
                 return redirect()->route('payment.failure')->with('error', 'Invalid payment response.');
             }
 
-            $order = Order::where('order_id', $merchantTransactionId)->first();
+            $order = Order::where('order_id', $merchantOrderId)->first();
             if (!$order) {
-                Log::error('PhonePe: Order not found', ['transaction_id' => $merchantTransactionId]);
+                Log::error('PhonePe: Order not found', ['order_id' => $merchantOrderId]);
                 return redirect()->route('payment.failure')->with('error', 'Order not found.');
             }
 
             // Server-side verification
-            $verification = $this->phonePeService->verifyPayment($merchantTransactionId);
+            $verification = $this->phonePeService->verifyPayment($merchantOrderId);
 
             DB::beginTransaction();
             try {
                 $order->update([
                     'payment_response' => array_merge(
                         $order->payment_response ?? [],
-                        ['callback' => $response, 'verification' => $verification]
+                        ['verification' => $verification]
                     ),
                 ]);
 
                 if ($verification['success'] && ($verification['state'] ?? '') === 'COMPLETED') {
                     $order->update([
                         'status'         => 'success',
-                        'transaction_id' => $verification['data']['transactionId'] ?? $order->transaction_id,
+                        'transaction_id' => $verification['data']['orderId'] ?? $order->transaction_id,
                         'paid_at'        => now(),
                     ]);
 
