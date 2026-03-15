@@ -22,7 +22,7 @@
                 <h3 class="font-bold text-lg" style="color: var(--text);">{{ $subscription->user->name }}</h3>
                 <p class="text-sm" style="color: var(--muted);">{{ $subscription->membershipPlan->name }} - {{ $subscription->start_date->format('M d, Y') }} to {{ $subscription->end_date->format('M d, Y') }}</p>
             </div>
-            <form method="POST" action="{{ route('admin.deliveries.generate', $subscription) }}">
+            <form method="POST" action="{{ route('admin.subscriptions.deliveries.generate', $subscription) }}">
                 @csrf
                 <button type="submit" class="px-4 py-2 rounded-lg font-semibold" style="background-color: var(--green); color: #fff;">
                     <i class="fa-solid fa-calendar-plus mr-2"></i>Generate Schedule
@@ -76,7 +76,7 @@
                 <button type="submit" class="flex-1 px-4 py-2 rounded-lg font-semibold" style="background-color: var(--green); color: #fff;">
                     Filter
                 </button>
-                <a href="{{ route('admin.deliveries.index', $subscription) }}" class="px-4 py-2 rounded-lg border font-semibold" style="border-color: var(--border); color: var(--text);">
+                <a href="{{ route('admin.subscriptions.deliveries.index', $subscription) }}" class="px-4 py-2 rounded-lg border font-semibold" style="border-color: var(--border); color: var(--text);">
                     Clear
                 </a>
             </div>

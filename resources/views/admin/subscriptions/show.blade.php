@@ -59,7 +59,7 @@
                 </div>
 
                 <div class="mt-4 pt-4 border-t" style="border-color: var(--border);">
-                    <a href="{{ route('admin.deliveries.index', $subscription) }}" class="inline-flex items-center px-4 py-2 rounded-lg font-semibold text-sm" style="background-color: var(--green); color: #fff;">
+                    <a href="{{ route('admin.subscriptions.deliveries.index', $subscription) }}" class="inline-flex items-center px-4 py-2 rounded-lg font-semibold text-sm" style="background-color: var(--green); color: #fff;">
                         <i class="fa-solid fa-truck mr-2"></i>View Delivery Logs
                     </a>
                 </div>
