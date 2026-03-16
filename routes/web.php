@@ -135,6 +135,9 @@ Route::middleware('auth')->group(function () {
         // Product Orders
         Route::resource('product-orders', App\Http\Controllers\Admin\ProductOrderController::class)->only(['index', 'show']);
         Route::post('product-orders/{product_order}/status', [App\Http\Controllers\Admin\ProductOrderController::class, 'updateStatus'])->name('product-orders.update-status');
+        Route::post('product-orders/export', [App\Http\Controllers\Admin\ProductOrderController::class, 'export'])->name('product-orders.export');
+        Route::get('product-orders/exports/list', [App\Http\Controllers\Admin\ProductOrderController::class, 'exportList'])->name('product-orders.exports.list');
+        Route::delete('product-orders/exports/{export}', [App\Http\Controllers\Admin\ProductOrderController::class, 'exportDelete'])->name('product-orders.exports.delete');
 
         // Content Management
         Route::resource('sliders', App\Http\Controllers\Admin\SliderController::class);
