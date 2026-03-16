@@ -32,7 +32,14 @@ class DashboardController extends Controller
 
     public function member()
     {
-        return view('member-dashboard');
+        $user = auth()->user();
+
+        $subscriptionHistory = \App\Models\UserSubscription::with('membershipPlan', 'location')
+            ->where('user_id', $user->id)
+            ->orderByDesc('created_at')
+            ->get();
+
+        return view('member-dashboard', compact('subscriptionHistory'));
     }
 
     public function delivery()

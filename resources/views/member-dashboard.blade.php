@@ -85,7 +85,9 @@
         <a href="{{ route('member.product-orders.index') }}" class="bg-white rounded-xl shadow-sm p-6 border hover:shadow-lg transition-all" style="border-color: var(--border);">
             <div class="flex items-center justify-between mb-4">
                 <div class="w-12 h-12 rounded-lg flex items-center justify-center" style="background-color: rgba(234, 88, 12, 0.1);">
-                    <i class="fa-solid fa-bag-shopping text-xl" style="color: #ea580c;"></i>
+                    <svg class="w-6 h-6" style="color: #ea580c;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
+                    </svg>
                 </div>
                 <svg class="w-5 h-5" style="color: var(--muted);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
@@ -453,6 +455,62 @@
         </div>
     </div>
     @endif
+    <!-- Subscription Order History -->
+    @if($subscriptionHistory->count() > 0)
+    <div class="bg-white rounded-xl shadow-sm p-4 lg:p-6 border" style="border-color: var(--border);">
+        <h2 class="text-lg font-bold mb-4" style="color: var(--text);">
+            <i class="fa-solid fa-receipt mr-2" style="color: var(--green);"></i>Subscription History
+        </h2>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="border-b" style="border-color: var(--border);">
+                        <th class="pb-3 text-left font-semibold" style="color: var(--muted);">Plan</th>
+                        <th class="pb-3 text-left font-semibold" style="color: var(--muted);">Location</th>
+                        <th class="pb-3 text-left font-semibold" style="color: var(--muted);">Period</th>
+                        <th class="pb-3 text-left font-semibold" style="color: var(--muted);">Amount</th>
+                        <th class="pb-3 text-left font-semibold" style="color: var(--muted);">Payment</th>
+                        <th class="pb-3 text-left font-semibold" style="color: var(--muted);">Status</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y" style="border-color: var(--border);">
+                    @foreach($subscriptionHistory as $sub)
+                    <tr class="hover:bg-gray-50">
+                        <td class="py-3 font-medium" style="color: var(--text);">
+                            {{ $sub->membershipPlan->name ?? '—' }}
+                        </td>
+                        <td class="py-3" style="color: var(--muted);">
+                            {{ $sub->location->name ?? '—' }}
+                        </td>
+                        <td class="py-3 text-xs" style="color: var(--muted);">
+                            {{ $sub->start_date->format('d M Y') }} – {{ $sub->end_date->format('d M Y') }}
+                        </td>
+                        <td class="py-3 font-semibold" style="color: var(--green);">
+                            ₹{{ number_format($sub->amount_paid, 0) }}
+                        </td>
+                        <td class="py-3">
+                            <span class="px-2 py-0.5 text-xs rounded-full font-semibold
+                                {{ $sub->payment_status === 'paid' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800' }}">
+                                {{ ucfirst($sub->payment_status ?? 'pending') }}
+                            </span>
+                        </td>
+                        <td class="py-3">
+                            <span class="px-2 py-0.5 text-xs rounded-full font-semibold
+                                {{ $sub->status === 'active'    ? 'bg-green-100 text-green-800'  : '' }}
+                                {{ $sub->status === 'expired'   ? 'bg-gray-100 text-gray-600'    : '' }}
+                                {{ $sub->status === 'cancelled' ? 'bg-red-100 text-red-700'      : '' }}
+                                {{ $sub->status === 'pending'   ? 'bg-yellow-100 text-yellow-800': '' }}">
+                                {{ ucfirst($sub->status) }}
+                            </span>
+                        </td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+    </div>
+    @endif
+
 </div>
 
 <!-- Floating Support Button -->

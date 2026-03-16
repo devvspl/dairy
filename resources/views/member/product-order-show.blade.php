@@ -15,17 +15,20 @@
         <a href="{{ route('member.product-orders.index') }}"
            class="inline-flex items-center gap-2 px-3 py-2 rounded-lg border font-semibold text-sm hover:bg-gray-50"
            style="border-color: var(--border); color: var(--text);">
-            <i class="fa-solid fa-arrow-left"></i> Back
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+            </svg>
+            Back
         </a>
     </div>
 
     @php
         $badge = match($productOrder->status) {
-            'success'   => ['cls' => 'bg-green-100 text-green-800', 'icon' => 'fa-check-circle'],
-            'pending'   => ['cls' => 'bg-yellow-100 text-yellow-800', 'icon' => 'fa-clock'],
-            'failed'    => ['cls' => 'bg-red-100 text-red-800', 'icon' => 'fa-times-circle'],
-            'cancelled' => ['cls' => 'bg-gray-100 text-gray-600', 'icon' => 'fa-ban'],
-            default     => ['cls' => 'bg-gray-100 text-gray-600', 'icon' => 'fa-circle'],
+            'success'   => ['cls' => 'bg-green-100 text-green-800', 'svg' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>'],
+            'pending'   => ['cls' => 'bg-yellow-100 text-yellow-800', 'svg' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>'],
+            'failed'    => ['cls' => 'bg-red-100 text-red-800', 'svg' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/>'],
+            'cancelled' => ['cls' => 'bg-gray-100 text-gray-600', 'svg' => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/>'],
+            default     => ['cls' => 'bg-gray-100 text-gray-600', 'svg' => '<circle cx="12" cy="12" r="10" stroke-width="2"/>'],
         };
     @endphp
 
@@ -35,7 +38,7 @@
             <div>
                 <p class="text-xs font-medium mb-1" style="color: var(--muted);">Order Status</p>
                 <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full font-semibold text-sm {{ $badge['cls'] }}">
-                    <i class="fa-solid {{ $badge['icon'] }}"></i>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">{!! $badge['svg'] !!}</svg>
                     {{ ucfirst($productOrder->status) }}
                 </span>
             </div>
@@ -70,10 +73,11 @@
     <!-- Items -->
     @if($productOrder->items && count($productOrder->items))
     <div class="bg-white rounded-xl shadow-sm border" style="border-color: var(--border);">
-        <div class="px-5 py-4 border-b" style="border-color: var(--border);">
-            <h3 class="font-bold text-sm" style="color: var(--text);">
-                <i class="fa-solid fa-box mr-2" style="color: var(--green);"></i>Items Ordered
-            </h3>
+        <div class="px-5 py-4 border-b flex items-center gap-2" style="border-color: var(--border);">
+            <svg class="w-4 h-4" style="color: var(--green);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+            </svg>
+            <h3 class="font-bold text-sm" style="color: var(--text);">Items Ordered</h3>
         </div>
         <div class="divide-y" style="border-color: var(--border);">
             @foreach($productOrder->items as $item)
@@ -89,14 +93,18 @@
                          class="w-12 h-12 rounded-lg object-cover border flex-shrink-0"
                          style="border-color: var(--border);"
                          onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
-                    <div class="w-12 h-12 rounded-lg items-center justify-center flex-shrink-0 hidden"
+                    <div class="w-12 h-12 rounded-lg items-center justify-center flex-shrink-0"
                          style="background-color: rgba(47,74,30,0.08); display:none;">
-                        <i class="fa-solid fa-box text-lg" style="color: var(--green);"></i>
+                        <svg class="w-6 h-6" style="color: var(--green);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                        </svg>
                     </div>
                     @else
                     <div class="w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0"
                          style="background-color: rgba(47,74,30,0.08);">
-                        <i class="fa-solid fa-box text-lg" style="color: var(--green);"></i>
+                        <svg class="w-6 h-6" style="color: var(--green);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                        </svg>
                     </div>
                     @endif
                     <div>
@@ -125,9 +133,12 @@
     <!-- Delivery Address -->
     @if($productOrder->delivery_address)
     <div class="bg-white rounded-xl shadow-sm border p-5" style="border-color: var(--border);">
-        <h3 class="font-bold text-sm mb-2" style="color: var(--text);">
-            <i class="fa-solid fa-location-dot mr-2" style="color: var(--green);"></i>Delivery Address
-        </h3>
+        <div class="flex items-center gap-2 mb-2">
+            <svg class="w-4 h-4" style="color: var(--green);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0zM15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+            </svg>
+            <h3 class="font-bold text-sm" style="color: var(--text);">Delivery Address</h3>
+        </div>
         <p class="text-sm" style="color: var(--muted);">{{ $productOrder->delivery_address }}</p>
     </div>
     @endif
