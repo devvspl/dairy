@@ -83,7 +83,7 @@ class ProductOrderController extends Controller
             isset($filters['product_id']) ? 'product:' . $filters['product_id'] : null,
             $filters['date_from']  ?? null,
             $filters['date_to']    ?? null,
-            $filters['search']     ? 'search:' . $filters['search'] : null,
+            !empty($filters['search']) ? 'search:' . $filters['search'] : null,
         ])->filter()->implode(' | ') ?: 'All';
 
         ExportLog::create([
