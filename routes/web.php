@@ -128,11 +128,14 @@ Route::middleware('auth')->group(function () {
      */
     Route::prefix('admin')->name('admin.')->middleware('admin')->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'admin'])->name('dashboard');
+
         // Users
         Route::resource('users', App\Http\Controllers\UserController::class);
-        Route::resource('product-orders', App\Http\Controllers\Admin\ProductOrderController::class)->only(['index', 'show']);
+
         // Product Orders
         Route::resource('product-orders', App\Http\Controllers\Admin\ProductOrderController::class)->only(['index', 'show']);
+        Route::post('product-orders/{product_order}/status', [App\Http\Controllers\Admin\ProductOrderController::class, 'updateStatus'])->name('product-orders.update-status');
+
         // Content Management
         Route::resource('sliders', App\Http\Controllers\Admin\SliderController::class);
         Route::resource('categories', App\Http\Controllers\Admin\CategoryController::class);

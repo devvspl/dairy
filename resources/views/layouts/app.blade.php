@@ -128,21 +128,6 @@
                                 <span class="ml-3 font-medium" x-show="!sidebarCollapsed">Users</span>
                             </a>
 
-                            <!-- Product Orders -->
-                            <a href="{{ route('admin.product-orders.index') }}"
-                                class="sidebar-link {{ request()->routeIs('admin.product-orders.*') ? 'active' : '' }} flex items-center rounded-lg transition-all hover:bg-gray-50 text-sm"
-                                :class="sidebarCollapsed ? 'justify-center p-3' : 'px-3 py-2'"
-                                style="{{ request()->routeIs('admin.product-orders.*') ? '' : 'color: var(--muted);' }}"
-                                :title="sidebarCollapsed ? 'Product Orders' : ''">
-                                <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor"
-                                    viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z">
-                                    </path>
-                                </svg>
-                                <span class="ml-3 font-medium" x-show="!sidebarCollapsed">Product Orders</span>
-                            </a>
-
                             <!-- Products & Catalog Section -->
                             <div x-show="!sidebarCollapsed" class="px-3 pt-4 pb-2">
                                 <p class="text-xs font-semibold uppercase tracking-wider" style="color: var(--muted);">
@@ -177,9 +162,25 @@
                                 <span class="ml-3 font-medium" x-show="!sidebarCollapsed">Products</span>
                             </a>
 
+                            <!-- Product Orders -->
+                            <a href="{{ route('admin.product-orders.index') }}"
+                                class="sidebar-link {{ request()->routeIs('admin.product-orders.*') ? 'active' : '' }} flex items-center rounded-lg transition-all hover:bg-gray-50 text-sm"
+                                :class="sidebarCollapsed ? 'justify-center p-3' : 'px-3 py-2'"
+                                style="{{ request()->routeIs('admin.product-orders.*') ? '' : 'color: var(--muted);' }}"
+                                :title="sidebarCollapsed ? 'Product Orders' : ''">
+                                <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z">
+                                    </path>
+                                </svg>
+                                <span class="ml-3 font-medium" x-show="!sidebarCollapsed">Product Orders</span>
+                            </a>
+
                             <!-- Home Page Content Section -->
                             <div x-show="!sidebarCollapsed" class="px-3 pt-4 pb-2">
-                                <p class="text-xs font-semibold uppercase tracking-wider" style="color: var(--muted);">
+                                <p class="text-xs font-semibold uppercase tracking-wider"
+                                    style="color: var(--muted);">
                                     Home
                                     Page Content</p>
                             </div>
@@ -630,7 +631,8 @@
                         </button>
                     @else
                         <!-- Logo for Members/Delivery Persons -->
-                        <a href="{{ auth()->user()->isDeliveryPerson() ? route('delivery.dashboard') : route('member.dashboard') }}" class="flex items-center">
+                        <a href="{{ auth()->user()->isDeliveryPerson() ? route('delivery.dashboard') : route('member.dashboard') }}"
+                            class="flex items-center">
                             <img src="{{ asset('images/new.png') }}" alt="{{ config('app.name') }}"
                                 class="h-10 w-auto">
                         </a>
@@ -700,7 +702,8 @@
                                 Account
                             </a>
                             <hr class="my-2" style="border-color: var(--border);">
-                            <form method="POST" action="{{ auth()->user()->isMember() ? route('member.logout') : route('logout') }}">
+                            <form method="POST"
+                                action="{{ auth()->user()->isMember() ? route('member.logout') : route('logout') }}">
                                 @csrf
                                 <button type="submit"
                                     class="block w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors"
