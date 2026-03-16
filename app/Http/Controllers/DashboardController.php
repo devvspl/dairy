@@ -235,42 +235,42 @@ class DashboardController extends Controller
         $todayVisits = PageVisit::getTodayVisits();
         $todayUniqueVisitors = PageVisit::getTodayUniqueVisitors();
 
-        // Get last 7 days visits
         $last7Days = PageVisit::getVisitsByDateRange(
             now()->subDays(6)->startOfDay(),
             now()->endOfDay()
         );
 
-        // Most visited pages
-        $mostVisitedPages = PageVisit::getMostVisitedPages(5);
+        $mostVisitedPages    = PageVisit::getMostVisitedPages(5);
+        $deviceStats         = PageVisit::getDeviceStats();
+        $browserStats        = PageVisit::getBrowserStats();
 
-        // Device statistics
-        $deviceStats = PageVisit::getDeviceStats();
-
-        // Browser statistics
-        $browserStats = PageVisit::getBrowserStats();
-
-        // Other statistics
         $totalInquiries = ContactInquiry::count();
-        $newInquiries = ContactInquiry::where('status', 'new')->count();
-        $totalProducts = Product::count();
-        $totalBlogs = Blog::count();
-        $totalUsers = User::count();
+        $newInquiries   = ContactInquiry::where('status', 'new')->count();
+        $totalProducts  = Product::count();
+        $totalBlogs     = Blog::count();
+        $totalUsers     = User::count();
+
+        // Membership stats
+        $totalSubscriptions  = \App\Models\UserSubscription::count();
+        $activeSubscriptions = \App\Models\UserSubscription::where('status', 'active')->count();
+        $expiredSubscriptions= \App\Models\UserSubscription::where('status', 'expired')->count();
+        $membershipRevenue   = \App\Models\UserSubscription::where('payment_status', 'paid')->sum('amount_paid');
+        $recentSubscriptions = \App\Models\UserSubscription::with('user', 'membershipPlan')
+            ->latest()->take(5)->get();
+
+        // Product order stats
+        $totalProductOrders   = \App\Models\ProductOrder::count();
+        $pendingProductOrders = \App\Models\ProductOrder::where('status', 'pending')->count();
+        $successProductOrders = \App\Models\ProductOrder::where('status', 'success')->count();
+        $productOrderRevenue  = \App\Models\ProductOrder::where('status', 'success')->sum('amount');
+        $recentProductOrders  = \App\Models\ProductOrder::latest()->take(5)->get();
 
         return view('admin.dashboard', compact(
-            'totalVisits',
-            'uniqueVisitors',
-            'todayVisits',
-            'todayUniqueVisitors',
-            'last7Days',
-            'mostVisitedPages',
-            'deviceStats',
-            'browserStats',
-            'totalInquiries',
-            'newInquiries',
-            'totalProducts',
-            'totalBlogs',
-            'totalUsers'
+            'totalVisits', 'uniqueVisitors', 'todayVisits', 'todayUniqueVisitors',
+            'last7Days', 'mostVisitedPages', 'deviceStats', 'browserStats',
+            'totalInquiries', 'newInquiries', 'totalProducts', 'totalBlogs', 'totalUsers',
+            'totalSubscriptions', 'activeSubscriptions', 'expiredSubscriptions', 'membershipRevenue', 'recentSubscriptions',
+            'totalProductOrders', 'pendingProductOrders', 'successProductOrders', 'productOrderRevenue', 'recentProductOrders'
         ));
     }
 }

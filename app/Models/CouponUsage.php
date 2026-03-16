@@ -10,6 +10,7 @@ class CouponUsage extends Model
         'coupon_id',
         'user_id',
         'order_id',
+        'product_order_id',
         'discount_amount',
     ];
 

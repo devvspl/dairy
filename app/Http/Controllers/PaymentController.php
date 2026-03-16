@@ -544,9 +544,10 @@ class PaymentController extends Controller
                     $coupon = Coupon::where('code', $order->coupon_code)->first();
                     if ($coupon) {
                         CouponUsage::create([
-                            'coupon_id'       => $coupon->id,
-                            'user_id'         => $order->user_id,
-                            'discount_amount' => $order->discount_amount,
+                            'coupon_id'        => $coupon->id,
+                            'user_id'          => $order->user_id,
+                            'product_order_id' => $order->id,
+                            'discount_amount'  => $order->discount_amount,
                         ]);
                         $coupon->increment('times_used');
                     }

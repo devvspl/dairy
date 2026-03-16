@@ -1313,8 +1313,8 @@
       <div class="dairy-offcanvas-body" id="coStep1" style="display:none;">
         <div id="coSummary"></div>
         <!-- Coupon -->
-        <div style="margin-top:14px;padding-top:14px;border-top:1px solid #e7e7e7;">
-          <p style="font-size:12px;font-weight:700;color:#6a7a63;text-transform:uppercase;letter-spacing:.5px;margin:0 0 8px;">Have a coupon?</p>
+        <div style="margin-top:16px;padding-top:16px;border-top:1px solid #e7e7e7;">
+          <p style="font-size:12px;font-weight:700;color:#6a7a63;text-transform:uppercase;letter-spacing:.5px;margin:0 0 10px;">Have a coupon?</p>
           <div style="display:flex;gap:8px;">
             <input type="text" id="co_coupon_input" placeholder="Enter coupon code"
                    style="flex:1;padding:9px 12px;border:1px solid #e7e7e7;border-radius:10px;font-size:13px;text-transform:uppercase;box-sizing:border-box;">
@@ -1327,7 +1327,7 @@
               Remove
             </button>
           </div>
-          <div id="co_coupon_msg" style="margin-top:6px;font-size:12px;display:none;"></div>
+          <div id="co_coupon_msg" style="margin-top:8px;font-size:12px;display:none;"></div>
         </div>
       </div>
 
@@ -2059,13 +2059,13 @@
           const totalEl = document.getElementById('coSummaryTotal');
           if (totalEl) {
             totalEl.innerHTML =
-              `<div style="display:flex;justify-content:space-between;font-size:13px;color:#6a7a63;margin-bottom:6px;">
+              `<div style="display:flex;justify-content:space-between;align-items:center;font-size:13px;color:#6a7a63;padding:8px 0;">
                 <span>Subtotal</span><span>₹${total.toFixed(0)}</span>
               </div>
-              <div style="display:flex;justify-content:space-between;font-size:13px;color:#16a34a;margin-bottom:8px;">
-                <span>Discount (${data.coupon_code})</span><span>-₹${data.discount.toFixed(0)}</span>
+              <div style="display:flex;justify-content:space-between;align-items:center;font-size:13px;color:#16a34a;padding:8px 0;border-bottom:1px solid #e7e7e7;">
+                <span>Coupon (${data.coupon_code})</span><span>-₹${data.discount.toFixed(0)}</span>
               </div>
-              <div style="display:flex;justify-content:space-between;font-weight:800;font-size:15px;border-top:1px solid #e7e7e7;padding-top:8px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;font-weight:800;font-size:15px;padding-top:10px;">
                 <span style="color:#1f2a1a;">Total</span>
                 <span style="color:#2f4a1e;">₹${data.final_total.toFixed(0)}</span>
               </div>`;
@@ -2107,7 +2107,7 @@
       const totalEl = document.getElementById('coSummaryTotal');
       if (totalEl) {
         totalEl.innerHTML =
-          `<div style="display:flex;justify-content:space-between;font-weight:800;font-size:15px;border-top:1px solid #e7e7e7;padding-top:12px;">
+          `<div style="display:flex;justify-content:space-between;align-items:center;font-weight:800;font-size:15px;border-top:1px solid #e7e7e7;padding-top:10px;">
             <span style="color:#1f2a1a;">Total</span>
             <span style="color:#2f4a1e;">₹${total.toFixed(0)}</span>
           </div>`;
@@ -2194,14 +2194,14 @@
         });
         html += `<div style="border-top:1px solid #e7e7e7;margin-top:6px;padding-top:8px;">`;
         if (coupon) {
-          html += `<div style="display:flex;justify-content:space-between;font-size:13px;color:#6a7a63;margin-bottom:4px;">
+          html += `<div style="display:flex;justify-content:space-between;align-items:center;font-size:13px;color:#6a7a63;padding:6px 0;">
             <span>Subtotal</span><span>₹${subtotal.toFixed(0)}</span>
           </div>
-          <div style="display:flex;justify-content:space-between;font-size:13px;color:#16a34a;margin-bottom:4px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;font-size:13px;color:#16a34a;padding:6px 0;border-bottom:1px solid #e7e7e7;">
             <span>Coupon (${coupon.code})</span><span>-₹${coupon.discount.toFixed(0)}</span>
           </div>`;
         }
-        html += `<div style="display:flex;justify-content:space-between;font-weight:800;font-size:15px;">
+        html += `<div style="display:flex;justify-content:space-between;align-items:center;font-weight:800;font-size:15px;padding-top:${coupon ? '10px' : '0'};">
           <span>Total</span><span style="color:#2f4a1e;">₹${payTotal.toFixed(0)}</span>
         </div></div>`;
         document.getElementById('coReview').innerHTML = html;
@@ -2247,8 +2247,8 @@
           <div style="font-weight:800;color:#2f4a1e;font-size:14px;flex-shrink:0;">₹${(item.price * item.quantity).toFixed(0)}</div>
         </div>`;
       });
-      html += `<div id="coSummaryTotal" style="padding-top:12px;margin-top:4px;">
-        <div style="display:flex;justify-content:space-between;font-weight:800;font-size:15px;border-top:1px solid #e7e7e7;padding-top:12px;">
+      html += `<div id="coSummaryTotal" style="padding-top:4px;margin-top:4px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;font-weight:800;font-size:15px;border-top:1px solid #e7e7e7;padding-top:10px;">
           <span style="color:#1f2a1a;">Total</span>
           <span style="color:#2f4a1e;">₹${total.toFixed(0)}</span>
         </div>
