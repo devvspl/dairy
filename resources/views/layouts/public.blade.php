@@ -1312,6 +1312,23 @@
       <!-- Checkout Step 1: Order Summary -->
       <div class="dairy-offcanvas-body" id="coStep1" style="display:none;">
         <div id="coSummary"></div>
+        <!-- Coupon -->
+        <div style="margin-top:14px;padding-top:14px;border-top:1px solid #e7e7e7;">
+          <p style="font-size:12px;font-weight:700;color:#6a7a63;text-transform:uppercase;letter-spacing:.5px;margin:0 0 8px;">Have a coupon?</p>
+          <div style="display:flex;gap:8px;">
+            <input type="text" id="co_coupon_input" placeholder="Enter coupon code"
+                   style="flex:1;padding:9px 12px;border:1px solid #e7e7e7;border-radius:10px;font-size:13px;text-transform:uppercase;box-sizing:border-box;">
+            <button id="co_coupon_apply_btn" onclick="_applyCoupon()"
+                    style="padding:9px 14px;background:#2f4a1e;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">
+              Apply
+            </button>
+            <button id="co_coupon_remove_btn" onclick="_removeCoupon()" style="display:none;
+                    padding:9px 14px;background:#fee2e2;color:#dc2626;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">
+              Remove
+            </button>
+          </div>
+          <div id="co_coupon_msg" style="margin-top:6px;font-size:12px;display:none;"></div>
+        </div>
       </div>
 
       <!-- Checkout Step 2: Details -->
@@ -2008,9 +2025,11 @@
     }
 
     function _applyCoupon() {
-      const input  = document.getElementById('co_coupon_input');
-      const msgEl  = document.getElementById('co_coupon_msg');
-      const code   = (input?.value || '').trim().toUpperCase();
+      const input     = document.getElementById('co_coupon_input');
+      const msgEl     = document.getElementById('co_coupon_msg');
+      const applyBtn  = document.getElementById('co_coupon_apply_btn');
+      const removeBtn = document.getElementById('co_coupon_remove_btn');
+      const code      = (input?.value || '').trim().toUpperCase();
       if (!code) return;
 
       const total = window.DairyCart ? window.DairyCart.getCartTotal() : 0;
@@ -2028,6 +2047,8 @@
           msgEl.style.color = '#16a34a';
           msgEl.textContent = data.message;
           input.disabled = true;
+          if (applyBtn)  applyBtn.style.display  = 'none';
+          if (removeBtn) removeBtn.style.display = '';
           // Update step-1 total display
           const totalEl = document.getElementById('coSummaryTotal');
           if (totalEl) {
@@ -2048,6 +2069,8 @@
           msgEl.style.color = '#dc2626';
           msgEl.textContent = data.message;
           input.disabled = false;
+          if (applyBtn)  applyBtn.style.display  = '';
+          if (removeBtn) removeBtn.style.display = 'none';
         }
       })
       .catch(() => {
@@ -2055,6 +2078,28 @@
         msgEl.style.color = '#dc2626';
         msgEl.textContent = 'Failed to apply coupon. Try again.';
       });
+    }
+
+    function _removeCoupon() {
+      window._appliedCoupon = null;
+      const input     = document.getElementById('co_coupon_input');
+      const msgEl     = document.getElementById('co_coupon_msg');
+      const applyBtn  = document.getElementById('co_coupon_apply_btn');
+      const removeBtn = document.getElementById('co_coupon_remove_btn');
+      if (input)     { input.value = ''; input.disabled = false; }
+      if (msgEl)     { msgEl.style.display = 'none'; msgEl.textContent = ''; }
+      if (applyBtn)  applyBtn.style.display  = '';
+      if (removeBtn) removeBtn.style.display = 'none';
+      // Restore original total
+      const total   = window.DairyCart ? window.DairyCart.getCartTotal() : 0;
+      const totalEl = document.getElementById('coSummaryTotal');
+      if (totalEl) {
+        totalEl.innerHTML =
+          `<div style="display:flex;justify-content:space-between;font-weight:800;font-size:15px;border-top:1px solid #e7e7e7;padding-top:12px;">
+            <span style="color:#1f2a1a;">Total</span>
+            <span style="color:#2f4a1e;">₹${total.toFixed(0)}</span>
+          </div>`;
+      }
     }
 
     function _showCheckoutStep(step) {
@@ -2168,10 +2213,14 @@
 
       // Reset coupon state
       window._appliedCoupon = null;
-      const couponInput = document.getElementById('co_coupon_input');
-      const couponMsg   = document.getElementById('co_coupon_msg');
-      if (couponInput) { couponInput.value = ''; couponInput.disabled = false; }
-      if (couponMsg)   { couponMsg.style.display = 'none'; couponMsg.textContent = ''; }
+      const couponInput     = document.getElementById('co_coupon_input');
+      const couponMsg       = document.getElementById('co_coupon_msg');
+      const couponApplyBtn  = document.getElementById('co_coupon_apply_btn');
+      const couponRemoveBtn = document.getElementById('co_coupon_remove_btn');
+      if (couponInput)     { couponInput.value = ''; couponInput.disabled = false; }
+      if (couponMsg)       { couponMsg.style.display = 'none'; couponMsg.textContent = ''; }
+      if (couponApplyBtn)  couponApplyBtn.style.display  = '';
+      if (couponRemoveBtn) couponRemoveBtn.style.display = 'none';
 
       // Build step-1 order summary
       let html = '';
