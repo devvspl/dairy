@@ -76,7 +76,14 @@ class ProductOrderController extends Controller
         $filename = 'product-orders-' . now()->format('Y-m-d-His') . '.xlsx';
         $path     = 'exports/product-orders/' . $filename;
 
+        // Ensure directory exists on public disk
+        Storage::disk('public')->makeDirectory('exports/product-orders');
+
         Excel::store($exporter, $path, 'public');
+
+        if (!Storage::disk('public')->exists($path)) {
+            return response()->json(['success' => false, 'message' => 'Export failed to save file.'], 500);
+        }
 
         $filterLabel = collect([
             $filters['status']     ?? null,
@@ -97,7 +104,7 @@ class ProductOrderController extends Controller
 
         return response()->json([
             'success'      => true,
-            'download_url' => Storage::url($path),
+            'download_url' => Storage::disk('public')->url($path),
             'filename'     => $filename,
         ]);
     }

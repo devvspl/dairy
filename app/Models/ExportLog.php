@@ -19,13 +19,13 @@ class ExportLog extends Model
 
     public function getDownloadUrlAttribute(): string
     {
-        return Storage::url($this->path);
+        return Storage::disk('public')->url($this->path);
     }
 
     public function getFileSizeAttribute(): string
     {
-        if (!Storage::exists($this->path)) return '-';
-        $bytes = Storage::size($this->path);
+        if (!Storage::disk('public')->exists($this->path)) return '-';
+        $bytes = Storage::disk('public')->size($this->path);
         return $bytes >= 1048576
             ? round($bytes / 1048576, 2) . ' MB'
             : round($bytes / 1024, 1) . ' KB';
