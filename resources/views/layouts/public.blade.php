@@ -1312,19 +1312,6 @@
       <!-- Checkout Step 1: Order Summary -->
       <div class="dairy-offcanvas-body" id="coStep1" style="display:none;">
         <div id="coSummary"></div>
-        <!-- Coupon -->
-        <div style="margin-top:14px;padding-top:14px;border-top:1px solid #e7e7e7;">
-          <p style="font-size:12px;font-weight:700;color:#6a7a63;text-transform:uppercase;letter-spacing:.5px;margin:0 0 8px;">Have a coupon?</p>
-          <div style="display:flex;gap:8px;">
-            <input type="text" id="co_coupon_input" placeholder="Enter coupon code"
-                   style="flex:1;padding:9px 12px;border:1px solid #e7e7e7;border-radius:10px;font-size:13px;text-transform:uppercase;box-sizing:border-box;">
-            <button onclick="_applyCoupon()"
-                    style="padding:9px 14px;background:#2f4a1e;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">
-              Apply
-            </button>
-          </div>
-          <div id="co_coupon_msg" style="margin-top:6px;font-size:12px;display:none;"></div>
-        </div>
       </div>
 
       <!-- Checkout Step 2: Details -->
