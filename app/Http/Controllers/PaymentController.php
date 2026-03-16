@@ -361,6 +361,9 @@ class PaymentController extends Controller
         $total    = (float) $request->total;
         $discount = $coupon->calculateDiscount($total);
 
+        // Ensure at least ₹1 remains payable
+        $discount = min($discount, $total - 1);
+
         if ($discount <= 0) {
             return response()->json([
                 'success' => false,
@@ -429,10 +432,14 @@ class PaymentController extends Controller
             if ($coupon && $coupon->isValid() && $coupon->applicable_to !== 'membership') {
                 $user = auth()->user();
                 if (!$user || $coupon->canBeUsedBy($user->id)) {
-                    $discountAmount = $coupon->calculateDiscount($total);
-                    if ($discountAmount > 0) {
-                        $couponCode = $coupon->code;
-                        $total      = max(0, $total - $discountAmount);
+                    $calculated = $coupon->calculateDiscount($total);
+                    if ($calculated > 0) {
+                        // Ensure at least ₹1 remains payable (PhonePe minimum = 100 paise)
+                        $discountAmount = min($calculated, $total - 1);
+                        if ($discountAmount > 0) {
+                            $couponCode = $coupon->code;
+                            $total      = $total - $discountAmount;
+                        }
                     }
                 }
             }
