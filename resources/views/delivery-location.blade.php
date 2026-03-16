@@ -210,6 +210,7 @@
                     <textarea name="notes" id="notesInput" rows="2"
                               class="w-full px-3 py-2 border rounded-lg" style="border-color: var(--border);"
                               placeholder="Leave empty to use default note"></textarea>
+                    <p id="notesHint" class="text-xs mt-1" style="color: var(--muted);"></p>
                 </div>
             </div>
             <div class="flex gap-3 mt-5">
@@ -404,7 +405,9 @@ const DEFAULT_NOTES = {
 };
 
 document.getElementById('statusSelect').addEventListener('change', function () {
-    document.getElementById('notesInput').value = DEFAULT_NOTES[this.value] || '';
+    const note = DEFAULT_NOTES[this.value] || '';
+    document.getElementById('notesInput').value = note;
+    document.getElementById('notesHint').textContent = note ? 'Default: ' + note : '';
 });
 
 function openModal(id, status, qty, time, notes) {
@@ -413,7 +416,9 @@ function openModal(id, status, qty, time, notes) {
     // Strip seconds from time if present (e.g. "11:35:00" → "11:35")
     document.getElementById('timeInput').value    = time ? time.substring(0, 5) : '';
     // Show existing note or the default for the current status
-    document.getElementById('notesInput').value   = notes || DEFAULT_NOTES[status] || '';
+    const note = notes || DEFAULT_NOTES[status] || '';
+    document.getElementById('notesInput').value   = note;
+    document.getElementById('notesHint').textContent = DEFAULT_NOTES[status] ? 'Default: ' + DEFAULT_NOTES[status] : '';
     document.getElementById('updateForm').action  = BASE_URL + id;
     const m = document.getElementById('updateModal');
     m.classList.remove('hidden');

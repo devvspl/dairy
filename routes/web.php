@@ -9,10 +9,10 @@ use App\Http\Controllers\PublicController;
 use Illuminate\Support\Facades\Route;
 
 /*
-|--------------------------------------------------------------------------
-| Public Routes
-|--------------------------------------------------------------------------
-*/
+ * |--------------------------------------------------------------------------
+ * | Public Routes
+ * |--------------------------------------------------------------------------
+ */
 Route::get('/', [PublicController::class, 'home'])->name('home');
 Route::get('/about', [PublicController::class, 'about'])->name('about');
 Route::get('/membership', [PublicController::class, 'membership'])->name('membership');
@@ -40,12 +40,11 @@ Route::prefix('payment')->name('payment.')->group(function () {
 });
 
 /*
-|--------------------------------------------------------------------------
-| Guest Routes (unauthenticated only)
-|--------------------------------------------------------------------------
-*/
+ * |--------------------------------------------------------------------------
+ * | Guest Routes (unauthenticated only)
+ * |--------------------------------------------------------------------------
+ */
 Route::middleware('guest')->group(function () {
-
     // Admin Auth
     Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
     Route::post('/login', [LoginController::class, 'login']);
@@ -64,10 +63,10 @@ Route::middleware('guest')->group(function () {
 });
 
 /*
-|--------------------------------------------------------------------------
-| Member Auth POST Routes (outside guest middleware — AJAX safe)
-|--------------------------------------------------------------------------
-*/
+ * |--------------------------------------------------------------------------
+ * | Member Auth POST Routes (outside guest middleware — AJAX safe)
+ * |--------------------------------------------------------------------------
+ */
 Route::prefix('member')->name('member.')->group(function () {
     Route::post('/send-login-otp', [App\Http\Controllers\Auth\MemberAuthController::class, 'sendLoginOtp'])->name('send-login-otp');
     Route::post('/verify-login-otp', [App\Http\Controllers\Auth\MemberAuthController::class, 'verifyLoginOtp'])->name('verify-login-otp');
@@ -76,12 +75,11 @@ Route::prefix('member')->name('member.')->group(function () {
 });
 
 /*
-|--------------------------------------------------------------------------
-| Authenticated Routes
-|--------------------------------------------------------------------------
-*/
+ * |--------------------------------------------------------------------------
+ * | Authenticated Routes
+ * |--------------------------------------------------------------------------
+ */
 Route::middleware('auth')->group(function () {
-
     // Dashboards
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/member/dashboard', [DashboardController::class, 'member'])->name('member.dashboard');
@@ -124,20 +122,17 @@ Route::middleware('auth')->group(function () {
     });
 
     /*
-    |----------------------------------------------------------------------
-    | Admin Routes
-    |----------------------------------------------------------------------
-    */
+     * |----------------------------------------------------------------------
+     * | Admin Routes
+     * |----------------------------------------------------------------------
+     */
     Route::prefix('admin')->name('admin.')->middleware('admin')->group(function () {
-
         Route::get('/dashboard', [DashboardController::class, 'admin'])->name('dashboard');
-
         // Users
         Route::resource('users', App\Http\Controllers\UserController::class);
-
+        Route::resource('product-orders', App\Http\Controllers\Admin\ProductOrderController::class)->only(['index', 'show']);
         // Product Orders
         Route::resource('product-orders', App\Http\Controllers\Admin\ProductOrderController::class)->only(['index', 'show']);
-
         // Content Management
         Route::resource('sliders', App\Http\Controllers\Admin\SliderController::class);
         Route::resource('categories', App\Http\Controllers\Admin\CategoryController::class);
@@ -148,16 +143,13 @@ Route::middleware('auth')->group(function () {
         Route::resource('usps', App\Http\Controllers\Admin\UspController::class);
         Route::resource('content-sections', App\Http\Controllers\Admin\ContentSectionController::class);
         Route::resource('about-sections', App\Http\Controllers\Admin\AboutSectionController::class);
-
         // Products
         Route::resource('products', App\Http\Controllers\Admin\ProductController::class);
         Route::delete('products/{product}/images', [App\Http\Controllers\Admin\ProductController::class, 'removeImage'])->name('products.remove-image');
         Route::post('products/{product}/images/reorder', [App\Http\Controllers\Admin\ProductController::class, 'reorderImages'])->name('products.reorder-images');
-
         // Blogs
         Route::resource('blogs', App\Http\Controllers\Admin\BlogController::class);
         Route::post('blogs/upload-image', [App\Http\Controllers\Admin\BlogController::class, 'uploadImage'])->name('blogs.upload-image');
-
         // Pages
         Route::get('contact-page', [App\Http\Controllers\Admin\ContactPageController::class, 'index'])->name('contact-page.index');
         Route::post('contact-page', [App\Http\Controllers\Admin\ContactPageController::class, 'update'])->name('contact-page.update');
@@ -165,13 +157,11 @@ Route::middleware('auth')->group(function () {
         Route::post('about-page', [App\Http\Controllers\Admin\AboutPageController::class, 'update'])->name('about-page.update');
         Route::get('legal-pages/{pageKey}', [App\Http\Controllers\Admin\LegalPageController::class, 'index'])->name('legal-pages.index');
         Route::post('legal-pages/{pageKey}', [App\Http\Controllers\Admin\LegalPageController::class, 'update'])->name('legal-pages.update');
-
         // Membership
         Route::resource('membership-plans', App\Http\Controllers\Admin\MembershipPlanController::class);
         Route::resource('membership-benefits', App\Http\Controllers\Admin\MembershipBenefitController::class);
         Route::resource('membership-faqs', App\Http\Controllers\Admin\MembershipFaqController::class);
         Route::resource('membership-steps', App\Http\Controllers\Admin\MembershipStepController::class);
-
         // Subscriptions
         Route::prefix('subscriptions')->name('subscriptions.')->group(function () {
             Route::get('/', [App\Http\Controllers\Admin\UserSubscriptionController::class, 'index'])->name('index');
@@ -185,7 +175,6 @@ Route::middleware('auth')->group(function () {
             Route::get('{subscription}/deliveries', [App\Http\Controllers\Admin\DeliveryLogController::class, 'index'])->name('deliveries.index');
             Route::post('{subscription}/deliveries/generate', [App\Http\Controllers\Admin\DeliveryLogController::class, 'generateSchedule'])->name('deliveries.generate');
         });
-
         // Deliveries
         Route::prefix('deliveries')->name('deliveries.')->group(function () {
             Route::get('today', [App\Http\Controllers\Admin\DeliveryLogController::class, 'todayDeliveries'])->name('today');
@@ -196,7 +185,6 @@ Route::middleware('auth')->group(function () {
             Route::post('{delivery}/status', [App\Http\Controllers\Admin\DeliveryLogController::class, 'updateStatus'])->name('update-status');
             Route::post('{delivery}/forward', [App\Http\Controllers\Admin\DeliveryLogController::class, 'forwardToNextDay'])->name('forward');
         });
-
         // Contact Inquiries
         Route::prefix('contact-inquiries')->name('contact-inquiries.')->group(function () {
             Route::get('/', [App\Http\Controllers\Admin\ContactInquiryController::class, 'index'])->name('index');
@@ -204,15 +192,12 @@ Route::middleware('auth')->group(function () {
             Route::post('{contactInquiry}/status', [App\Http\Controllers\Admin\ContactInquiryController::class, 'updateStatus'])->name('update-status');
             Route::delete('{contactInquiry}', [App\Http\Controllers\Admin\ContactInquiryController::class, 'destroy'])->name('destroy');
         });
-
         // Support Tickets
         Route::resource('support-tickets', App\Http\Controllers\Admin\SupportTicketController::class)->except(['create', 'store']);
-
         // Offers & Engagement
         Route::resource('coupons', App\Http\Controllers\Admin\CouponController::class);
         Route::resource('referral-codes', App\Http\Controllers\Admin\ReferralCodeController::class);
         Route::resource('loyalty-points', App\Http\Controllers\Admin\LoyaltyPointController::class);
-
         // Locations & SEO
         Route::resource('locations', App\Http\Controllers\Admin\LocationController::class);
         Route::resource('seo-metas', App\Http\Controllers\Admin\SeoMetaController::class);
