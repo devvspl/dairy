@@ -119,6 +119,8 @@ Route::middleware('auth')->group(function () {
         Route::resource('support-tickets', App\Http\Controllers\Member\SupportTicketController::class)->only(['index', 'create', 'store', 'show']);
         Route::get('referrals', [App\Http\Controllers\Member\ReferralController::class, 'index'])->name('referrals.index');
         Route::get('loyalty-points', [App\Http\Controllers\Member\LoyaltyPointController::class, 'index'])->name('loyalty-points.index');
+        Route::get('orders', [App\Http\Controllers\Member\ProductOrderController::class, 'index'])->name('product-orders.index');
+        Route::get('orders/{productOrder}', [App\Http\Controllers\Member\ProductOrderController::class, 'show'])->name('product-orders.show');
     });
 
     /*
