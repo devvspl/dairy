@@ -1337,11 +1337,13 @@
         <div style="margin-bottom:12px;">
           <label style="display:block;font-size:13px;font-weight:600;color:#1f2a1a;margin-bottom:4px;">Full Name *</label>
           <input type="text" id="co_name" required placeholder="Your name"
+                 oninput="_clearStep2Error(this)"
                  style="width:100%;padding:10px 12px;border:1px solid #e7e7e7;border-radius:10px;font-size:14px;box-sizing:border-box;">
         </div>
         <div style="margin-bottom:12px;">
           <label style="display:block;font-size:13px;font-weight:600;color:#1f2a1a;margin-bottom:4px;">Phone *</label>
           <input type="tel" id="co_phone" required placeholder="10-digit mobile number"
+                 oninput="_clearStep2Error(this)"
                  style="width:100%;padding:10px 12px;border:1px solid #e7e7e7;border-radius:10px;font-size:14px;box-sizing:border-box;">
         </div>
         <div style="margin-bottom:12px;">
@@ -1352,6 +1354,7 @@
         <div>
           <label style="display:block;font-size:13px;font-weight:600;color:#1f2a1a;margin-bottom:4px;">Delivery Address *</label>
           <textarea id="co_address" required rows="3" placeholder="Full delivery address"
+                    oninput="_clearStep2Error(this)"
                     style="width:100%;padding:10px 12px;border:1px solid #e7e7e7;border-radius:10px;font-size:14px;box-sizing:border-box;resize:vertical;"></textarea>
         </div>
         <div id="co_step2_error" style="display:none;margin-top:10px;padding:10px 12px;background:#fef2f2;border:1px solid #fecaca;border-radius:10px;color:#dc2626;font-size:13px;font-weight:600;">
@@ -2083,6 +2086,12 @@
       });
     }
 
+    function _clearStep2Error(el) {
+      if (el) el.style.borderColor = '#e7e7e7';
+      const errEl = document.getElementById('co_step2_error');
+      if (errEl) errEl.style.display = 'none';
+    }
+
     function _removeCoupon() {
       window._appliedCoupon = null;
       const input     = document.getElementById('co_coupon_input');
@@ -2283,13 +2292,24 @@
       if (current === 1) {
         _goToCheckoutStep(2);
       } else if (current === 2) {
-        const name  = (document.getElementById('co_name')?.value || '').trim();
-        const phone = (document.getElementById('co_phone')?.value || '').trim();
-        const addr  = (document.getElementById('co_address')?.value || '').trim();
+        const name    = (document.getElementById('co_name')?.value || '').trim();
+        const phone   = (document.getElementById('co_phone')?.value || '').trim();
+        const addr    = (document.getElementById('co_address')?.value || '').trim();
+        const errEl   = document.getElementById('co_step2_error');
         if (!name || !phone || !addr) {
-          alert('Please fill in all required fields.');
+          if (errEl) errEl.style.display = 'block';
+          // Highlight empty fields
+          ['co_name','co_phone','co_address'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el && !el.value.trim()) el.style.borderColor = '#dc2626';
+          });
           return;
         }
+        if (errEl) errEl.style.display = 'none';
+        ['co_name','co_phone','co_address'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.style.borderColor = '#e7e7e7';
+        });
         _goToCheckoutStep(3);
       } else {
         _submitCheckout();
