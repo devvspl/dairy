@@ -8,7 +8,6 @@ use App\Models\DeliveryLog;
 use App\Models\ExportLog;
 use App\Models\UserSubscription;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Maatwebsite\Excel\Facades\Excel;
 
 class DeliveryLogController extends Controller
@@ -229,7 +228,7 @@ class DeliveryLogController extends Controller
         $filename = 'deliveries-' . now()->format('d-M-Y-His') . '.xlsx';
         $path     = 'exports/deliveries/' . $filename;
 
-        Excel::store($exporter, $path, 'public');
+        Excel::store($exporter, $path, 'public_folder');
 
         ExportLog::create([
             'type'          => 'delivery',
@@ -243,7 +242,7 @@ class DeliveryLogController extends Controller
         return response()->json([
             'success'      => true,
             'message'      => 'Export generated successfully.',
-            'download_url' => Storage::url($path),
+            'download_url' => asset($path),
             'filename'     => $filename,
         ]);
     }
@@ -267,7 +266,7 @@ class DeliveryLogController extends Controller
                 'generated_by'  => $e->generatedBy->name ?? '-',
                 'created_at'    => $e->created_at->format('d M Y, h:i A'),
                 'download_url'  => $e->download_url,
-                'exists'        => Storage::disk('public')->exists($e->path),
+                'exists'        => file_exists(public_path($e->path)),
             ]);
 
         return response()->json(['success' => true, 'exports' => $exports]);
@@ -278,7 +277,8 @@ class DeliveryLogController extends Controller
      */
     public function exportDelete(ExportLog $export)
     {
-        Storage::disk('public')->delete($export->path);
+        $full = public_path($export->path);
+        if (file_exists($full)) unlink($full);
         $export->delete();
         return response()->json(['success' => true]);
     }

@@ -121,7 +121,7 @@ class DashboardController extends Controller
         $filename = $location->name . '-deliveries-' . $date . '-' . now()->format('His') . '.xlsx';
         $path     = 'exports/location-deliveries/' . $filename;
 
-        \Maatwebsite\Excel\Facades\Excel::store($exporter, $path, 'public');
+        \Maatwebsite\Excel\Facades\Excel::store($exporter, $path, 'public_folder');
 
         \App\Models\ExportLog::create([
             'type'          => 'location_delivery_' . $location->id,
@@ -134,7 +134,7 @@ class DashboardController extends Controller
 
         return response()->json([
             'success'      => true,
-            'download_url' => \Illuminate\Support\Facades\Storage::url($path),
+            'download_url' => asset($path),
             'filename'     => $filename,
         ]);
     }
@@ -160,7 +160,7 @@ class DashboardController extends Controller
                 'generated_by'  => $e->generatedBy->name ?? '-',
                 'created_at'    => $e->created_at->format('d M Y, h:i A'),
                 'download_url'  => $e->download_url,
-                'exists'        => \Illuminate\Support\Facades\Storage::disk('public')->exists($e->path),
+                'exists'        => file_exists(public_path($e->path)),
             ]);
 
         return response()->json(['success' => true, 'exports' => $exports]);
@@ -173,7 +173,7 @@ class DashboardController extends Controller
         if (!str_starts_with($export->type, 'location_delivery_')) {
             abort(403);
         }
-        \Illuminate\Support\Facades\Storage::disk('public')->delete($export->path);
+        \Illuminate\Support\Facades\Storage::disk('public_folder')->delete($export->path);
         $export->delete();
         return response()->json(['success' => true]);
     }

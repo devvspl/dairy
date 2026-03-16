@@ -4,8 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Support\Facades\Storage;
-
 class ExportLog extends Model
 {
     protected $fillable = [
@@ -19,13 +17,14 @@ class ExportLog extends Model
 
     public function getDownloadUrlAttribute(): string
     {
-        return Storage::disk('public')->url($this->path);
+        return asset($this->path);
     }
 
     public function getFileSizeAttribute(): string
     {
-        if (!Storage::disk('public')->exists($this->path)) return '-';
-        $bytes = Storage::disk('public')->size($this->path);
+        $full = public_path($this->path);
+        if (!file_exists($full)) return '-';
+        $bytes = filesize($full);
         return $bytes >= 1048576
             ? round($bytes / 1048576, 2) . ' MB'
             : round($bytes / 1024, 1) . ' KB';
