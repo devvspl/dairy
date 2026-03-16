@@ -1354,6 +1354,9 @@
           <textarea id="co_address" required rows="3" placeholder="Full delivery address"
                     style="width:100%;padding:10px 12px;border:1px solid #e7e7e7;border-radius:10px;font-size:14px;box-sizing:border-box;resize:vertical;"></textarea>
         </div>
+        <div id="co_step2_error" style="display:none;margin-top:10px;padding:10px 12px;background:#fef2f2;border:1px solid #fecaca;border-radius:10px;color:#dc2626;font-size:13px;font-weight:600;">
+          Please fill in all required fields.
+        </div>
       </div>
 
       <!-- Checkout Step 3: Review & Pay -->
