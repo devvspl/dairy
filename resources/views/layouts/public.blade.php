@@ -2045,13 +2045,13 @@
           const totalEl = document.getElementById('coSummaryTotal');
           if (totalEl) {
             totalEl.innerHTML =
-              `<div style="display:flex;justify-content:space-between;font-size:13px;color:#6a7a63;margin-bottom:2px;">
+              `<div style="display:flex;justify-content:space-between;font-size:13px;color:#6a7a63;margin-bottom:6px;">
                 <span>Subtotal</span><span>₹${total.toFixed(0)}</span>
               </div>
-              <div style="display:flex;justify-content:space-between;font-size:13px;color:#16a34a;margin-bottom:4px;">
+              <div style="display:flex;justify-content:space-between;font-size:13px;color:#16a34a;margin-bottom:8px;">
                 <span>Discount (${data.coupon_code})</span><span>-₹${data.discount.toFixed(0)}</span>
               </div>
-              <div style="display:flex;justify-content:space-between;font-weight:800;font-size:15px;">
+              <div style="display:flex;justify-content:space-between;font-weight:800;font-size:15px;border-top:1px solid #e7e7e7;padding-top:8px;">
                 <span style="color:#1f2a1a;">Total</span>
                 <span style="color:#2f4a1e;">₹${data.final_total.toFixed(0)}</span>
               </div>`;
@@ -2199,9 +2199,11 @@
           <div style="font-weight:800;color:#2f4a1e;font-size:14px;flex-shrink:0;">₹${(item.price * item.quantity).toFixed(0)}</div>
         </div>`;
       });
-      html += `<div id="coSummaryTotal" style="display:flex;justify-content:space-between;padding-top:12px;font-weight:800;font-size:15px;">
-        <span style="color:#1f2a1a;">Total</span>
-        <span style="color:#2f4a1e;">₹${total.toFixed(0)}</span>
+      html += `<div id="coSummaryTotal" style="padding-top:12px;margin-top:4px;">
+        <div style="display:flex;justify-content:space-between;font-weight:800;font-size:15px;border-top:1px solid #e7e7e7;padding-top:12px;">
+          <span style="color:#1f2a1a;">Total</span>
+          <span style="color:#2f4a1e;">₹${total.toFixed(0)}</span>
+        </div>
       </div>`;
       document.getElementById('coSummary').innerHTML = html;
 
