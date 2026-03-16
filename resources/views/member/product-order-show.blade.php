@@ -77,33 +77,45 @@
         </div>
         <div class="divide-y" style="border-color: var(--border);">
             @foreach($productOrder->items as $item)
+            @php
+                $qty   = $item['quantity'] ?? $item['qty'] ?? 1;
+                $price = $item['price'] ?? 0;
+                $img   = $item['image'] ?? null;
+            @endphp
             <div class="px-5 py-3 flex items-center justify-between gap-3">
                 <div class="flex items-center gap-3">
-                    @if(!empty($item['image']))
-                    <img src="{{ asset('storage/' . $item['image']) }}" alt="{{ $item['name'] ?? '' }}"
-                         class="w-12 h-12 rounded-lg object-cover border" style="border-color: var(--border);">
+                    @if($img)
+                    <img src="{{ asset($img) }}" alt="{{ $item['name'] ?? '' }}"
+                         class="w-12 h-12 rounded-lg object-cover border flex-shrink-0"
+                         style="border-color: var(--border);"
+                         onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                    <div class="w-12 h-12 rounded-lg items-center justify-center flex-shrink-0 hidden"
+                         style="background-color: rgba(47,74,30,0.08); display:none;">
+                        <i class="fa-solid fa-box text-lg" style="color: var(--green);"></i>
+                    </div>
                     @else
-                    <div class="w-12 h-12 rounded-lg flex items-center justify-center" style="background-color: rgba(47,74,30,0.08);">
+                    <div class="w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0"
+                         style="background-color: rgba(47,74,30,0.08);">
                         <i class="fa-solid fa-box text-lg" style="color: var(--green);"></i>
                     </div>
                     @endif
                     <div>
                         <p class="text-sm font-semibold" style="color: var(--text);">{{ $item['name'] ?? 'Product' }}</p>
-                        @if(!empty($item['variant'])) <p class="text-xs" style="color: var(--muted);">{{ $item['variant'] }}</p> @endif
-                        <p class="text-xs" style="color: var(--muted);">Qty: {{ $item['qty'] ?? 1 }}</p>
+                        @if(!empty($item['variant']))
+                        <p class="text-xs" style="color: var(--muted);">{{ $item['variant'] }}</p>
+                        @endif
+                        <p class="text-xs" style="color: var(--muted);">Qty: {{ $qty }}</p>
                     </div>
                 </div>
-                <div class="text-right">
-                    <p class="text-sm font-bold" style="color: var(--green);">
-                        ₹{{ number_format(($item['price'] ?? 0) * ($item['qty'] ?? 1), 2) }}
-                    </p>
-                    <p class="text-xs" style="color: var(--muted);">₹{{ number_format($item['price'] ?? 0, 2) }} each</p>
+                <div class="text-right flex-shrink-0">
+                    <p class="text-sm font-bold" style="color: var(--green);">₹{{ number_format($price * $qty, 2) }}</p>
+                    <p class="text-xs" style="color: var(--muted);">₹{{ number_format($price, 2) }} each</p>
                 </div>
             </div>
             @endforeach
         </div>
-        <!-- Total row -->
-        <div class="px-5 py-3 border-t flex justify-between items-center" style="border-color: var(--border); background-color: rgba(47,74,30,0.03);">
+        <div class="px-5 py-3 border-t flex justify-between items-center"
+             style="border-color: var(--border); background-color: rgba(47,74,30,0.03);">
             <span class="font-bold text-sm" style="color: var(--text);">Total</span>
             <span class="font-bold text-base" style="color: var(--green);">₹{{ number_format($productOrder->amount, 2) }}</span>
         </div>
