@@ -7,7 +7,6 @@ use App\Http\Controllers\Controller;
 use App\Models\ExportLog;
 use App\Models\ProductOrder;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Maatwebsite\Excel\Facades\Excel;
 
 class ProductOrderController extends Controller
@@ -76,12 +75,9 @@ class ProductOrderController extends Controller
         $filename = 'product-orders-' . now()->format('Y-m-d-His') . '.xlsx';
         $path     = 'exports/product-orders/' . $filename;
 
-        // Ensure directory exists on public disk
-        Storage::disk('public')->makeDirectory('exports/product-orders');
+        Excel::store($exporter, $path, 'public_folder');
 
-        Excel::store($exporter, $path, 'public');
-
-        if (!Storage::disk('public')->exists($path)) {
+        if (!file_exists(public_path($path))) {
             return response()->json(['success' => false, 'message' => 'Export failed to save file.'], 500);
         }
 
@@ -104,7 +100,7 @@ class ProductOrderController extends Controller
 
         return response()->json([
             'success'      => true,
-            'download_url' => Storage::disk('public')->url($path),
+            'download_url' => asset($path),
             'filename'     => $filename,
         ]);
     }
@@ -125,7 +121,7 @@ class ProductOrderController extends Controller
                 'generated_by'  => $e->generatedBy->name ?? '-',
                 'created_at'    => $e->created_at->format('d M Y, h:i A'),
                 'download_url'  => $e->download_url,
-                'exists'        => Storage::disk('public')->exists($e->path),
+                'exists'        => file_exists(public_path($e->path)),
             ]);
 
         return response()->json(['success' => true, 'exports' => $exports]);
@@ -134,7 +130,8 @@ class ProductOrderController extends Controller
     public function exportDelete(ExportLog $export)
     {
         abort_if($export->type !== 'product_orders', 403);
-        Storage::disk('public')->delete($export->path);
+        $full = public_path($export->path);
+        if (file_exists($full)) unlink($full);
         $export->delete();
         return response()->json(['success' => true]);
     }
