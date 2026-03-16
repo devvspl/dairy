@@ -61,6 +61,8 @@ class ProductOrdersExport implements
             'Email'          => $o->customer_email ?? '-',
             'Items'          => collect($o->items)->sum('quantity'),
             'Amount (₹)'     => number_format($o->amount, 2),
+            'Discount (₹)'   => $o->discount_amount > 0 ? number_format($o->discount_amount, 2) : '-',
+            'Coupon'         => $o->coupon_code ?? '-',
             'Payment Method' => ucfirst(str_replace('_', ' ', $o->payment_method ?? '-')),
             'Status'         => ucfirst($o->status),
             'Transaction ID' => $o->transaction_id ?? '-',
@@ -74,7 +76,7 @@ class ProductOrdersExport implements
 
     public function headings(): array
     {
-        return ['Order ID', 'Customer', 'Phone', 'Email', 'Items', 'Amount (₹)', 'Payment Method', 'Status', 'Transaction ID', 'Paid At', 'Order Date'];
+        return ['Order ID', 'Customer', 'Phone', 'Email', 'Items', 'Amount (₹)', 'Discount (₹)', 'Coupon', 'Payment Method', 'Status', 'Transaction ID', 'Paid At', 'Order Date'];
     }
 
     public function title(): string
@@ -84,13 +86,13 @@ class ProductOrdersExport implements
 
     public function columnWidths(): array
     {
-        return ['A' => 22, 'B' => 22, 'C' => 15, 'D' => 28, 'E' => 8, 'F' => 14, 'G' => 18, 'H' => 13, 'I' => 28, 'J' => 18, 'K' => 18];
+        return ['A' => 22, 'B' => 22, 'C' => 15, 'D' => 28, 'E' => 8, 'F' => 14, 'G' => 14, 'H' => 16, 'I' => 18, 'J' => 13, 'K' => 28, 'L' => 18, 'M' => 18];
     }
 
     public function styles(Worksheet $sheet)
     {
         $lastRow = $sheet->getHighestRow();
-        $lastCol = 'K';
+        $lastCol = 'M';
 
         $sheet->getStyle("A1:{$lastCol}1")->applyFromArray([
             'font'      => ['bold' => true, 'color' => ['argb' => 'FFFFFFFF'], 'size' => 11],
@@ -101,7 +103,7 @@ class ProductOrdersExport implements
         $sheet->getRowDimension(1)->setRowHeight(22);
 
         for ($row = 2; $row <= $lastRow; $row++) {
-            $status = strtolower((string) $sheet->getCell("H{$row}")->getValue());
+            $status = strtolower((string) $sheet->getCell("J{$row}")->getValue());
             $rowBg  = match ($status) {
                 'success'   => 'FFD1FAE5',
                 'pending'   => 'FFFEF9C3',
@@ -122,7 +124,7 @@ class ProductOrdersExport implements
                 'borders'   => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['argb' => 'FFD1D5DB']]],
                 'alignment' => ['vertical' => Alignment::VERTICAL_CENTER],
             ]);
-            $sheet->getStyle("H{$row}")->applyFromArray([
+            $sheet->getStyle("J{$row}")->applyFromArray([
                 'font'      => ['bold' => true, 'color' => ['argb' => $textColor]],
                 'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
             ]);

@@ -1312,6 +1312,19 @@
       <!-- Checkout Step 1: Order Summary -->
       <div class="dairy-offcanvas-body" id="coStep1" style="display:none;">
         <div id="coSummary"></div>
+        <!-- Coupon -->
+        <div style="margin-top:14px;padding-top:14px;border-top:1px solid #e7e7e7;">
+          <p style="font-size:12px;font-weight:700;color:#6a7a63;text-transform:uppercase;letter-spacing:.5px;margin:0 0 8px;">Have a coupon?</p>
+          <div style="display:flex;gap:8px;">
+            <input type="text" id="co_coupon_input" placeholder="Enter coupon code"
+                   style="flex:1;padding:9px 12px;border:1px solid #e7e7e7;border-radius:10px;font-size:13px;text-transform:uppercase;box-sizing:border-box;">
+            <button onclick="_applyCoupon()"
+                    style="padding:9px 14px;background:#2f4a1e;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">
+              Apply
+            </button>
+          </div>
+          <div id="co_coupon_msg" style="margin-top:6px;font-size:12px;display:none;"></div>
+        </div>
       </div>
 
       <!-- Checkout Step 2: Details -->
@@ -1986,8 +1999,12 @@
     <script>
     const PRODUCT_ORDER_URL   = '{{ route('payment.product.initiate') }}';
     const PRODUCT_CSRF        = '{{ csrf_token() }}';
+    const APPLY_COUPON_URL    = '{{ route('payment.product.apply-coupon') }}';
     const IS_MEMBER_LOGGED_IN = {{ auth()->check() && auth()->user()->isMember() ? 'true' : 'false' }};
     const MEMBER_LOGIN_URL    = '{{ route('member.login') }}';
+
+    // Applied coupon state
+    window._appliedCoupon = null; // { code, discount, final_total, message }
 
     // ── helpers to switch cart offcanvas between cart-view and checkout-view ──
 
@@ -2001,6 +2018,56 @@
         document.getElementById(id).style.display = 'none';
       });
       document.getElementById('checkoutFooter').style.display = 'none';
+    }
+
+    function _applyCoupon() {
+      const input  = document.getElementById('co_coupon_input');
+      const msgEl  = document.getElementById('co_coupon_msg');
+      const code   = (input?.value || '').trim().toUpperCase();
+      if (!code) return;
+
+      const total = window.DairyCart ? window.DairyCart.getCartTotal() : 0;
+
+      fetch(APPLY_COUPON_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': PRODUCT_CSRF },
+        body: JSON.stringify({ code, total }),
+      })
+      .then(r => r.json())
+      .then(data => {
+        msgEl.style.display = 'block';
+        if (data.success) {
+          window._appliedCoupon = { code: data.coupon_code, discount: data.discount, final_total: data.final_total, message: data.message };
+          msgEl.style.color = '#16a34a';
+          msgEl.textContent = data.message;
+          input.disabled = true;
+          // Update step-1 total display
+          const totalEl = document.getElementById('coSummaryTotal');
+          if (totalEl) {
+            totalEl.innerHTML =
+              `<div style="display:flex;justify-content:space-between;font-size:13px;color:#6a7a63;margin-bottom:2px;">
+                <span>Subtotal</span><span>₹${total.toFixed(0)}</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;font-size:13px;color:#16a34a;margin-bottom:4px;">
+                <span>Discount (${data.coupon_code})</span><span>-₹${data.discount.toFixed(0)}</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;font-weight:800;font-size:15px;">
+                <span style="color:#1f2a1a;">Total</span>
+                <span style="color:#2f4a1e;">₹${data.final_total.toFixed(0)}</span>
+              </div>`;
+          }
+        } else {
+          window._appliedCoupon = null;
+          msgEl.style.color = '#dc2626';
+          msgEl.textContent = data.message;
+          input.disabled = false;
+        }
+      })
+      .catch(() => {
+        msgEl.style.display = 'block';
+        msgEl.style.color = '#dc2626';
+        msgEl.textContent = 'Failed to apply coupon. Try again.';
+      });
     }
 
     function _showCheckoutStep(step) {
@@ -2035,7 +2102,7 @@
         nextBtn.style.display = '';
       } else {
         // Step 3: show pay button
-        const total = window.DairyCart ? window.DairyCart.getCartTotal() : 0;
+        const total = window._appliedCoupon ? window._appliedCoupon.final_total : (window.DairyCart ? window.DairyCart.getCartTotal() : 0);
         nextBtn.innerHTML = '<i class="fa-solid fa-lock" style="margin-right:6px;"></i>Pay ₹' + total.toFixed(0);
         nextBtn.style.display = '';
       }
@@ -2065,8 +2132,11 @@
           return;
         }
         // Build review
-        const cart  = window.DairyCart ? window.DairyCart.getCart() : [];
-        const total = window.DairyCart ? window.DairyCart.getCartTotal() : 0;
+        const cart     = window.DairyCart ? window.DairyCart.getCart() : [];
+        const subtotal = window.DairyCart ? window.DairyCart.getCartTotal() : 0;
+        const coupon   = window._appliedCoupon;
+        const payTotal = coupon ? coupon.final_total : subtotal;
+
         let html = `<div style="margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid #e7e7e7;">
           <div style="font-size:12px;color:#6a7a63;margin-bottom:2px;">Deliver to</div>
           <div style="font-weight:700;color:#1f2a1a;font-size:13px;">${name} · ${phone}</div>
@@ -2078,9 +2148,18 @@
             <span style="font-weight:700;color:#2f4a1e;">₹${(item.price * item.quantity).toFixed(0)}</span>
           </div>`;
         });
-        html += `<div style="display:flex;justify-content:space-between;padding-top:8px;font-weight:800;font-size:15px;border-top:1px solid #e7e7e7;margin-top:6px;">
-          <span>Total</span><span style="color:#2f4a1e;">₹${total.toFixed(0)}</span>
-        </div>`;
+        html += `<div style="border-top:1px solid #e7e7e7;margin-top:6px;padding-top:8px;">`;
+        if (coupon) {
+          html += `<div style="display:flex;justify-content:space-between;font-size:13px;color:#6a7a63;margin-bottom:4px;">
+            <span>Subtotal</span><span>₹${subtotal.toFixed(0)}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:13px;color:#16a34a;margin-bottom:4px;">
+            <span>Coupon (${coupon.code})</span><span>-₹${coupon.discount.toFixed(0)}</span>
+          </div>`;
+        }
+        html += `<div style="display:flex;justify-content:space-between;font-weight:800;font-size:15px;">
+          <span>Total</span><span style="color:#2f4a1e;">₹${payTotal.toFixed(0)}</span>
+        </div></div>`;
         document.getElementById('coReview').innerHTML = html;
         const errEl = document.getElementById('checkoutError');
         if (errEl) errEl.style.display = 'none';
@@ -2100,6 +2179,13 @@
       const total = window.DairyCart ? window.DairyCart.getCartTotal() : 0;
       if (!cart.length) return;
 
+      // Reset coupon state
+      window._appliedCoupon = null;
+      const couponInput = document.getElementById('co_coupon_input');
+      const couponMsg   = document.getElementById('co_coupon_msg');
+      if (couponInput) { couponInput.value = ''; couponInput.disabled = false; }
+      if (couponMsg)   { couponMsg.style.display = 'none'; couponMsg.textContent = ''; }
+
       // Build step-1 order summary
       let html = '';
       cart.forEach(item => {
@@ -2113,7 +2199,7 @@
           <div style="font-weight:800;color:#2f4a1e;font-size:14px;flex-shrink:0;">₹${(item.price * item.quantity).toFixed(0)}</div>
         </div>`;
       });
-      html += `<div style="display:flex;justify-content:space-between;padding-top:12px;font-weight:800;font-size:15px;">
+      html += `<div id="coSummaryTotal" style="display:flex;justify-content:space-between;padding-top:12px;font-weight:800;font-size:15px;">
         <span style="color:#1f2a1a;">Total</span>
         <span style="color:#2f4a1e;">₹${total.toFixed(0)}</span>
       </div>`;
@@ -2188,6 +2274,7 @@
           customer_phone:   document.getElementById('co_phone').value,
           customer_email:   document.getElementById('co_email').value,
           delivery_address: document.getElementById('co_address').value,
+          coupon_code:      window._appliedCoupon ? window._appliedCoupon.code : null,
         }),
       })
       .then(r => r.json())

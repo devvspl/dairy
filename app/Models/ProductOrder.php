@@ -10,11 +10,12 @@ class ProductOrder extends Model
         'user_id', 'order_id', 'transaction_id', 'amount', 'status',
         'payment_method', 'items', 'payment_response',
         'customer_name', 'customer_phone', 'customer_email',
-        'delivery_address', 'paid_at',
+        'delivery_address', 'paid_at', 'coupon_code', 'discount_amount',
     ];
 
     protected $casts = [
         'amount'           => 'decimal:2',
+        'discount_amount'  => 'decimal:2',
         'items'            => 'array',
         'payment_response' => 'array',
         'paid_at'          => 'datetime',

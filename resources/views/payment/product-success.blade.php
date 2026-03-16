@@ -19,6 +19,16 @@
                 <span style="color:#6a7a63;font-size:14px;">Order ID</span>
                 <span style="font-weight:700;color:#1f2a1a;font-size:14px;">{{ $order->order_id }}</span>
             </div>
+            @if($order->discount_amount > 0)
+            <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+                <span style="color:#6a7a63;font-size:14px;">Subtotal</span>
+                <span style="font-weight:600;color:#1f2a1a;font-size:14px;">₹{{ number_format($order->amount + $order->discount_amount, 2) }}</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+                <span style="color:#16a34a;font-size:14px;">Coupon ({{ $order->coupon_code }})</span>
+                <span style="font-weight:700;color:#16a34a;font-size:14px;">-₹{{ number_format($order->discount_amount, 2) }}</span>
+            </div>
+            @endif
             <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
                 <span style="color:#6a7a63;font-size:14px;">Amount Paid</span>
                 <span style="font-weight:800;color:#2f4a1e;font-size:18px;">₹{{ number_format($order->amount, 2) }}</span>

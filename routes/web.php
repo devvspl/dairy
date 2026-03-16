@@ -35,6 +35,7 @@ Route::get('/blogs/{slug}', [PublicController::class, 'blogDetail'])->name('blog
 // Product Cart Payment (guest + auth)
 Route::prefix('payment')->name('payment.')->group(function () {
     Route::post('/product-order/initiate', [App\Http\Controllers\PaymentController::class, 'initiateProductOrder'])->name('product.initiate');
+    Route::post('/product-order/apply-coupon', [App\Http\Controllers\PaymentController::class, 'applyCoupon'])->name('product.apply-coupon');
     Route::any('/product-order/callback', [App\Http\Controllers\PaymentController::class, 'productOrderCallback'])->name('product.callback');
     Route::get('/product-order/success/{order}', [App\Http\Controllers\PaymentController::class, 'productOrderSuccess'])->name('product.success');
 });

@@ -58,7 +58,7 @@
                 <label class="block text-xs font-medium mb-1" style="color: var(--muted);">Payment</label>
                 <select name="payment_status" class="w-full px-3 py-2 border rounded-lg text-sm" style="border-color: var(--border);">
                     <option value="">All Payments</option>
-                    @foreach(['pending','paid','failed','refunded'] as $p)
+                    @foreach(['pending','paid','failed'] as $p)
                     <option value="{{ $p }}" {{ request('payment_status') === $p ? 'selected' : '' }}>{{ ucfirst($p) }}</option>
                     @endforeach
                 </select>

@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Coupon;
+use App\Models\CouponUsage;
 use App\Models\Order;
 use App\Models\MembershipPlan;
 use App\Models\Product;
@@ -325,6 +327,58 @@ class PaymentController extends Controller
     // =========================================================
 
     /**
+     * Validate and apply a coupon to a product cart (AJAX)
+     */
+    public function applyCoupon(Request $request)
+    {
+        $request->validate([
+            'code'  => 'required|string',
+            'total' => 'required|numeric|min:0',
+        ]);
+
+        $coupon = \App\Models\Coupon::where('code', strtoupper(trim($request->code)))->first();
+
+        if (!$coupon) {
+            return response()->json(['success' => false, 'message' => 'Invalid coupon code.']);
+        }
+
+        if (!$coupon->isValid()) {
+            return response()->json(['success' => false, 'message' => 'This coupon has expired or is no longer active.']);
+        }
+
+        // Check applicable_to
+        if ($coupon->applicable_to === 'membership') {
+            return response()->json(['success' => false, 'message' => 'This coupon is only valid for membership plans.']);
+        }
+
+        // Check per-user usage if logged in
+        if (auth()->check()) {
+            if (!$coupon->canBeUsedBy(auth()->id())) {
+                return response()->json(['success' => false, 'message' => 'You have already used this coupon.']);
+            }
+        }
+
+        $total    = (float) $request->total;
+        $discount = $coupon->calculateDiscount($total);
+
+        if ($discount <= 0) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Minimum order amount of ₹' . number_format($coupon->min_purchase_amount, 0) . ' required.',
+            ]);
+        }
+
+        return response()->json([
+            'success'         => true,
+            'discount'        => $discount,
+            'final_total'     => max(0, $total - $discount),
+            'coupon_code'     => $coupon->code,
+            'coupon_name'     => $coupon->name,
+            'message'         => 'Coupon applied! You save ₹' . number_format($discount, 2),
+        ]);
+    }
+
+    /**
      * Initiate payment for a product cart order (guest or logged-in)
      */
     public function initiateProductOrder(Request $request)
@@ -344,6 +398,7 @@ class PaymentController extends Controller
             'customer_phone'   => 'required|string|max:20',
             'customer_email'   => 'nullable|email|max:255',
             'delivery_address' => 'required|string|max:500',
+            'coupon_code'      => 'nullable|string|max:50',
         ]);
 
         // Verify prices server-side and check stock
@@ -366,6 +421,23 @@ class PaymentController extends Controller
             $total += $product->price * $item['quantity'];
         }
 
+        // Apply coupon server-side
+        $couponCode     = null;
+        $discountAmount = 0;
+        if ($request->filled('coupon_code')) {
+            $coupon = Coupon::where('code', strtoupper(trim($request->coupon_code)))->first();
+            if ($coupon && $coupon->isValid() && $coupon->applicable_to !== 'membership') {
+                $user = auth()->user();
+                if (!$user || $coupon->canBeUsedBy($user->id)) {
+                    $discountAmount = $coupon->calculateDiscount($total);
+                    if ($discountAmount > 0) {
+                        $couponCode = $coupon->code;
+                        $total      = max(0, $total - $discountAmount);
+                    }
+                }
+            }
+        }
+
         DB::beginTransaction();
         try {
             $user  = auth()->user();
@@ -373,6 +445,8 @@ class PaymentController extends Controller
                 'user_id'          => $user?->id,
                 'order_id'         => ProductOrder::generateOrderId(),
                 'amount'           => $total,
+                'discount_amount'  => $discountAmount,
+                'coupon_code'      => $couponCode,
                 'status'           => 'pending',
                 'payment_method'   => 'phonepe',
                 'items'            => $items,
@@ -456,6 +530,20 @@ class PaymentController extends Controller
                             ]);
                         }
                     });
+                }
+
+                // Record coupon usage
+                if ($order->coupon_code && $order->user_id) {
+                    $coupon = Coupon::where('code', $order->coupon_code)->first();
+                    if ($coupon) {
+                        CouponUsage::create([
+                            'coupon_id'       => $coupon->id,
+                            'user_id'         => $order->user_id,
+                            'order_id'        => $order->id,
+                            'discount_amount' => $order->discount_amount,
+                        ]);
+                        $coupon->increment('times_used');
+                    }
                 }
 
                 DB::commit();
