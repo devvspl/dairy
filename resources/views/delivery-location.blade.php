@@ -407,7 +407,7 @@ const DEFAULT_NOTES = {
 document.getElementById('statusSelect').addEventListener('change', function () {
     const note = DEFAULT_NOTES[this.value] || '';
     document.getElementById('notesInput').value = note;
-    document.getElementById('notesHint').textContent = note ? 'Default: ' + note : '';
+    document.getElementById('notesHint').textContent = note ? '💬 Default: ' + note : '';
 });
 
 function openModal(id, status, qty, time, notes) {

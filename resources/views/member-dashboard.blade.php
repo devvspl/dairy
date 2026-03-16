@@ -457,6 +457,168 @@
     @endif
 </div>
 
+<!-- Product Order History -->
+@php
+    $productOrders = \App\Models\ProductOrder::where('user_id', auth()->id())
+        ->latest()
+        ->take(10)
+        ->get();
+@endphp
+@if($productOrders->count())
+<div class="bg-white rounded-xl shadow-sm p-4 lg:p-6 border" style="border-color: var(--border);">
+    <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-bold" style="color: var(--text);">
+            <i class="fa-solid fa-bag-shopping mr-2" style="color: var(--green);"></i>Product Orders
+        </h2>
+        <span class="text-xs px-2 py-1 rounded-full font-semibold" style="background-color: rgba(47,74,30,0.1); color: var(--green);">
+            {{ $productOrders->count() }} orders
+        </span>
+    </div>
+    <div class="space-y-3">
+        @foreach($productOrders as $po)
+        @php
+            $sc = match($po->status) {
+                'success'   => ['bg' => '#dcfce7', 'border' => '#16a34a', 'text' => '#15803d', 'icon' => 'fa-check-circle'],
+                'pending'   => ['bg' => '#fef3c7', 'border' => '#d97706', 'text' => '#92400e', 'icon' => 'fa-clock'],
+                'failed'    => ['bg' => '#fee2e2', 'border' => '#dc2626', 'text' => '#991b1b', 'icon' => 'fa-times-circle'],
+                'cancelled' => ['bg' => '#f3f4f6', 'border' => '#9ca3af', 'text' => '#6b7280', 'icon' => 'fa-ban'],
+                default     => ['bg' => '#f3f4f6', 'border' => '#9ca3af', 'text' => '#6b7280', 'icon' => 'fa-circle'],
+            };
+        @endphp
+        <div class="rounded-lg border p-3" style="border-color: {{ $sc['border'] }}; background-color: {{ $sc['bg'] }};">
+            <div class="flex items-start justify-between gap-3">
+                <div class="flex-1 min-w-0">
+                    <!-- Order ID + Status -->
+                    <div class="flex items-center gap-2 flex-wrap mb-1.5">
+                        <span class="font-bold text-sm" style="color: var(--text);">{{ $po->order_id }}</span>
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded-full font-semibold"
+                              style="background-color: white; color: {{ $sc['text'] }}; border: 1px solid {{ $sc['border'] }};">
+                            <i class="fa-solid {{ $sc['icon'] }} text-[10px]"></i>
+                            {{ ucfirst($po->status) }}
+                        </span>
+                    </div>
+                    <!-- Items -->
+                    @if($po->items && count($po->items))
+                    <div class="flex flex-wrap gap-1 mb-1.5">
+                        @foreach(array_slice($po->items, 0, 3) as $item)
+                        <span class="text-xs px-2 py-0.5 rounded bg-white" style="color: var(--text); border: 1px solid #e5e7eb;">
+                            {{ $item['name'] ?? 'Item' }}
+                            @if(!empty($item['qty'])) &times;{{ $item['qty'] }}@endif
+                        </span>
+                        @endforeach
+                        @if(count($po->items) > 3)
+                        <span class="text-xs px-2 py-0.5 rounded bg-white" style="color: var(--muted); border: 1px solid #e5e7eb;">
+                            +{{ count($po->items) - 3 }} more
+                        </span>
+                        @endif
+                    </div>
+                    @endif
+                    <!-- Meta -->
+                    <div class="flex flex-wrap gap-x-4 gap-y-0.5">
+                        <span class="text-xs" style="color: var(--muted);">
+                            <i class="fa-regular fa-clock mr-1"></i>{{ $po->created_at->format('d M Y, h:i A') }}
+                        </span>
+                        <span class="text-xs" style="color: var(--muted);">
+                            <i class="fa-solid fa-credit-card mr-1"></i>{{ ucfirst(str_replace('_', ' ', $po->payment_method)) }}
+                        </span>
+                    </div>
+                </div>
+                <!-- Amount -->
+                <div class="text-right flex-shrink-0">
+                    <p class="text-lg font-bold" style="color: var(--green);">₹{{ number_format($po->amount, 0) }}</p>
+                    @if($po->paid_at)
+                    <p class="text-xs" style="color: var(--muted);">Paid {{ $po->paid_at->format('d M') }}</p>
+                    @endif
+                </div>
+            </div>
+        </div>
+        @endforeach
+    </div>
+</div>
+@endif
+
+<!-- Order History -->
+@php
+    $orderHistory = auth()->user()->subscriptions()
+        ->with('membershipPlan', 'location')
+        ->latest()
+        ->take(10)
+        ->get();
+@endphp
+@if($orderHistory->count())
+<div class="bg-white rounded-xl shadow-sm p-4 lg:p-6 border" style="border-color: var(--border);">
+    <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-bold" style="color: var(--text);">
+            <i class="fa-solid fa-receipt mr-2" style="color: var(--green);"></i>Order History
+        </h2>
+        <span class="text-xs px-2 py-1 rounded-full font-semibold" style="background-color: rgba(47,74,30,0.1); color: var(--green);">
+            {{ $orderHistory->count() }} orders
+        </span>
+    </div>
+    <div class="space-y-3">
+        @foreach($orderHistory as $order)
+        @php
+            $statusColors = [
+                'active'    => ['bg' => '#dcfce7', 'border' => '#16a34a', 'text' => '#15803d'],
+                'pending'   => ['bg' => '#fef3c7', 'border' => '#d97706', 'text' => '#92400e'],
+                'expired'   => ['bg' => '#f3f4f6', 'border' => '#9ca3af', 'text' => '#6b7280'],
+                'cancelled' => ['bg' => '#fee2e2', 'border' => '#dc2626', 'text' => '#991b1b'],
+            ];
+            $sc = $statusColors[$order->status] ?? $statusColors['pending'];
+            $payColors = [
+                'paid'    => ['bg' => '#dcfce7', 'text' => '#15803d'],
+                'pending' => ['bg' => '#fef3c7', 'text' => '#92400e'],
+                'failed'  => ['bg' => '#fee2e2', 'text' => '#991b1b'],
+            ];
+            $pc = $payColors[$order->payment_status] ?? $payColors['pending'];
+        @endphp
+        <div class="rounded-lg border p-3 flex flex-col sm:flex-row sm:items-center gap-3"
+             style="border-color: {{ $sc['border'] }}; background-color: {{ $sc['bg'] }};">
+            <!-- Plan Info -->
+            <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2 flex-wrap">
+                    <span class="font-bold text-sm" style="color: var(--text);">
+                        {{ $order->membershipPlan->name ?? 'Plan' }}
+                    </span>
+                    <span class="px-2 py-0.5 text-xs rounded-full font-semibold"
+                          style="background-color: {{ $sc['bg'] }}; color: {{ $sc['text'] }}; border: 1px solid {{ $sc['border'] }};">
+                        {{ ucfirst($order->status) }}
+                    </span>
+                    <span class="px-2 py-0.5 text-xs rounded-full font-semibold"
+                          style="background-color: {{ $pc['bg'] }}; color: {{ $pc['text'] }};">
+                        {{ ucfirst($order->payment_status) }}
+                    </span>
+                </div>
+                <div class="flex flex-wrap gap-x-4 gap-y-1 mt-1.5">
+                    <span class="text-xs" style="color: var(--muted);">
+                        <i class="fa-solid fa-calendar mr-1"></i>
+                        {{ $order->start_date->format('d M Y') }} – {{ $order->end_date->format('d M Y') }}
+                    </span>
+                    @if($order->location)
+                    <span class="text-xs" style="color: var(--muted);">
+                        <i class="fa-solid fa-map-marker-alt mr-1"></i>{{ $order->location->name }}
+                    </span>
+                    @endif
+                    @if($order->transaction_id)
+                    <span class="text-xs" style="color: var(--muted);">
+                        <i class="fa-solid fa-hashtag mr-1"></i>{{ $order->transaction_id }}
+                    </span>
+                    @endif
+                </div>
+            </div>
+            <!-- Amount -->
+            <div class="text-right flex-shrink-0">
+                <p class="text-lg font-bold" style="color: var(--green);">₹{{ number_format($order->amount_paid, 0) }}</p>
+                <p class="text-xs" style="color: var(--muted);">
+                    {{ $order->payment_method ? ucfirst(str_replace('_', ' ', $order->payment_method)) : '—' }}
+                </p>
+            </div>
+        </div>
+        @endforeach
+    </div>
+</div>
+@endif
+
 <!-- Floating Support Button -->
 <a href="{{ route('member.support-tickets.index') }}" 
    class="fixed bottom-6 right-6 w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-all hover:scale-110 hover:shadow-xl z-50"
