@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
@@ -463,7 +463,7 @@
     }
     .nav a:hover{ opacity:.85; }
 
-    /* ✅ Hamburger (same style as your old .hamburger) */
+    /* âœ… Hamburger (same style as your old .hamburger) */
     .tb-hamburger{
       display:none;
       width:44px;
@@ -645,9 +645,10 @@
       border-color: #f1cc24;
     }
     .dairy-offcanvas-body {
-      flex: 1;
+      flex: 1 1 auto;
       overflow-y: auto;
-      padding: 20px 24px;
+      padding: 16px 20px;
+      min-height: 0;
     }
     .dairy-offcanvas-empty {
       text-align: center;
@@ -666,11 +667,12 @@
     }
     .dairy-offcanvas-item {
       display: flex;
-      gap: 14px;
-      padding: 14px;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 12px;
       border: 1px solid #e0e0e0;
       border-radius: 12px;
-      margin-bottom: 12px;
+      margin-bottom: 10px;
       background: #fff;
       transition: all 0.2s ease;
     }
@@ -679,8 +681,8 @@
       box-shadow: 0 4px 12px rgba(0,0,0,0.08);
     }
     .dairy-offcanvas-img {
-      width: 80px;
-      height: 80px;
+      width: 60px;
+      height: 60px;
       border-radius: 8px;
       object-fit: cover;
       border: 1px solid #e0e0e0;
@@ -691,37 +693,43 @@
       min-width: 0;
     }
     .dairy-offcanvas-name {
-      font-weight: 800;
-      font-size: 14px;
+      font-weight: 700;
+      font-size: 13px;
       color: var(--green-dark);
-      margin: 0 0 6px 0;
+      margin: 0 0 4px 0;
       display: block;
       text-decoration: none;
       transition: color 0.2s ease;
+      line-height: 1.3;
     }
     .dairy-offcanvas-name:hover {
       color: #f1cc24;
     }
     .dairy-offcanvas-price {
-      font-weight: 900;
-      font-size: 16px;
-      color: var(--text);
-      margin-bottom: 8px;
+      font-weight: 800;
+      font-size: 14px;
+      color: #2f4a1e;
+      margin-bottom: 6px;
     }
     .dairy-offcanvas-qty {
       display: flex;
       align-items: center;
-      gap: 8px;
-      margin-top: 8px;
+      gap: 6px;
+      margin-top: 6px;
     }
     .dairy-offcanvas-qty button {
-      width: 28px;
-      height: 28px;
+      width: 26px;
+      height: 26px;
       border: 1px solid #e0e0e0;
       border-radius: 6px;
       background: #fff;
       cursor: pointer;
       font-weight: 900;
+      font-size: 14px;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       transition: all 0.2s ease;
     }
     .dairy-offcanvas-qty button:hover {
@@ -753,27 +761,29 @@
       border-color: #e74c3c;
     }
     .dairy-offcanvas-footer {
-      padding: 20px 24px;
+      padding: 16px 20px;
       border-top: 1px solid #e0e0e0;
       background: #f9f9f9;
+      flex-shrink: 0;
     }
     .dairy-offcanvas-total {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 16px;
-      font-size: 18px;
-      font-weight: 900;
+      margin-bottom: 12px;
+      font-size: 16px;
+      font-weight: 800;
+      color: #1f2a1a;
     }
     .dairy-offcanvas-btn {
       width: 100%;
-      padding: 14px;
+      padding: 13px 16px;
       border: 0;
       border-radius: 10px;
-      background: var(--green);
+      background: #2f4a1e;
       color: #fff;
-      font-weight: 900;
-      font-size: 15px;
+      font-weight: 800;
+      font-size: 14px;
       cursor: pointer;
       transition: all 0.2s ease;
       display: flex;
@@ -781,21 +791,22 @@
       justify-content: center;
       gap: 8px;
       text-decoration: none;
+      box-sizing: border-box;
     }
     .dairy-offcanvas-btn:hover {
-      background: var(--green-dark);
-      transform: translateY(-2px);
+      background: #1e3212;
+      transform: translateY(-1px);
       box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     }
     .dairy-offcanvas-btn.secondary {
       background: #fff;
-      color: var(--green-dark);
+      color: #2f4a1e;
       border: 1px solid #e0e0e0;
-      margin-top: 10px;
+      margin-top: 8px;
     }
     .dairy-offcanvas-btn.secondary:hover {
       background: #f5f5f5;
-      border-color: #f1cc24;
+      border-color: #2f4a1e;
     }
 
     @media (max-width: 560px) {
@@ -936,7 +947,7 @@
             <i class="fa-solid fa-bag-shopping"></i>
           </button>
 
-          <!-- ✅ Hamburger -->
+          <!-- âœ… Hamburger -->
           <button class="tb-hamburger" type="button" id="tbMenuBtn" aria-label="Menu" aria-controls="navbar" aria-expanded="false">
             <i class="fa-solid fa-bars" aria-hidden="true"></i>
           </button>
@@ -946,7 +957,7 @@
     </div>
   </header>
 
-  <!-- ✅ NAVBAR (same ID used in JS) -->
+  <!-- âœ… NAVBAR (same ID used in JS) -->
   <nav class="navbar" id="navbar" aria-label="Primary">
     <div class="container">
       <ul class="nav">
@@ -1052,7 +1063,7 @@
       <!-- Bottom bar -->
 <!--      <div class="tb-foot-bottom">-->
 <!--        <div class="container">-->
-<!--          <p>© {{ date('Y') }} {{ config('app.name') }}. All rights reserved. Designed and Developed by <a target="_blank" href="https://www.apwebworld.com/"  style="text-decoration: none; color:white;">Ap Web World</a>-->
+<!--          <p>Â© {{ date('Y') }} {{ config('app.name') }}. All rights reserved. Designed and Developed by <a target="_blank" href="https://www.apwebworld.com/"  style="text-decoration: none; color:white;">Ap Web World</a>-->
 <!--</p>-->
 <!--        </div>-->
 <!--      </div>-->
@@ -1060,7 +1071,7 @@
 <!-- Bottom bar -->
       <div class="tb-foot-bottom">
         <div class="container">
-          <p>© {{ date('Y') }} Nulac Dairy Private Limited. All rights reserved. Designed and Developed by <a target="" href="https://www.apwebworld.com/"  style="text-decoration: none; color:white;">Ap Web World</a>
+          <p>Â© {{ date('Y') }} Nulac Dairy Private Limited. All rights reserved. Designed and Developed by <a target="" href="https://www.apwebworld.com/"  style="text-decoration: none; color:white;">Ap Web World</a>
 </p>
         </div>
       </div>
@@ -1255,30 +1266,107 @@
  
     </style>
     
-    <!-- Cart Offcanvas -->
+    <!-- Cart Offcanvas (also used for checkout steps) -->
     <div class="dairy-offcanvas-overlay" id="cartOverlay"></div>
     <div class="dairy-offcanvas" id="cartOffcanvas">
-      <div class="dairy-offcanvas-header">
+
+      <!-- Cart Header -->
+      <div class="dairy-offcanvas-header" id="cartHeader">
         <h3><i class="fa-solid fa-bag-shopping"></i> Shopping Cart</h3>
         <button class="dairy-offcanvas-close" id="closeCart" aria-label="Close cart">
           <i class="fa-solid fa-xmark"></i>
         </button>
       </div>
-      <div class="dairy-offcanvas-body" id="cartBody">
-        <!-- Cart items will be inserted here -->
+
+      <!-- Checkout Header (hidden by default) -->
+      <div id="checkoutHeader" style="display:none;align-items:center;justify-content:space-between;padding:16px 20px;background:#2f4a1e;flex-shrink:0;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <button id="checkoutBackBtn" style="background:none;border:none;cursor:pointer;color:rgba(255,255,255,.8);font-size:16px;padding:0;line-height:1;">
+            <i class="fa-solid fa-arrow-left"></i>
+          </button>
+          <h3 id="checkoutHeaderTitle" style="margin:0;font-size:16px;font-weight:800;color:#fff;">Checkout</h3>
+        </div>
+        <button class="dairy-offcanvas-close" onclick="closeCartPanel()" style="color:rgba(255,255,255,.8);">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
       </div>
-      <div class="dairy-offcanvas-footer" id="cartFooter" style="display: none;">
+
+      <!-- Step tabs (shown during checkout) -->
+      <div id="checkoutTabs" style="display:none;flex-shrink:0;border-bottom:1px solid #e7e7e7;">
+        <div style="display:flex;">
+          <div id="coTab1" style="flex:1;padding:10px;text-align:center;font-size:12px;font-weight:700;color:#2f4a1e;border-bottom:2px solid #2f4a1e;">
+            <i class="fa-solid fa-list" style="margin-right:3px;"></i>Order
+          </div>
+          <div id="coTab2" style="flex:1;padding:10px;text-align:center;font-size:12px;font-weight:700;color:#9ca3af;border-bottom:2px solid transparent;">
+            <i class="fa-solid fa-user" style="margin-right:3px;"></i>Details
+          </div>
+          <div id="coTab3" style="flex:1;padding:10px;text-align:center;font-size:12px;font-weight:700;color:#9ca3af;border-bottom:2px solid transparent;">
+            <i class="fa-solid fa-lock" style="margin-right:3px;"></i>Pay
+          </div>
+        </div>
+      </div>
+
+      <!-- Cart body -->
+      <div class="dairy-offcanvas-body" id="cartBody"></div>
+
+      <!-- Checkout Step 1: Order Summary -->
+      <div class="dairy-offcanvas-body" id="coStep1" style="display:none;">
+        <div id="coSummary"></div>
+      </div>
+
+      <!-- Checkout Step 2: Details -->
+      <div class="dairy-offcanvas-body" id="coStep2" style="display:none;padding:20px;">
+        <p style="font-size:12px;font-weight:700;color:#6a7a63;text-transform:uppercase;letter-spacing:.5px;margin:0 0 14px;">Delivery Details</p>
+        <div style="margin-bottom:12px;">
+          <label style="display:block;font-size:13px;font-weight:600;color:#1f2a1a;margin-bottom:4px;">Full Name *</label>
+          <input type="text" id="co_name" required placeholder="Your name"
+                 style="width:100%;padding:10px 12px;border:1px solid #e7e7e7;border-radius:10px;font-size:14px;box-sizing:border-box;">
+        </div>
+        <div style="margin-bottom:12px;">
+          <label style="display:block;font-size:13px;font-weight:600;color:#1f2a1a;margin-bottom:4px;">Phone *</label>
+          <input type="tel" id="co_phone" required placeholder="10-digit mobile number"
+                 style="width:100%;padding:10px 12px;border:1px solid #e7e7e7;border-radius:10px;font-size:14px;box-sizing:border-box;">
+        </div>
+        <div style="margin-bottom:12px;">
+          <label style="display:block;font-size:13px;font-weight:600;color:#1f2a1a;margin-bottom:4px;">Email</label>
+          <input type="email" id="co_email" placeholder="Optional"
+                 style="width:100%;padding:10px 12px;border:1px solid #e7e7e7;border-radius:10px;font-size:14px;box-sizing:border-box;">
+        </div>
+        <div>
+          <label style="display:block;font-size:13px;font-weight:600;color:#1f2a1a;margin-bottom:4px;">Delivery Address *</label>
+          <textarea id="co_address" required rows="3" placeholder="Full delivery address"
+                    style="width:100%;padding:10px 12px;border:1px solid #e7e7e7;border-radius:10px;font-size:14px;box-sizing:border-box;resize:vertical;"></textarea>
+        </div>
+      </div>
+
+      <!-- Checkout Step 3: Review & Pay -->
+      <div class="dairy-offcanvas-body" id="coStep3" style="display:none;">
+        <div id="coReview"></div>
+        <div id="checkoutError" style="display:none;background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:10px 14px;color:#dc2626;font-size:13px;margin-top:12px;"></div>
+      </div>
+
+      <!-- Cart Footer -->
+      <div class="dairy-offcanvas-footer" id="cartFooter" style="display:none;">
         <div class="dairy-offcanvas-total">
           <span>Total:</span>
-          <span id="cartTotal">₹0</span>
+          <span id="cartTotal">&#8377;0</span>
         </div>
-        <a href="{{ route('contact') }}" class="dairy-offcanvas-btn">
-          <i class="fa-solid fa-paper-plane"></i> Proceed to Inquiry
-        </a>
+        <button onclick="openCheckoutModal()" class="dairy-offcanvas-btn">
+          <i class="fa-solid fa-credit-card"></i> Proceed to Payment
+        </button>
         <button class="dairy-offcanvas-btn secondary" id="clearCartBtn">
           <i class="fa-solid fa-trash"></i> Clear Cart
         </button>
       </div>
+
+      <!-- Checkout Footer -->
+      <div id="checkoutFooter" style="display:none;padding:16px 20px;border-top:1px solid #e7e7e7;flex-shrink:0;">
+        <button id="checkoutNextBtn" onclick="checkoutNext()"
+                class="dairy-offcanvas-btn" style="margin-bottom:0;">
+          Continue <i class="fa-solid fa-arrow-right" style="margin-left:6px;"></i>
+        </button>
+      </div>
+
     </div>
 
     <!-- Wishlist Offcanvas -->
@@ -1419,8 +1507,8 @@
                   <h4 class="search-result-name">${highlightText(product.name, query)}</h4>
                   <p class="search-result-desc">${product.short_description || ''}</p>
                   <div class="search-result-price">
-                    <span class="search-result-price-current">₹${Math.round(product.price)}</span>
-                    ${product.mrp ? `<span class="search-result-price-old">₹${Math.round(product.mrp)}</span>` : ''}
+                    <span class="search-result-price-current">â‚¹${Math.round(product.price)}</span>
+                    ${product.mrp ? `<span class="search-result-price-old">â‚¹${Math.round(product.mrp)}</span>` : ''}
                     ${product.badge ? `<span class="search-result-badge">${product.badge}</span>` : ''}
                   </div>
                 </div>
@@ -1665,15 +1753,13 @@
         if (!cartBtn || !cartOffcanvas) return;
 
         function openCart() {
-          if (!window.DairyCart) {
-            console.error('DairyCart not loaded');
-            return;
-          }
+          if (!window.DairyCart) return;
+
+          // Reset to cart view (in case we were in checkout)
+          if (typeof _showCartView === 'function') _showCartView();
 
           const cart = window.DairyCart.getCart();
           const total = window.DairyCart.getCartTotal();
-
-          console.log('Opening cart with items:', cart);
 
           // Render cart items
           if (cart.length === 0) {
@@ -1704,22 +1790,24 @@
                   <img src="${itemImage}" alt="${itemName}" class="dairy-offcanvas-img" onerror="this.src='{{ asset('images/products-1.png') }}'">
                   <div class="dairy-offcanvas-info">
                     <a href="${productUrl}" class="dairy-offcanvas-name">${itemName}</a>
-                    <div class="dairy-offcanvas-price">₹${itemTotal.toFixed(0)}</div>
                     <div class="dairy-offcanvas-qty">
-                      <button onclick="updateCartQty(${item.id}, ${itemQty - 1})" aria-label="Decrease quantity">−</button>
+                      <button onclick="updateCartQty(${item.id}, ${itemQty - 1})" aria-label="Decrease quantity">&#8722;</button>
                       <span>${itemQty}</span>
                       <button onclick="updateCartQty(${item.id}, ${itemQty + 1})" aria-label="Increase quantity">+</button>
-                      <span style="color: var(--muted); font-size: 12px; margin-left: 4px;">× ₹${itemPrice.toFixed(0)}</span>
+                      <span style="color:#9ca3af;font-size:11px;margin-left:2px;">&#215; &#8377;${itemPrice.toFixed(0)}</span>
                     </div>
                   </div>
-                  <button class="dairy-offcanvas-remove" onclick="removeFromCart(${item.id})" aria-label="Remove item">
-                    <i class="fa-solid fa-trash"></i>
-                  </button>
+                  <div style="display:flex;flex-direction:column;align-items:flex-end;justify-content:space-between;flex-shrink:0;gap:6px;">
+                    <button class="dairy-offcanvas-remove" onclick="removeFromCart(${item.id})" aria-label="Remove item">
+                      <i class="fa-solid fa-trash"></i>
+                    </button>
+                    <span style="font-weight:800;font-size:14px;color:#2f4a1e;">&#8377;${itemTotal.toFixed(0)}</span>
+                  </div>
                 </div>
               `;
             });
             cartBody.innerHTML = html;
-            cartTotal.textContent = `₹${total.toFixed(0)}`;
+            cartTotal.textContent = `â‚¹${total.toFixed(0)}`;
             cartFooter.style.display = 'block';
           }
 
@@ -1733,6 +1821,8 @@
           cartOverlay.classList.remove('show');
           cartOffcanvas.classList.remove('show');
           document.body.style.overflow = '';
+          // Reset to cart view for next open
+          if (typeof _showCartView === 'function') _showCartView();
         }
 
         // Global functions for cart operations
@@ -1821,7 +1911,7 @@
                   <img src="${itemImage}" alt="${itemName}" class="dairy-offcanvas-img" onerror="this.src='{{ asset('images/products-1.png') }}'">
                   <div class="dairy-offcanvas-info">
                     <a href="${productUrl}" class="dairy-offcanvas-name">${itemName}</a>
-                    <div class="dairy-offcanvas-price">₹${itemPrice.toFixed(0)}</div>
+                    <div class="dairy-offcanvas-price">â‚¹${itemPrice.toFixed(0)}</div>
                     <button class="dairy-offcanvas-btn" onclick="moveToCart(${item.id})" style="margin-top: 8px; padding: 8px 12px; font-size: 13px;">
                       <i class="fa-solid fa-bag-shopping"></i> Add to Cart
                     </button>
@@ -1892,5 +1982,248 @@
     </script>
     
     @stack('scripts')
+
+    <script>
+    const PRODUCT_ORDER_URL   = '{{ route('payment.product.initiate') }}';
+    const PRODUCT_CSRF        = '{{ csrf_token() }}';
+    const IS_MEMBER_LOGGED_IN = {{ auth()->check() && auth()->user()->isMember() ? 'true' : 'false' }};
+    const MEMBER_LOGIN_URL    = '{{ route('member.login') }}';
+
+    // ── helpers to switch cart offcanvas between cart-view and checkout-view ──
+
+    function _showCartView() {
+      document.getElementById('cartHeader').style.display    = '';
+      document.getElementById('checkoutHeader').style.display = 'none';
+      document.getElementById('checkoutTabs').style.display  = 'none';
+      document.getElementById('cartBody').style.display      = '';
+      document.getElementById('cartFooter').style.display    = ''; // openCart() will correct this
+      ['coStep1','coStep2','coStep3'].forEach(id => {
+        document.getElementById(id).style.display = 'none';
+      });
+      document.getElementById('checkoutFooter').style.display = 'none';
+    }
+
+    function _showCheckoutStep(step) {
+      document.getElementById('cartHeader').style.display    = 'none';
+      document.getElementById('checkoutHeader').style.display = 'flex';
+      document.getElementById('checkoutTabs').style.display  = 'block';
+      document.getElementById('cartBody').style.display      = 'none';
+      document.getElementById('cartFooter').style.display    = 'none';
+      document.getElementById('checkoutFooter').style.display = 'block';
+
+      ['coStep1','coStep2','coStep3'].forEach((id, i) => {
+        document.getElementById(id).style.display = (i + 1 === step) ? '' : 'none';
+      });
+
+      // Update tab styles
+      [1,2,3].forEach(n => {
+        const tab = document.getElementById('coTab' + n);
+        if (!tab) return;
+        tab.style.color             = n === step ? '#2f4a1e' : '#9ca3af';
+        tab.style.borderBottomColor = n === step ? '#2f4a1e' : 'transparent';
+        tab.style.borderBottom      = n === step ? '2px solid #2f4a1e' : '2px solid transparent';
+      });
+
+      // Update checkout footer button
+      const nextBtn = document.getElementById('checkoutNextBtn');
+      if (!nextBtn) return;
+      if (step === 1) {
+        nextBtn.innerHTML = 'Continue <i class="fa-solid fa-arrow-right" style="margin-left:6px;"></i>';
+        nextBtn.style.display = '';
+      } else if (step === 2) {
+        nextBtn.innerHTML = 'Review Order <i class="fa-solid fa-arrow-right" style="margin-left:6px;"></i>';
+        nextBtn.style.display = '';
+      } else {
+        // Step 3: show pay button
+        const total = window.DairyCart ? window.DairyCart.getCartTotal() : 0;
+        nextBtn.innerHTML = '<i class="fa-solid fa-lock" style="margin-right:6px;"></i>Pay ₹' + total.toFixed(0);
+        nextBtn.style.display = '';
+      }
+
+      // Update back button behaviour
+      const backBtn = document.getElementById('checkoutBackBtn');
+      if (backBtn) {
+        backBtn.onclick = step > 1
+          ? () => _goToCheckoutStep(step - 1)
+          : () => { _showCartView(); };
+      }
+
+      // Update header title
+      const titles = { 1: 'Order Summary', 2: 'Delivery Details', 3: 'Review & Pay' };
+      const titleEl = document.getElementById('checkoutHeaderTitle');
+      if (titleEl) titleEl.textContent = titles[step] || 'Checkout';
+    }
+
+    function _goToCheckoutStep(step) {
+      if (step === 3) {
+        // Validate step 2 before proceeding
+        const name  = (document.getElementById('co_name')?.value || '').trim();
+        const phone = (document.getElementById('co_phone')?.value || '').trim();
+        const addr  = (document.getElementById('co_address')?.value || '').trim();
+        if (!name || !phone || !addr) {
+          _showCheckoutStep(2);
+          return;
+        }
+        // Build review
+        const cart  = window.DairyCart ? window.DairyCart.getCart() : [];
+        const total = window.DairyCart ? window.DairyCart.getCartTotal() : 0;
+        let html = `<div style="margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid #e7e7e7;">
+          <div style="font-size:12px;color:#6a7a63;margin-bottom:2px;">Deliver to</div>
+          <div style="font-weight:700;color:#1f2a1a;font-size:13px;">${name} · ${phone}</div>
+          <div style="color:#6a7a63;font-size:12px;">${addr}</div>
+        </div>`;
+        cart.forEach(item => {
+          html += `<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:13px;">
+            <span style="color:#1f2a1a;">${item.name} × ${item.quantity}</span>
+            <span style="font-weight:700;color:#2f4a1e;">₹${(item.price * item.quantity).toFixed(0)}</span>
+          </div>`;
+        });
+        html += `<div style="display:flex;justify-content:space-between;padding-top:8px;font-weight:800;font-size:15px;border-top:1px solid #e7e7e7;margin-top:6px;">
+          <span>Total</span><span style="color:#2f4a1e;">₹${total.toFixed(0)}</span>
+        </div>`;
+        document.getElementById('coReview').innerHTML = html;
+        const errEl = document.getElementById('checkoutError');
+        if (errEl) errEl.style.display = 'none';
+      }
+      _showCheckoutStep(step);
+    }
+
+    // Called by "Proceed to Payment" button in cart footer
+    function openCheckoutModal() {
+      if (!IS_MEMBER_LOGGED_IN) {
+        const returnUrl = window.location.origin + window.location.pathname + '?checkout=1';
+        window.location.href = MEMBER_LOGIN_URL + '?redirect=' + encodeURIComponent(returnUrl);
+        return;
+      }
+
+      const cart  = window.DairyCart ? window.DairyCart.getCart() : [];
+      const total = window.DairyCart ? window.DairyCart.getCartTotal() : 0;
+      if (!cart.length) return;
+
+      // Build step-1 order summary
+      let html = '';
+      cart.forEach(item => {
+        html += `<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #e7e7e7;">
+          <img src="${item.image || ''}" onerror="this.style.display='none'"
+               style="width:44px;height:44px;border-radius:8px;object-fit:cover;border:1px solid #e7e7e7;flex-shrink:0;">
+          <div style="flex:1;min-width:0;">
+            <div style="font-weight:600;color:#1f2a1a;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${item.name}</div>
+            <div style="color:#6a7a63;font-size:12px;">Qty: ${item.quantity} × ₹${item.price.toFixed(0)}</div>
+          </div>
+          <div style="font-weight:800;color:#2f4a1e;font-size:14px;flex-shrink:0;">₹${(item.price * item.quantity).toFixed(0)}</div>
+        </div>`;
+      });
+      html += `<div style="display:flex;justify-content:space-between;padding-top:12px;font-weight:800;font-size:15px;">
+        <span style="color:#1f2a1a;">Total</span>
+        <span style="color:#2f4a1e;">₹${total.toFixed(0)}</span>
+      </div>`;
+      document.getElementById('coSummary').innerHTML = html;
+
+      // Pre-fill member details
+      @auth
+      if (!document.getElementById('co_name').value)  document.getElementById('co_name').value  = '{{ auth()->user()->name ?? '' }}';
+      if (!document.getElementById('co_phone').value) document.getElementById('co_phone').value = '{{ auth()->user()->phone ?? '' }}';
+      if (!document.getElementById('co_email').value) document.getElementById('co_email').value = '{{ auth()->user()->email ?? '' }}';
+      @endauth
+
+      _showCheckoutStep(1);
+
+      // Make sure cart offcanvas is open
+      const cartOverlay   = document.getElementById('cartOverlay');
+      const cartOffcanvas = document.getElementById('cartOffcanvas');
+      if (cartOverlay && !cartOverlay.classList.contains('show')) {
+        cartOverlay.classList.add('show');
+        cartOffcanvas.classList.add('show');
+        document.body.style.overflow = 'hidden';
+      }
+
+      // Clean ?checkout=1 from URL
+      const url = new URL(window.location.href);
+      url.searchParams.delete('checkout');
+      window.history.replaceState({}, '', url.toString());
+    }
+
+    // Checkout footer "Continue / Review / Pay" button
+    function checkoutNext() {
+      // Determine current step
+      const steps = [1,2,3];
+      let current = 1;
+      steps.forEach(n => {
+        const el = document.getElementById('coStep' + n);
+        if (el && el.style.display !== 'none') current = n;
+      });
+
+      if (current === 1) {
+        _goToCheckoutStep(2);
+      } else if (current === 2) {
+        const name  = (document.getElementById('co_name')?.value || '').trim();
+        const phone = (document.getElementById('co_phone')?.value || '').trim();
+        const addr  = (document.getElementById('co_address')?.value || '').trim();
+        if (!name || !phone || !addr) {
+          alert('Please fill in all required fields.');
+          return;
+        }
+        _goToCheckoutStep(3);
+      } else {
+        _submitCheckout();
+      }
+    }
+
+    function _submitCheckout() {
+      const cart  = window.DairyCart ? window.DairyCart.getCart() : [];
+      const btn   = document.getElementById('checkoutNextBtn');
+      const errEl = document.getElementById('checkoutError');
+      if (errEl) errEl.style.display = 'none';
+
+      const origHtml = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin" style="margin-right:6px;"></i>Redirecting...';
+
+      fetch(PRODUCT_ORDER_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': PRODUCT_CSRF },
+        body: JSON.stringify({
+          items:            cart,
+          customer_name:    document.getElementById('co_name').value,
+          customer_phone:   document.getElementById('co_phone').value,
+          customer_email:   document.getElementById('co_email').value,
+          delivery_address: document.getElementById('co_address').value,
+        }),
+      })
+      .then(r => r.json())
+      .then(data => {
+        if (data.success) {
+          window.DairyCart.clearCart();
+          window.location.href = data.redirect_url;
+        } else {
+          if (errEl) { errEl.textContent = data.message || 'Payment failed. Please try again.'; errEl.style.display = 'block'; }
+          btn.disabled = false;
+          btn.innerHTML = origHtml;
+        }
+      })
+      .catch(() => {
+        if (errEl) { errEl.textContent = 'Network error. Please try again.'; errEl.style.display = 'block'; }
+        btn.disabled = false;
+        btn.innerHTML = origHtml;
+      });
+    }
+
+    // Auto-open checkout after login redirect (?checkout=1)
+    document.addEventListener('DOMContentLoaded', function() {
+      if (new URLSearchParams(window.location.search).get('checkout') === '1' && IS_MEMBER_LOGGED_IN) {
+        setTimeout(function() {
+          // Open cart offcanvas first, then switch to checkout
+          const cartOverlay   = document.getElementById('cartOverlay');
+          const cartOffcanvas = document.getElementById('cartOffcanvas');
+          if (cartOverlay && cartOffcanvas) {
+            cartOverlay.classList.add('show');
+            cartOffcanvas.classList.add('show');
+            document.body.style.overflow = 'hidden';
+          }
+          openCheckoutModal();
+        }, 300);
+      }
+    });
+    </script>
 </body>
 </html>

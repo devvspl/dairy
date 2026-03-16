@@ -2,9 +2,13 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Exports\SubscriptionsExport;
 use App\Http\Controllers\Controller;
+use App\Models\ExportLog;
 use App\Models\UserSubscription;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Maatwebsite\Excel\Facades\Excel;
 
 class UserSubscriptionController extends Controller
 {
@@ -13,20 +17,21 @@ class UserSubscriptionController extends Controller
      */
     public function index(Request $request)
     {
-        $query = UserSubscription::with(['user', 'membershipPlan'])
+        $query = UserSubscription::with(['user', 'membershipPlan', 'location'])
             ->orderBy('created_at', 'desc');
 
-        // Filter by status
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
 
-        // Filter by payment status
         if ($request->filled('payment_status')) {
             $query->where('payment_status', $request->payment_status);
         }
 
-        // Search by user name or email
+        if ($request->filled('location_id')) {
+            $query->where('location_id', $request->location_id);
+        }
+
         if ($request->filled('search')) {
             $search = $request->search;
             $query->whereHas('user', function($q) use ($search) {
@@ -35,18 +40,95 @@ class UserSubscriptionController extends Controller
             });
         }
 
-        $subscriptions = $query->paginate(20);
+        // Group by user — fetch all (no pagination) then group
+        $subscriptions = $query->get()->groupBy('user_id');
+        $locations = \App\Models\Location::orderBy('name')->get();
 
-        return view('admin.subscriptions.index', compact('subscriptions'));
+        return view('admin.subscriptions.index', compact('subscriptions', 'locations'));
     }
 
     /**
-     * Display the specified subscription
+     * Export subscriptions to Excel and store the file
+     */
+    public function export(Request $request)
+    {
+        $filters  = $request->only(['status', 'payment_status', 'location_id', 'search']);
+        $exporter = new SubscriptionsExport($filters);
+
+        $filename = 'subscriptions-' . now()->format('d-M-Y-His') . '.xlsx';
+        $path     = 'exports/subscriptions/' . $filename;
+
+        Excel::store($exporter, $path, 'public');
+
+        ExportLog::create([
+            'type'          => 'subscription',
+            'filename'      => $filename,
+            'path'          => $path,
+            'filter_status' => implode('|', array_filter($filters)) ?: null,
+            'row_count'     => $exporter->rowCount,
+            'generated_by'  => auth()->id(),
+        ]);
+
+        return response()->json([
+            'success'      => true,
+            'message'      => 'Export generated successfully.',
+            'download_url' => Storage::url($path),
+            'filename'     => $filename,
+        ]);
+    }
+
+    /**
+     * List stored subscription export files (AJAX)
+     */
+    public function exportList()
+    {
+        $exports = ExportLog::where('type', 'subscription')
+            ->with('generatedBy:id,name')
+            ->latest()
+            ->take(30)
+            ->get()
+            ->map(fn($e) => [
+                'id'            => $e->id,
+                'filename'      => $e->filename,
+                'filter_status' => $e->filter_status ?? 'All',
+                'row_count'     => $e->row_count,
+                'file_size'     => $e->file_size,
+                'generated_by'  => $e->generatedBy->name ?? '-',
+                'created_at'    => $e->created_at->format('d M Y, h:i A'),
+                'download_url'  => $e->download_url,
+                'exists'        => Storage::disk('public')->exists($e->path),
+            ]);
+
+        return response()->json(['success' => true, 'exports' => $exports]);
+    }
+
+    /**
+     * Delete a stored subscription export file
+     */
+    public function exportDelete(ExportLog $export)
+    {
+        Storage::disk('public')->delete($export->path);
+        $export->delete();
+        return response()->json(['success' => true]);
+    }
+
+    /**
+     * Display a listing of subscriptions
      */
     public function show(UserSubscription $subscription)
     {
-        $subscription->load(['user', 'membershipPlan']);
-        return view('admin.subscriptions.show', compact('subscription'));
+        $subscription->load(['user', 'membershipPlan', 'location']);
+
+        $today = now();
+        $startOfMonth = $today->copy()->startOfMonth();
+        $endOfMonth   = $today->copy()->endOfMonth();
+
+        $monthDeliveries = $subscription->deliveryLogs()
+            ->whereBetween('delivery_date', [$startOfMonth, $endOfMonth])
+            ->get()
+            ->keyBy(fn($item) => $item->delivery_date->format('Y-m-d'));
+
+        return view('admin.subscriptions.show', compact('subscription', 'monthDeliveries'));
     }
 
     /**

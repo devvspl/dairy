@@ -24,6 +24,10 @@ class MemberAuthController extends Controller
     public function showLoginForm()
     {
         $otpEnabled = $this->otpService->isConfigured();
+        // Store intended redirect in session if passed as query param
+        if (request()->has('redirect')) {
+            session(['url.intended_member' => request()->query('redirect')]);
+        }
         return view('auth.member.login', compact('otpEnabled'));
     }
 
@@ -115,10 +119,12 @@ class MemberAuthController extends Controller
         if ($user->verifyOtp($request->otp)) {
             Auth::login($user);
 
+            $redirect = session()->pull('url.intended_member', route('member.dashboard'));
+
             return response()->json([
-                'success' => true,
-                'message' => 'Login successful',
-                'redirect' => route('member.dashboard')
+                'success'  => true,
+                'message'  => 'Login successful',
+                'redirect' => $redirect,
             ]);
         }
 
@@ -261,10 +267,12 @@ class MemberAuthController extends Controller
         // Login user
         Auth::login($user);
 
+        $redirect = session()->pull('url.intended_member', route('member.dashboard'));
+
         return response()->json([
-            'success' => true,
-            'message' => 'Registration successful',
-            'redirect' => route('member.dashboard')
+            'success'  => true,
+            'message'  => 'Registration successful',
+            'redirect' => $redirect,
         ]);
     }
 

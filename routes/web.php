@@ -32,6 +32,13 @@ Route::get('/api/filter-products', [PublicController::class, 'filterProducts'])-
 Route::get('/blogs', [PublicController::class, 'blogs'])->name('blogs');
 Route::get('/blogs/{slug}', [PublicController::class, 'blogDetail'])->name('blog.detail');
 
+// Product Cart Payment (guest + auth)
+Route::prefix('payment')->name('payment.')->group(function () {
+    Route::post('/product-order/initiate', [App\Http\Controllers\PaymentController::class, 'initiateProductOrder'])->name('product.initiate');
+    Route::any('/product-order/callback', [App\Http\Controllers\PaymentController::class, 'productOrderCallback'])->name('product.callback');
+    Route::get('/product-order/success/{order}', [App\Http\Controllers\PaymentController::class, 'productOrderSuccess'])->name('product.success');
+});
+
 /*
 |--------------------------------------------------------------------------
 | Guest Routes (unauthenticated only)
@@ -79,6 +86,11 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/member/dashboard', [DashboardController::class, 'member'])->name('member.dashboard');
     Route::get('/delivery/dashboard', [DashboardController::class, 'delivery'])->name('delivery.dashboard');
+    Route::get('/delivery/location/{location}', [DashboardController::class, 'deliveryLocation'])->name('delivery.location');
+    Route::get('/delivery/location/{location}/export', [DashboardController::class, 'deliveryLocationExport'])->name('delivery.location.export');
+    Route::get('/delivery/location/{location}/exports', [DashboardController::class, 'deliveryLocationExportList'])->name('delivery.location.exports.list');
+    Route::delete('/delivery/exports/{export}', [DashboardController::class, 'deliveryLocationExportDelete'])->name('delivery.location.exports.delete');
+    Route::post('/delivery/location/{location}/update/{delivery}', [DashboardController::class, 'deliveryUpdateStatus'])->name('delivery.update-status');
 
     // Auth Actions
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
@@ -123,6 +135,9 @@ Route::middleware('auth')->group(function () {
         // Users
         Route::resource('users', App\Http\Controllers\UserController::class);
 
+        // Product Orders
+        Route::resource('product-orders', App\Http\Controllers\Admin\ProductOrderController::class)->only(['index', 'show']);
+
         // Content Management
         Route::resource('sliders', App\Http\Controllers\Admin\SliderController::class);
         Route::resource('categories', App\Http\Controllers\Admin\CategoryController::class);
@@ -160,6 +175,9 @@ Route::middleware('auth')->group(function () {
         // Subscriptions
         Route::prefix('subscriptions')->name('subscriptions.')->group(function () {
             Route::get('/', [App\Http\Controllers\Admin\UserSubscriptionController::class, 'index'])->name('index');
+            Route::post('export', [App\Http\Controllers\Admin\UserSubscriptionController::class, 'export'])->name('export');
+            Route::get('exports', [App\Http\Controllers\Admin\UserSubscriptionController::class, 'exportList'])->name('exports.list');
+            Route::delete('exports/{export}', [App\Http\Controllers\Admin\UserSubscriptionController::class, 'exportDelete'])->name('exports.delete');
             Route::get('{subscription}', [App\Http\Controllers\Admin\UserSubscriptionController::class, 'show'])->name('show');
             Route::post('{subscription}/status', [App\Http\Controllers\Admin\UserSubscriptionController::class, 'updateStatus'])->name('update-status');
             Route::post('{subscription}/payment', [App\Http\Controllers\Admin\UserSubscriptionController::class, 'updatePaymentStatus'])->name('update-payment');

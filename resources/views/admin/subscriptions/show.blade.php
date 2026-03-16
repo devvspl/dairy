@@ -71,8 +71,41 @@
                 <p class="text-sm" style="color: var(--text);">{{ $subscription->delivery_address }}</p>
             </div>
 
+            <!-- Location Details -->
+            @if($subscription->location)
+            <div class="bg-white rounded-lg shadow-sm p-6 border" style="border-color: var(--border);">
+                <h3 class="text-lg font-bold mb-4" style="color: var(--text);">
+                    <i class="fa-solid fa-map-marker-alt mr-2" style="color: var(--green);"></i>Delivery Location
+                </h3>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <p class="text-xs font-medium mb-1" style="color: var(--muted);">Location Name</p>
+                        <p class="font-semibold" style="color: var(--text);">{{ $subscription->location->name }}</p>
+                    </div>
+                    @if($subscription->location->area)
+                    <div>
+                        <p class="text-xs font-medium mb-1" style="color: var(--muted);">Area</p>
+                        <p class="font-semibold" style="color: var(--text);">{{ $subscription->location->area }}</p>
+                    </div>
+                    @endif
+                    @if($subscription->location->city)
+                    <div>
+                        <p class="text-xs font-medium mb-1" style="color: var(--muted);">City</p>
+                        <p class="font-semibold" style="color: var(--text);">{{ $subscription->location->city }}</p>
+                    </div>
+                    @endif
+                    @if($subscription->location->pincode)
+                    <div>
+                        <p class="text-xs font-medium mb-1" style="color: var(--muted);">Pincode</p>
+                        <p class="font-semibold" style="color: var(--text);">{{ $subscription->location->pincode }}</p>
+                    </div>
+                    @endif
+                </div>
+            </div>
+            @endif
+
             <!-- Day-wise Schedule -->
-            @if($subscription->membershipPlan->day_wise_schedule)
+            @if(false)
             <div class="bg-white rounded-lg shadow-sm p-6 border" style="border-color: var(--border);">
                 <h3 class="text-lg font-bold mb-4" style="color: var(--text);">Weekly Delivery Schedule</h3>
                 
@@ -110,6 +143,124 @@
                         <p class="text-xl font-bold" style="color: var(--green);">
                             {{ number_format($subscription->membershipPlan->getTotalWeeklyQuantity() / max($subscription->membershipPlan->getDeliveryDaysCount(), 1), 1) }} L
                         </p>
+                    </div>
+                </div>
+            </div>
+            @endif
+
+            <!-- Monthly Delivery Calendar -->
+            @if($subscription->membershipPlan->day_wise_schedule)
+            <div class="bg-white rounded-lg shadow-sm p-6 border" style="border-color: var(--border);">
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <h3 class="text-lg font-bold" style="color: var(--text);">
+                            <i class="fa-solid fa-calendar-days mr-2" style="color: var(--green);"></i>Delivery Calendar
+                        </h3>
+                        <p class="text-sm mt-1" style="color: var(--muted);">Monthly delivery tracking</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-xl font-bold" style="color: var(--green);">{{ now()->format('F Y') }}</p>
+                    </div>
+                </div>
+
+                @php
+                    $today         = now();
+                    $startOfMonth  = $today->copy()->startOfMonth();
+                    $endOfMonth    = $today->copy()->endOfMonth();
+                    $startDay      = $startOfMonth->copy()->startOfWeek();
+                    $endDay        = $endOfMonth->copy()->endOfWeek();
+                    $daysInCalendar = [];
+                    $cur = $startDay->copy();
+                    while ($cur <= $endDay) { $daysInCalendar[] = $cur->copy(); $cur->addDay(); }
+                @endphp
+
+                <!-- Day headers -->
+                <div class="grid grid-cols-7 gap-2 mb-2">
+                    @foreach(['Sun','Mon','Tue','Wed','Thu','Fri','Sat'] as $d)
+                    <div class="text-center py-2 rounded text-xs font-bold" style="background-color: rgba(47,74,30,0.07); color: var(--green);">{{ $d }}</div>
+                    @endforeach
+                </div>
+
+                <!-- Calendar grid -->
+                <div class="grid grid-cols-7 gap-2">
+                    @foreach($daysInCalendar as $date)
+                        @php
+                            $isCurrentMonth = $date->month === $today->month;
+                            $isToday        = $date->isToday();
+                            $dayKey         = $date->format('D');
+                            $hasScheduled   = $subscription->membershipPlan->hasDeliveryOnDay($dayKey);
+                            $dateKey        = $date->format('Y-m-d');
+                            $log            = $monthDeliveries->get($dateKey);
+                            $isPast         = $date->isPast() && !$isToday;
+                        @endphp
+                        <div class="relative min-h-[80px] p-2 rounded-lg border-2 transition-all"
+                             style="
+                                @if($isToday)
+                                    background: linear-gradient(135deg, var(--green) 0%, #3d6b2e 100%); border-color: var(--green);
+                                @elseif($log)
+                                    @if($log->status === 'delivered') background:#dcfce7; border-color:#16a34a;
+                                    @elseif($log->status === 'pending') background:#fef3c7; border-color:#d97706;
+                                    @elseif($log->status === 'skipped') background:#f3f4f6; border-color:#9ca3af;
+                                    @else background:#fee2e2; border-color:#dc2626;
+                                    @endif
+                                @elseif($hasScheduled && $isCurrentMonth && !$isPast)
+                                    background:#f0fdf4; border-color:rgba(47,74,30,0.4); border-style:dashed;
+                                @else
+                                    background:{{ $isCurrentMonth ? '#fff' : '#fafafa' }}; border-color:#e5e7eb;
+                                @endif
+                             ">
+                            <span class="text-sm font-bold" style="color:{{ $isToday ? '#fff' : ($isCurrentMonth ? '#1f2937' : '#9ca3af') }};">
+                                {{ $date->day }}
+                            </span>
+                            @if($isCurrentMonth)
+                                @if($log)
+                                    <div class="flex flex-col items-center mt-1">
+                                        @if($log->status === 'delivered')
+                                            <i class="fa-solid fa-check text-xs" style="color:#15803d;"></i>
+                                            <p class="text-xs font-bold" style="color:#15803d;">{{ $log->quantity_delivered }}L</p>
+                                        @elseif($log->status === 'pending')
+                                            <i class="fa-solid fa-clock text-xs" style="color:#92400e;"></i>
+                                            <p class="text-xs font-bold" style="color:#92400e;">{{ $log->quantity_delivered }}L</p>
+                                        @elseif($log->status === 'skipped')
+                                            <i class="fa-solid fa-forward text-xs" style="color:#6b7280;"></i>
+                                            <p class="text-[10px]" style="color:#6b7280;">Skip</p>
+                                        @else
+                                            <i class="fa-solid fa-times text-xs" style="color:#dc2626;"></i>
+                                            <p class="text-[10px]" style="color:#dc2626;">Failed</p>
+                                        @endif
+                                    </div>
+                                @elseif($hasScheduled && !$isPast)
+                                    <div class="flex flex-col items-center mt-1">
+                                        <i class="fa-solid fa-droplet text-xs" style="color:var(--green);"></i>
+                                        <p class="text-xs font-bold" style="color:var(--green);">{{ $subscription->membershipPlan->getDayQuantity($dayKey) }}L</p>
+                                    </div>
+                                @endif
+                            @endif
+                        </div>
+                    @endforeach
+                </div>
+
+                <!-- Legend -->
+                <div class="mt-4 pt-4 border-t flex flex-wrap gap-4" style="border-color: var(--border);">
+                    <div class="flex items-center gap-2">
+                        <div class="w-5 h-5 rounded border-2 flex items-center justify-center" style="background:#dcfce7; border-color:#16a34a;"><i class="fa-solid fa-check text-[9px]" style="color:#15803d;"></i></div>
+                        <span class="text-xs" style="color:var(--muted);">Delivered</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-5 h-5 rounded border-2 flex items-center justify-center" style="background:#fef3c7; border-color:#d97706;"><i class="fa-solid fa-clock text-[9px]" style="color:#92400e;"></i></div>
+                        <span class="text-xs" style="color:var(--muted);">Pending</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-5 h-5 rounded border-2 flex items-center justify-center" style="background:#f3f4f6; border-color:#9ca3af;"><i class="fa-solid fa-forward text-[9px]" style="color:#6b7280;"></i></div>
+                        <span class="text-xs" style="color:var(--muted);">Skipped</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-5 h-5 rounded border-2 flex items-center justify-center" style="background:#fee2e2; border-color:#dc2626;"><i class="fa-solid fa-times text-[9px]" style="color:#dc2626;"></i></div>
+                        <span class="text-xs" style="color:var(--muted);">Failed</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-5 h-5 rounded border-2" style="background:#f0fdf4; border-color:rgba(47,74,30,0.4); border-style:dashed;"></div>
+                        <span class="text-xs" style="color:var(--muted);">Scheduled</span>
                     </div>
                 </div>
             </div>

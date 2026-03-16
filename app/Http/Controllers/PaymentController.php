@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Order;
 use App\Models\MembershipPlan;
+use App\Models\Product;
+use App\Models\ProductOrder;
 use App\Models\UserSubscription;
 use App\Services\PhonePeService;
 use Illuminate\Http\Request;
@@ -316,5 +318,169 @@ class PaymentController extends Controller
         }
 
         return view('payment.invoice', compact('order'));
+    }
+
+    // =========================================================
+    // Product Cart Payment
+    // =========================================================
+
+    /**
+     * Initiate payment for a product cart order (guest or logged-in)
+     */
+    public function initiateProductOrder(Request $request)
+    {
+        // Must be a logged-in member
+        if (!auth()->check() || !auth()->user()->isMember()) {
+            return response()->json(['success' => false, 'message' => 'Please login as a member to proceed.', 'redirect' => route('member.login')], 401);
+        }
+
+        $request->validate([
+            'items'            => 'required|array|min:1',
+            'items.*.id'       => 'required|integer|exists:products,id',
+            'items.*.name'     => 'required|string',
+            'items.*.price'    => 'required|numeric|min:0',
+            'items.*.quantity' => 'required|integer|min:1',
+            'customer_name'    => 'required|string|max:255',
+            'customer_phone'   => 'required|string|max:20',
+            'customer_email'   => 'nullable|email|max:255',
+            'delivery_address' => 'required|string|max:500',
+        ]);
+
+        // Verify prices server-side and check stock
+        $total = 0;
+        $items = [];
+        foreach ($request->items as $item) {
+            $product = Product::findOrFail($item['id']);
+
+            if ($product->stock_status === 'out_of_stock') {
+                return response()->json(['success' => false, 'message' => "{$product->name} is out of stock."], 422);
+            }
+
+            $items[] = [
+                'id'       => $product->id,
+                'name'     => $product->name,
+                'price'    => (float) $product->price,
+                'quantity' => (int) $item['quantity'],
+                'image'    => $product->main_image,
+            ];
+            $total += $product->price * $item['quantity'];
+        }
+
+        DB::beginTransaction();
+        try {
+            $user  = auth()->user();
+            $order = ProductOrder::create([
+                'user_id'          => $user?->id,
+                'order_id'         => ProductOrder::generateOrderId(),
+                'amount'           => $total,
+                'status'           => 'pending',
+                'payment_method'   => 'phonepe',
+                'items'            => $items,
+                'customer_name'    => $request->customer_name,
+                'customer_phone'   => $request->customer_phone,
+                'customer_email'   => $request->customer_email,
+                'delivery_address' => $request->delivery_address,
+            ]);
+
+            $paymentResponse = $this->phonePeService->initiatePayment(
+                $order->order_id,
+                $order->amount,
+                $user?->id ?? 0,
+                $request->customer_name,
+                $request->customer_phone,
+                'payment.product.callback'
+            );
+
+            if ($paymentResponse['success']) {
+                $order->update([
+                    'transaction_id'   => $paymentResponse['data']['orderId'] ?? null,
+                    'payment_response' => $paymentResponse,
+                ]);
+                DB::commit();
+
+                return response()->json([
+                    'success'      => true,
+                    'redirect_url' => $paymentResponse['redirect_url'],
+                ]);
+            }
+
+            DB::rollBack();
+            return response()->json(['success' => false, 'message' => $paymentResponse['message'] ?? 'Payment initiation failed.'], 500);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Product Order Payment Error', ['error' => $e->getMessage()]);
+            return response()->json(['success' => false, 'message' => 'An error occurred.'], 500);
+        }
+    }
+
+    /**
+     * Handle PhonePe callback for product orders
+     */
+    public function productOrderCallback(Request $request)
+    {
+        $merchantOrderId = $request->query('merchantOrderId')
+            ?? $request->input('merchantOrderId');
+
+        if (!$merchantOrderId) {
+            return redirect()->route('products')->with('error', 'Invalid payment response.');
+        }
+
+        $order = ProductOrder::where('order_id', $merchantOrderId)->first()
+            ?? ProductOrder::where('transaction_id', $merchantOrderId)->first();
+
+        if (!$order) {
+            return redirect()->route('products')->with('error', 'Order not found.');
+        }
+
+        $verification = $this->phonePeService->verifyPayment($order->order_id);
+
+        DB::beginTransaction();
+        try {
+            if ($verification['success'] && ($verification['state'] ?? '') === 'COMPLETED') {
+                $order->update([
+                    'status'           => 'success',
+                    'transaction_id'   => $verification['data']['orderId'] ?? $merchantOrderId,
+                    'paid_at'          => now(),
+                    'payment_response' => array_merge($order->payment_response ?? [], ['verification' => $verification]),
+                ]);
+
+                // Deduct stock for each item
+                foreach ($order->items as $item) {
+                    Product::where('id', $item['id'])->each(function ($product) use ($item) {
+                        if ($product->stock_quantity !== null) {
+                            $newQty = max(0, $product->stock_quantity - $item['quantity']);
+                            $product->update([
+                                'stock_quantity' => $newQty,
+                                'stock_status'   => $newQty === 0 ? 'out_of_stock' : ($newQty <= 10 ? 'limited' : 'available'),
+                            ]);
+                        }
+                    });
+                }
+
+                DB::commit();
+                return redirect()->route('payment.product.success', $order->id);
+            }
+
+            $order->update(['status' => 'failed']);
+            DB::commit();
+            return redirect()->route('payment.failure')->with('error', 'Payment verification failed.');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Product Order Callback Error', ['error' => $e->getMessage()]);
+            return redirect()->route('payment.failure')->with('error', 'An error occurred.');
+        }
+    }
+
+    /**
+     * Product order success page
+     */
+    public function productOrderSuccess(ProductOrder $order)
+    {
+        if (!$order->isSuccess()) {
+            return redirect()->route('products');
+        }
+        return view('payment.product-success', compact('order'));
     }
 }

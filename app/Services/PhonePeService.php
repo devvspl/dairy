@@ -153,13 +153,14 @@ class PhonePeService
         float  $amount,
         int    $userId,
         string $userName,
-        string $userPhone
+        string $userPhone,
+        string $callbackRoute = 'payment.callback'
     ): array {
         try {
             $token = $this->getAccessToken();
 
             // Embed merchantOrderId in redirectUrl so PhonePe preserves it on redirect
-            $redirectUrl = route('payment.callback') . '?merchantOrderId=' . urlencode($orderId);
+            $redirectUrl = route($callbackRoute) . '?merchantOrderId=' . urlencode($orderId);
 
             $payload = [
                 'merchantOrderId' => $orderId,

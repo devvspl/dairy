@@ -312,6 +312,19 @@ function addFeature() {
     container.appendChild(div);
     featureIndex++;
 }
+
+// Auto-calculate stock status from quantity
+(function() {
+    const qtyInput    = document.querySelector('[name=stock_quantity]');
+    const statusSelect = document.querySelector('[name=stock_status]');
+    if (!qtyInput || !statusSelect) return;
+    qtyInput.addEventListener('input', function() {
+        const qty = parseInt(this.value) || 0;
+        if (qty === 0)       statusSelect.value = 'out_of_stock';
+        else if (qty <= 10)  statusSelect.value = 'limited';
+        else                 statusSelect.value = 'available';
+    });
+})();
 </script>
 @endsection
 

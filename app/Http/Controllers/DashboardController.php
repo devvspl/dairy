@@ -3,6 +3,9 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Exports\LocationDeliveriesExport;
+use App\Models\DeliveryLog;
+use App\Models\Location;
 use App\Models\PageVisit;
 use App\Models\ContactInquiry;
 use App\Models\Product;
@@ -36,8 +39,185 @@ class DashboardController extends Controller
     {
         $user = auth()->user();
         $user->load('locations');
-        
-        return view('delivery-dashboard', compact('user'));
+
+        // Today's stats per assigned location
+        $locationStats = $user->locations->map(function ($location) {
+            $base = DeliveryLog::whereHas('subscription', fn($q) => $q->where('location_id', $location->id))
+                ->today();
+
+            return [
+                'location'  => $location,
+                'total'     => (clone $base)->count(),
+                'delivered' => (clone $base)->where('status', 'delivered')->count(),
+                'pending'   => (clone $base)->where('status', 'pending')->count(),
+                'quantity'  => (clone $base)->sum('quantity_delivered'),
+            ];
+        });
+
+        return view('delivery-dashboard', compact('user', 'locationStats'));
+    }
+
+    public function deliveryLocation(Request $request, Location $location)
+    {
+        $user = auth()->user();
+
+        if (!$user->locations->contains($location->id)) {
+            abort(403, 'You are not assigned to this location.');
+        }
+
+        $date   = $request->get('date', now()->format('Y-m-d'));
+        $search = $request->get('search', '');
+
+        $query = DeliveryLog::with(['subscription.user', 'subscription.membershipPlan'])
+            ->whereHas('subscription', fn($q) => $q->where('location_id', $location->id))
+            ->whereDate('delivery_date', $date)
+            ->orderBy('status');
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        if ($search) {
+            $query->whereHas('subscription.user', fn($q) => $q
+                ->where('name', 'like', "%{$search}%")
+                ->orWhere('phone', 'like', "%{$search}%")
+            );
+        }
+
+        $deliveries = $query->paginate(50)->withQueryString();
+
+        $statsBase = DeliveryLog::whereHas('subscription', fn($q) => $q->where('location_id', $location->id))
+            ->whereDate('delivery_date', $date);
+
+        $stats = [
+            'total'     => (clone $statsBase)->count(),
+            'delivered' => (clone $statsBase)->where('status', 'delivered')->count(),
+            'pending'   => (clone $statsBase)->where('status', 'pending')->count(),
+            'skipped'   => (clone $statsBase)->where('status', 'skipped')->count(),
+            'quantity'  => (clone $statsBase)->sum('quantity_delivered'),
+        ];
+
+        return view('delivery-location', compact('location', 'deliveries', 'stats', 'date'));
+    }
+
+    public function deliveryLocationExport(Request $request, Location $location)
+    {
+        $user = auth()->user();
+        if (!$user->locations->contains($location->id)) {
+            abort(403);
+        }
+
+        $date     = $request->get('date', now()->format('Y-m-d'));
+        $status   = (string) $request->get('status', '');
+        $exporter = new LocationDeliveriesExport($location, $date, $status);
+
+        $filename = $location->name . '-deliveries-' . $date . '-' . now()->format('His') . '.xlsx';
+        $path     = 'exports/location-deliveries/' . $filename;
+
+        \Maatwebsite\Excel\Facades\Excel::store($exporter, $path, 'public');
+
+        \App\Models\ExportLog::create([
+            'type'          => 'location_delivery_' . $location->id,
+            'filename'      => $filename,
+            'path'          => $path,
+            'filter_status' => trim(($status ?: 'All') . ' | ' . $date),
+            'row_count'     => $exporter->rowCount,
+            'generated_by'  => $user->id,
+        ]);
+
+        return response()->json([
+            'success'      => true,
+            'download_url' => \Illuminate\Support\Facades\Storage::url($path),
+            'filename'     => $filename,
+        ]);
+    }
+
+    public function deliveryLocationExportList(Location $location)
+    {
+        $user = auth()->user();
+        if (!$user->locations->contains($location->id)) {
+            abort(403);
+        }
+
+        $exports = \App\Models\ExportLog::where('type', 'location_delivery_' . $location->id)
+            ->with('generatedBy:id,name')
+            ->latest()
+            ->take(30)
+            ->get()
+            ->map(fn($e) => [
+                'id'            => $e->id,
+                'filename'      => $e->filename,
+                'filter_status' => $e->filter_status ?? 'All',
+                'row_count'     => $e->row_count,
+                'file_size'     => $e->file_size,
+                'generated_by'  => $e->generatedBy->name ?? '-',
+                'created_at'    => $e->created_at->format('d M Y, h:i A'),
+                'download_url'  => $e->download_url,
+                'exists'        => \Illuminate\Support\Facades\Storage::disk('public')->exists($e->path),
+            ]);
+
+        return response()->json(['success' => true, 'exports' => $exports]);
+    }
+
+    public function deliveryLocationExportDelete(\App\Models\ExportLog $export)
+    {
+        $user = auth()->user();
+        // Only allow deleting location_delivery_* types
+        if (!str_starts_with($export->type, 'location_delivery_')) {
+            abort(403);
+        }
+        \Illuminate\Support\Facades\Storage::disk('public')->delete($export->path);
+        $export->delete();
+        return response()->json(['success' => true]);
+    }
+
+    public function deliveryUpdateStatus(Request $request, Location $location, DeliveryLog $delivery)
+    {
+        $user = auth()->user();
+
+        if (!$user->locations->contains($location->id)) {
+            abort(403);
+        }
+
+        $validated = $request->validate([
+            'status'             => 'required|in:pending,delivered,skipped,failed',
+            'quantity_delivered' => 'nullable|numeric|min:0',
+            'delivery_time'      => 'nullable|string',
+            'notes'              => 'nullable|string|max:500',
+        ]);
+
+        $deliveryTime = null;
+        if (!empty($validated['delivery_time'])) {
+            try {
+                $deliveryTime = \Carbon\Carbon::parse($validated['delivery_time'])->format('H:i');
+            } catch (\Exception $e) {
+                $deliveryTime = $delivery->delivery_time;
+            }
+        } else {
+            $deliveryTime = now()->format('H:i');
+        }
+
+        // Default note based on status if no custom note provided
+        $defaultNotes = [
+            'delivered' => 'Delivered successfully.',
+            'skipped'   => 'Delivery skipped.',
+            'failed'    => 'Delivery failed.',
+            'pending'   => 'Marked as pending.',
+        ];
+        $notes = !empty($validated['notes'])
+            ? $validated['notes']
+            : ($defaultNotes[$validated['status']] ?? null);
+
+        $delivery->update([
+            'status'             => $validated['status'],
+            'quantity_delivered' => $validated['quantity_delivered'] ?? $delivery->quantity_delivered,
+            'delivery_time'      => $deliveryTime,
+            'notes'              => $notes,
+            'marked_by'          => $user->id,
+            'marked_at'          => now(),
+        ]);
+
+        return redirect()->back()->with('success', 'Delivery updated successfully.');
     }
 
     public function admin()
