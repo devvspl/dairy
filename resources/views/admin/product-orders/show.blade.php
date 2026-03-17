@@ -87,8 +87,24 @@
                             @endforeach
                         </tbody>
                         <tfoot class="border-t" style="border-color: var(--border); background-color: rgba(47,74,30,0.03);">
+                            @php $subtotal = collect($productOrder->items)->sum(fn($i) => $i['price'] * $i['quantity']); @endphp
+                            @if($productOrder->discount_amount > 0)
                             <tr>
-                                <td colspan="3" class="px-6 py-3 text-right font-bold" style="color: var(--text);">Grand Total</td>
+                                <td colspan="3" class="px-6 py-2 text-right text-sm" style="color: var(--muted);">Subtotal</td>
+                                <td class="px-6 py-2 text-right text-sm" style="color: var(--muted);">₹{{ number_format($subtotal, 2) }}</td>
+                            </tr>
+                            <tr>
+                                <td colspan="3" class="px-6 py-2 text-right text-sm font-medium">
+                                    <span style="color:#16a34a;">Discount</span>
+                                    @if($productOrder->coupon_code)
+                                        <span class="ml-1 px-2 py-0.5 rounded text-xs font-bold" style="background:rgba(22,163,74,0.1);color:#16a34a;">{{ $productOrder->coupon_code }}</span>
+                                    @endif
+                                </td>
+                                <td class="px-6 py-2 text-right text-sm font-semibold" style="color:#16a34a;">-₹{{ number_format($productOrder->discount_amount, 2) }}</td>
+                            </tr>
+                            @endif
+                            <tr class="border-t" style="border-color: var(--border);">
+                                <td colspan="3" class="px-6 py-3 text-right font-bold" style="color: var(--text);">Amount Paid</td>
                                 <td class="px-6 py-3 text-right font-bold text-lg" style="color: var(--green);">₹{{ number_format($productOrder->amount, 2) }}</td>
                             </tr>
                         </tfoot>
@@ -150,10 +166,32 @@
             <div class="bg-white rounded-lg shadow-sm p-6 border" style="border-color: var(--border);">
                 <h3 class="text-lg font-bold mb-4" style="color: var(--text);">Payment Summary</h3>
                 <div class="space-y-3">
+                    @if($productOrder->discount_amount > 0)
+                    @php $subtotal = collect($productOrder->items)->sum(fn($i) => $i['price'] * $i['quantity']); @endphp
+                    <div class="flex justify-between items-center">
+                        <p class="text-sm font-medium" style="color: var(--muted);">Subtotal</p>
+                        <p class="font-semibold" style="color: var(--text);">₹{{ number_format($subtotal, 2) }}</p>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <p class="text-sm font-medium" style="color: var(--muted);">Discount
+                            @if($productOrder->coupon_code)
+                                <span class="ml-1 px-1.5 py-0.5 rounded text-xs font-bold" style="background:rgba(22,163,74,0.1);color:#16a34a;">{{ $productOrder->coupon_code }}</span>
+                            @endif
+                        </p>
+                        <p class="font-semibold" style="color:#16a34a;">-₹{{ number_format($productOrder->discount_amount, 2) }}</p>
+                    </div>
+                    <div class="pt-2 border-t" style="border-color: var(--border);">
+                        <div class="flex justify-between items-center">
+                            <p class="text-sm font-medium" style="color: var(--muted);">Amount Paid</p>
+                            <p class="text-2xl font-bold" style="color: var(--green);">₹{{ number_format($productOrder->amount, 2) }}</p>
+                        </div>
+                    </div>
+                    @else
                     <div>
                         <p class="text-sm font-medium" style="color: var(--muted);">Amount</p>
                         <p class="text-2xl font-bold" style="color: var(--green);">₹{{ number_format($productOrder->amount, 2) }}</p>
                     </div>
+                    @endif
                     <div>
                         <p class="text-sm font-medium" style="color: var(--muted);">Payment Method</p>
                         <p class="font-semibold" style="color: var(--text);">{{ ucfirst(str_replace('_', ' ', $productOrder->payment_method ?? 'N/A')) }}</p>
