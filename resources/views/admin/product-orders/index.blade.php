@@ -4,6 +4,7 @@
 @section('page-title', 'Product Orders')
 
 @section('content')
+@php $srEnabled = \App\Models\ShiprocketSetting::instance()->enabled; @endphp
 <div class="space-y-5">
 
     <!-- Stats -->
@@ -81,25 +82,71 @@
         </form>
     </div>
 
+    <!-- Bulk Action Toolbar (hidden until rows selected) -->
+    @if($srEnabled)
+    <div id="bulkToolbar"
+         class="hidden items-center gap-3 bg-white rounded-lg shadow-sm px-4 py-3 border"
+         style="border-color: var(--green);">
+        <span class="text-sm font-semibold" style="color: var(--text);">
+            <span id="selectedCount">0</span> order(s) selected
+        </span>
+        <div class="h-4 w-px bg-gray-300"></div>
+        <button onclick="bulkAssignShiprocket()"
+                id="bulkAssignBtn"
+                class="inline-flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-semibold text-white"
+                style="background-color: var(--green);">
+            <i class="fa-solid fa-truck-fast" id="bulkAssignIcon"></i>
+            <span id="bulkAssignText">Assign to Shiprocket</span>
+        </button>
+        <button onclick="clearSelection()"
+                class="text-sm font-medium hover:underline" style="color: var(--muted);">
+            Clear selection
+        </button>
+    </div>
+    @endif
+
     <!-- Table -->
     <div class="bg-white rounded-lg shadow-sm border" style="border-color: var(--border);">
         <div class="overflow-x-auto">
             <table class="w-full">
                 <thead class="border-b" style="border-color: var(--border); background-color: rgba(47,74,30,0.05);">
                     <tr>
+                        @if($srEnabled)
+                        <th class="px-4 py-3 w-10">
+                            <input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)"
+                                   class="w-4 h-4 rounded accent-green-600 cursor-pointer">
+                        </th>
+                        @endif
                         <th class="px-4 py-3 text-left text-sm font-semibold" style="color: var(--text);">Order ID</th>
                         <th class="px-4 py-3 text-left text-sm font-semibold" style="color: var(--text);">Customer</th>
                         <th class="px-4 py-3 text-left text-sm font-semibold" style="color: var(--text);">Items</th>
                         <th class="px-4 py-3 text-left text-sm font-semibold" style="color: var(--text);">Amount</th>
                         <th class="px-4 py-3 text-left text-sm font-semibold" style="color: var(--text);">Payment</th>
                         <th class="px-4 py-3 text-left text-sm font-semibold" style="color: var(--text);">Status</th>
+                        @if($srEnabled)
+                        <th class="px-4 py-3 text-left text-sm font-semibold" style="color: var(--text);">Shiprocket</th>
+                        @endif
                         <th class="px-4 py-3 text-left text-sm font-semibold" style="color: var(--text);">Date</th>
                         <th class="px-4 py-3 text-left text-sm font-semibold" style="color: var(--text);"></th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse($orders as $order)
-                    <tr class="border-b hover:bg-gray-50" style="border-color: var(--border);">
+                    <tr class="border-b hover:bg-gray-50 order-row" style="border-color: var(--border);"
+                        data-id="{{ $order->id }}"
+                        data-assigned="{{ $order->shiprocket_order_id ? '1' : '0' }}">
+                        @if($srEnabled)
+                        <td class="px-4 py-3 w-10">
+                            @if(!$order->shiprocket_order_id)
+                            <input type="checkbox" class="row-check w-4 h-4 rounded accent-green-600 cursor-pointer"
+                                   value="{{ $order->id }}" onchange="onRowCheck()">
+                            @else
+                            <span class="block w-4 h-4 flex items-center justify-center">
+                                <i class="fa-solid fa-circle-check text-green-500 text-sm"></i>
+                            </span>
+                            @endif
+                        </td>
+                        @endif
                         <td class="px-4 py-3 text-sm font-mono" style="color: var(--text);">{{ $order->order_id }}</td>
                         <td class="px-4 py-3">
                             <div class="text-sm font-medium" style="color: var(--text);">{{ $order->customer_name }}</div>
@@ -123,6 +170,18 @@
                                 {{ ucfirst($order->status) }}
                             </span>
                         </td>
+                        @if($srEnabled)
+                        <td class="px-4 py-3">
+                            @if($order->shiprocket_order_id)
+                                <span class="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-full font-semibold bg-blue-50 text-blue-700">
+                                    <i class="fa-solid fa-truck-fast text-xs"></i>
+                                    {{ $order->shiprocket_status ?? 'Assigned' }}
+                                </span>
+                            @else
+                                <span class="text-xs" style="color: var(--muted);">—</span>
+                            @endif
+                        </td>
+                        @endif
                         <td class="px-4 py-3 text-sm" style="color: var(--muted);">
                             {{ $order->created_at->format('d M Y, h:i A') }}
                         </td>
@@ -133,7 +192,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="8" class="px-4 py-10 text-center" style="color: var(--muted);">
+                        <td colspan="{{ $srEnabled ? 10 : 8 }}" class="px-4 py-10 text-center" style="color: var(--muted);">
                             <i class="fa-solid fa-box text-4xl mb-3 block" style="color: var(--muted);"></i>
                             No orders found.
                         </td>
@@ -149,6 +208,23 @@
         @endif
     </div>
 </div>
+
+<!-- Bulk Assign Result Modal -->
+@if($srEnabled)
+<div id="bulkResultModal" class="fixed inset-0 z-50 hidden items-center justify-center">
+    <div class="absolute inset-0 bg-black bg-opacity-40" onclick="closeBulkResult()"></div>
+    <div class="relative bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 p-6 z-10">
+        <h3 class="text-lg font-bold mb-4" style="color: var(--text);">
+            <i class="fa-solid fa-truck-fast mr-2" style="color: var(--green);"></i>Bulk Assignment Result
+        </h3>
+        <div id="bulkResultBody" class="space-y-3 text-sm"></div>
+        <button onclick="closeBulkResult()"
+                class="mt-5 w-full px-4 py-2 rounded-lg font-semibold text-white" style="background-color: var(--green);">
+            Done
+        </button>
+    </div>
+</div>
+@endif
 
 <!-- Exports Offcanvas -->
 <div id="exportsPanel" class="fixed inset-0 z-50 hidden">
@@ -180,9 +256,126 @@
 </div>
 
 <script>
-const EXPORT_URL       = '{{ route('admin.product-orders.export') }}';
-const EXPORTS_LIST_URL = '{{ route('admin.product-orders.exports.list') }}';
-const CSRF_TOKEN       = '{{ csrf_token() }}';
+const EXPORT_URL        = '{{ route('admin.product-orders.export') }}';
+const EXPORTS_LIST_URL  = '{{ route('admin.product-orders.exports.list') }}';
+const BULK_ASSIGN_URL   = '{{ route('admin.product-orders.shiprocket.bulk-assign') }}';
+const CSRF_TOKEN        = '{{ csrf_token() }}';
+
+// ─── Selection ────────────────────────────────────────────────────────────────
+
+function getChecked() {
+    return [...document.querySelectorAll('.row-check:checked')].map(c => c.value);
+}
+
+function onRowCheck() {
+    const checked = getChecked();
+    document.getElementById('selectedCount').textContent = checked.length;
+    const toolbar = document.getElementById('bulkToolbar');
+    if (toolbar) toolbar.classList.toggle('hidden', checked.length === 0);
+    toolbar && toolbar.classList.toggle('flex', checked.length > 0);
+
+    // sync select-all state
+    const all   = document.querySelectorAll('.row-check');
+    const selAll = document.getElementById('selectAll');
+    if (selAll) selAll.indeterminate = checked.length > 0 && checked.length < all.length;
+    if (selAll) selAll.checked = checked.length === all.length && all.length > 0;
+}
+
+function toggleSelectAll(master) {
+    document.querySelectorAll('.row-check').forEach(c => c.checked = master.checked);
+    onRowCheck();
+}
+
+function clearSelection() {
+    document.querySelectorAll('.row-check').forEach(c => c.checked = false);
+    const selAll = document.getElementById('selectAll');
+    if (selAll) { selAll.checked = false; selAll.indeterminate = false; }
+    onRowCheck();
+}
+
+// ─── Bulk Assign ──────────────────────────────────────────────────────────────
+
+function bulkAssignShiprocket() {
+    const ids = getChecked();
+    if (!ids.length) return;
+    if (!confirm(`Assign ${ids.length} order(s) to Shiprocket?`)) return;
+
+    const btn  = document.getElementById('bulkAssignBtn');
+    const icon = document.getElementById('bulkAssignIcon');
+    const text = document.getElementById('bulkAssignText');
+    btn.disabled   = true;
+    icon.className = 'fa-solid fa-spinner fa-spin';
+    text.textContent = 'Assigning...';
+
+    fetch(BULK_ASSIGN_URL, {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': CSRF_TOKEN,
+            'X-Requested-With': 'XMLHttpRequest',
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ ids }),
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            showBulkResult(data);
+        } else {
+            alert(data.message);
+        }
+    })
+    .catch(() => alert('Request failed. Please try again.'))
+    .finally(() => {
+        btn.disabled   = false;
+        icon.className = 'fa-solid fa-truck-fast';
+        text.textContent = 'Assign to Shiprocket';
+    });
+}
+
+function showBulkResult(data) {
+    const body = document.getElementById('bulkResultBody');
+    let html = '';
+
+    if (data.assigned_count > 0) {
+        html += `<div class="flex items-center gap-2 p-3 rounded-lg bg-green-50 border border-green-200">
+            <i class="fa-solid fa-circle-check text-green-600"></i>
+            <span class="font-semibold text-green-700">${data.assigned_count} order(s) assigned successfully</span>
+        </div>`;
+    }
+    if (data.skipped_count > 0) {
+        html += `<div class="flex items-center gap-2 p-3 rounded-lg bg-yellow-50 border border-yellow-200">
+            <i class="fa-solid fa-circle-exclamation text-yellow-600"></i>
+            <span class="text-yellow-700">${data.skipped_count} already assigned — skipped</span>
+        </div>`;
+    }
+    if (data.failed_count > 0) {
+        const failList = data.failed.map(f =>
+            `<li class="text-xs mt-1"><span class="font-mono">${f.order_id}</span>: ${f.reason}</li>`
+        ).join('');
+        html += `<div class="p-3 rounded-lg bg-red-50 border border-red-200">
+            <div class="flex items-center gap-2 mb-1">
+                <i class="fa-solid fa-circle-xmark text-red-600"></i>
+                <span class="font-semibold text-red-700">${data.failed_count} order(s) failed</span>
+            </div>
+            <ul class="text-red-600 pl-2">${failList}</ul>
+        </div>`;
+    }
+
+    body.innerHTML = html;
+    const modal = document.getElementById('bulkResultModal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+}
+
+function closeBulkResult() {
+    const modal = document.getElementById('bulkResultModal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+    clearSelection();
+    location.reload();
+}
+
+// ─── Export ───────────────────────────────────────────────────────────────────
 
 function getFilters() {
     const form = document.getElementById('filterForm');

@@ -6,6 +6,7 @@ use App\Exports\ProductOrdersExport;
 use App\Http\Controllers\Controller;
 use App\Models\ExportLog;
 use App\Models\ProductOrder;
+use App\Services\ShiprocketService;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
 
@@ -134,5 +135,130 @@ class ProductOrderController extends Controller
         if (file_exists($full)) unlink($full);
         $export->delete();
         return response()->json(['success' => true]);
+    }
+
+    // ─── Shiprocket ───────────────────────────────────────────────────────────
+
+    public function shiprocketAssign(Request $request, ProductOrder $productOrder)
+    {
+        $shiprocket = app(ShiprocketService::class);
+
+        if (!$shiprocket->isEnabled()) {
+            return response()->json(['success' => false, 'message' => 'Shiprocket is disabled. Enable it in Settings.']);
+        }
+
+        if ($productOrder->isShiprocketAssigned()) {
+            return response()->json(['success' => false, 'message' => 'Order already assigned to Shiprocket.']);
+        }
+
+        $result = $shiprocket->createOrder($productOrder);
+
+        if ($result['success']) {
+            $productOrder->update([
+                'shiprocket_order_id'    => $result['order_id'],
+                'shiprocket_shipment_id' => $result['shipment_id'],
+                'shiprocket_awb'         => $result['awb_code'],
+                'shiprocket_courier'     => $result['courier'],
+                'shiprocket_status'      => $result['status'] ?? 'NEW',
+                'shiprocket_assigned_at' => now(),
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Order successfully assigned to Shiprocket.',
+                'data'    => [
+                    'shiprocket_order_id'    => $productOrder->shiprocket_order_id,
+                    'shiprocket_shipment_id' => $productOrder->shiprocket_shipment_id,
+                    'shiprocket_awb'         => $productOrder->shiprocket_awb,
+                    'shiprocket_courier'     => $productOrder->shiprocket_courier,
+                    'shiprocket_status'      => $productOrder->shiprocket_status,
+                    'shiprocket_assigned_at' => $productOrder->shiprocket_assigned_at?->format('d M Y, h:i A'),
+                ],
+            ]);
+        }
+
+        return response()->json(['success' => false, 'message' => $result['message']]);
+    }
+
+    public function shiprocketTrack(ProductOrder $productOrder)
+    {
+        if (!$productOrder->shiprocket_awb) {
+            return response()->json(['success' => false, 'message' => 'No AWB code found for this order.']);
+        }
+
+        $result = app(ShiprocketService::class)->trackOrder($productOrder->shiprocket_awb);
+
+        if ($result['success']) {
+            $tracking = $result['data']['tracking_data'] ?? $result['data'];
+            $status   = data_get($tracking, 'shipment_track.0.current_status')
+                     ?? data_get($tracking, 'track_status', 'Unknown');
+
+            $productOrder->update(['shiprocket_status' => $status]);
+
+            return response()->json(['success' => true, 'status' => $status, 'data' => $tracking]);
+        }
+
+        return response()->json(['success' => false, 'message' => $result['message']]);
+    }
+
+    public function shiprocketBulkAssign(Request $request)
+    {
+        $request->validate(['ids' => 'required|array', 'ids.*' => 'integer|exists:product_orders,id']);
+
+        $shiprocket = app(ShiprocketService::class);
+
+        if (!$shiprocket->isEnabled()) {
+            return response()->json(['success' => false, 'message' => 'Shiprocket is disabled. Enable it in Settings.']);
+        }
+
+        $orders  = ProductOrder::whereIn('id', $request->ids)
+                               ->whereNull('shiprocket_order_id')
+                               ->get();
+
+        $results = ['success' => [], 'failed' => []];
+
+        foreach ($orders as $order) {
+            $result = $shiprocket->createOrder($order);
+            if ($result['success']) {
+                $order->update([
+                    'shiprocket_order_id'    => $result['order_id'],
+                    'shiprocket_shipment_id' => $result['shipment_id'],
+                    'shiprocket_awb'         => $result['awb_code'],
+                    'shiprocket_courier'     => $result['courier'],
+                    'shiprocket_status'      => $result['status'] ?? 'NEW',
+                    'shiprocket_assigned_at' => now(),
+                ]);
+                $results['success'][] = $order->order_id;
+            } else {
+                $results['failed'][] = ['order_id' => $order->order_id, 'reason' => $result['message']];
+            }
+        }
+
+        $skipped = count($request->ids) - $orders->count();
+
+        return response()->json([
+            'success'        => true,
+            'assigned_count' => count($results['success']),
+            'failed_count'   => count($results['failed']),
+            'skipped_count'  => $skipped,
+            'assigned'       => $results['success'],
+            'failed'         => $results['failed'],
+        ]);
+    }
+
+    public function shiprocketCancel(ProductOrder $productOrder)
+    {
+        if (!$productOrder->shiprocket_order_id) {
+            return response()->json(['success' => false, 'message' => 'No Shiprocket order found.']);
+        }
+
+        $result = app(ShiprocketService::class)->cancelOrder($productOrder->shiprocket_order_id);
+
+        if ($result['success']) {
+            $productOrder->update(['shiprocket_status' => 'CANCELLED']);
+            return response()->json(['success' => true, 'message' => 'Shiprocket order cancelled.']);
+        }
+
+        return response()->json(['success' => false, 'message' => $result['message']]);
     }
 }

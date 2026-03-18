@@ -141,6 +141,15 @@ Route::middleware('auth')->group(function () {
         Route::post('product-orders/export', [App\Http\Controllers\Admin\ProductOrderController::class, 'export'])->name('product-orders.export');
         Route::get('product-orders/exports/list', [App\Http\Controllers\Admin\ProductOrderController::class, 'exportList'])->name('product-orders.exports.list');
         Route::delete('product-orders/exports/{export}', [App\Http\Controllers\Admin\ProductOrderController::class, 'exportDelete'])->name('product-orders.exports.delete');
+        // Shiprocket
+        Route::post('product-orders/{product_order}/shiprocket/assign', [App\Http\Controllers\Admin\ProductOrderController::class, 'shiprocketAssign'])->name('product-orders.shiprocket.assign');
+        Route::post('product-orders/shiprocket/bulk-assign', [App\Http\Controllers\Admin\ProductOrderController::class, 'shiprocketBulkAssign'])->name('product-orders.shiprocket.bulk-assign');
+        Route::get('product-orders/{product_order}/shiprocket/track', [App\Http\Controllers\Admin\ProductOrderController::class, 'shiprocketTrack'])->name('product-orders.shiprocket.track');
+        Route::post('product-orders/{product_order}/shiprocket/cancel', [App\Http\Controllers\Admin\ProductOrderController::class, 'shiprocketCancel'])->name('product-orders.shiprocket.cancel');
+        // Shiprocket Settings
+        Route::get('settings/shiprocket', [App\Http\Controllers\Admin\ShiprocketSettingController::class, 'index'])->name('settings.shiprocket');
+        Route::post('settings/shiprocket', [App\Http\Controllers\Admin\ShiprocketSettingController::class, 'update'])->name('settings.shiprocket.update');
+        Route::post('settings/shiprocket/test', [App\Http\Controllers\Admin\ShiprocketSettingController::class, 'testConnection'])->name('settings.shiprocket.test');
 
         // Content Management
         Route::resource('sliders', App\Http\Controllers\Admin\SliderController::class);

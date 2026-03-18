@@ -177,6 +177,20 @@
                                 <span class="ml-3 font-medium" x-show="!sidebarCollapsed">Product Orders</span>
                             </a>
 
+                            <!-- Shiprocket Settings -->
+                            <a href="{{ route('admin.settings.shiprocket') }}"
+                                class="sidebar-link {{ request()->routeIs('admin.settings.shiprocket*') ? 'active' : '' }} flex items-center rounded-lg transition-all hover:bg-gray-50 text-sm"
+                                :class="sidebarCollapsed ? 'justify-center p-3' : 'px-3 py-2'"
+                                style="{{ request()->routeIs('admin.settings.shiprocket*') ? '' : 'color: var(--muted);' }}"
+                                :title="sidebarCollapsed ? 'Shiprocket' : ''">
+                                <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0">
+                                    </path>
+                                </svg>
+                                <span class="ml-3 font-medium" x-show="!sidebarCollapsed">Shiprocket</span>
+                            </a>
+
                             <!-- Home Page Content Section -->
                             <div x-show="!sidebarCollapsed" class="px-3 pt-4 pb-2">
                                 <p class="text-xs font-semibold uppercase tracking-wider"
