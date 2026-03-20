@@ -49,4 +49,9 @@ return [
         'template_id' => env('OTP_TEMPLATE_ID'),
     ],
 
+    'shiprocket' => [
+        'email'    => env('SHIPROCKET_EMAIL'),
+        'password' => env('SHIPROCKET_PASSWORD'),
+    ],
+
 ];

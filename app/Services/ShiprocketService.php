@@ -19,12 +19,16 @@ class ShiprocketService
     protected function token(): ?string
     {
         return Cache::remember('shiprocket_token', 3600 * 8, function () {
-            $s = $this->settings();
-            if (!$s->email || !$s->password) return null;
+            $email    = config('services.shiprocket.email');
+            $password = config('services.shiprocket.password');
+
+            if (!$email || !$password) {
+                return null;
+            }
 
             $response = Http::post("{$this->baseUrl}/auth/login", [
-                'email'    => $s->email,
-                'password' => $s->password,
+                'email'    => $email,
+                'password' => $password,
             ]);
 
             if ($response->successful()) return $response->json('token');

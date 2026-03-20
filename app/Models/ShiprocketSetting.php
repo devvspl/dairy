@@ -10,8 +10,6 @@ class ShiprocketSetting extends Model
 
     protected $fillable = [
         'enabled',
-        'email',
-        'password',
         'pickup_location',
         'default_city',
         'default_state',

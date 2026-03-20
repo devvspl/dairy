@@ -19,7 +19,6 @@ class ShiprocketSettingController extends Controller
     public function update(Request $request)
     {
         $request->validate([
-            'email'           => 'nullable|email',
             'pickup_location' => 'nullable|string|max:100',
             'default_city'    => 'nullable|string|max:100',
             'default_state'   => 'nullable|string|max:100',
@@ -30,27 +29,17 @@ class ShiprocketSettingController extends Controller
             'pkg_weight'      => 'nullable|numeric|min:0.1',
         ]);
 
-        $s = ShiprocketSetting::instance();
-
-        $data = [
-            'enabled'          => $request->boolean('enabled'),
-            'email'            => $request->email,
-            'pickup_location'  => $request->pickup_location ?? 'Primary',
-            'default_city'     => $request->default_city,
-            'default_state'    => $request->default_state,
-            'default_pincode'  => $request->default_pincode,
-            'pkg_length'       => $request->pkg_length ?? 10,
-            'pkg_breadth'      => $request->pkg_breadth ?? 10,
-            'pkg_height'       => $request->pkg_height ?? 10,
-            'pkg_weight'       => $request->pkg_weight ?? 0.5,
-        ];
-
-        // Only update password if a new one is provided
-        if ($request->filled('password')) {
-            $data['password'] = $request->password;
-        }
-
-        $s->update($data);
+        ShiprocketSetting::instance()->update([
+            'enabled'         => $request->boolean('enabled'),
+            'pickup_location' => $request->pickup_location ?? 'Primary',
+            'default_city'    => $request->default_city,
+            'default_state'   => $request->default_state,
+            'default_pincode' => $request->default_pincode,
+            'pkg_length'      => $request->pkg_length ?? 10,
+            'pkg_breadth'     => $request->pkg_breadth ?? 10,
+            'pkg_height'      => $request->pkg_height ?? 10,
+            'pkg_weight'      => $request->pkg_weight ?? 0.5,
+        ]);
 
         app(ShiprocketService::class)->refreshToken();
 
@@ -59,17 +48,21 @@ class ShiprocketSettingController extends Controller
 
     public function testConnection()
     {
-        $s = ShiprocketSetting::instance();
+        $email    = config('services.shiprocket.email');
+        $password = config('services.shiprocket.password');
 
-        if (!$s->email || !$s->password) {
-            return response()->json(['success' => false, 'message' => 'Email and password are required.']);
+        if (!$email || !$password) {
+            return response()->json([
+                'success' => false,
+                'message' => 'SHIPROCKET_EMAIL and SHIPROCKET_PASSWORD are not set in .env',
+            ]);
         }
 
         app(ShiprocketService::class)->refreshToken();
 
         $response = Http::post('https://apiv2.shiprocket.in/v1/external/auth/login', [
-            'email'    => $s->email,
-            'password' => $s->password,
+            'email'    => $email,
+            'password' => $password,
         ]);
 
         if ($response->successful() && $response->json('token')) {
@@ -78,7 +71,7 @@ class ShiprocketSettingController extends Controller
 
         return response()->json([
             'success' => false,
-            'message' => $response->json('message') ?? 'Authentication failed. Check your credentials.',
+            'message' => $response->json('message') ?? 'Authentication failed. Check your .env credentials.',
         ]);
     }
 }
