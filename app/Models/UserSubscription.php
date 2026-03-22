@@ -8,24 +8,23 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class UserSubscription extends Model
 {
     protected $fillable = [
-        'user_id',
-        'membership_plan_id',
-        'location_id',
-        'start_date',
-        'end_date',
-        'status',
-        'payment_method',
-        'payment_status',
-        'delivery_address',
-        'amount_paid',
-        'transaction_id',
-        'notes',
+        'user_id', 'membership_plan_id', 'location_id',
+        'start_date', 'end_date', 'status',
+        'payment_method', 'payment_status', 'delivery_address',
+        'amount_paid', 'transaction_id', 'notes',
+        // wallet fields (on-demand plans)
+        'wallet_total', 'wallet_balance', 'price_per_litre',
+        'milk_type', 'quantity_per_day', 'delivery_slot',
     ];
 
     protected $casts = [
-        'start_date' => 'date',
-        'end_date' => 'date',
-        'amount_paid' => 'decimal:2',
+        'start_date'       => 'date',
+        'end_date'         => 'date',
+        'amount_paid'      => 'decimal:2',
+        'wallet_total'     => 'decimal:2',
+        'wallet_balance'   => 'decimal:2',
+        'price_per_litre'  => 'decimal:2',
+        'quantity_per_day' => 'decimal:2',
     ];
 
     /**
@@ -109,6 +108,14 @@ class UserSubscription extends Model
     }
 
     /**
+     * Wallet transactions for this subscription
+     */
+    public function walletTransactions()
+    {
+        return $this->hasMany(MilkWalletTransaction::class);
+    }
+
+    /**
      * Get delivered count
      */
     public function deliveredCount(): int
@@ -130,5 +137,82 @@ class UserSubscription extends Model
     public function totalQuantityDelivered(): float
     {
         return $this->deliveryLogs()->delivered()->sum('quantity_delivered');
+    }
+
+    // ── Wallet helpers (on-demand plans) ─────────────────────
+
+    public function isOnDemand(): bool
+    {
+        return $this->membershipPlan && $this->membershipPlan->isOnDemand();
+    }
+
+    public function walletBalanceFormatted(): string
+    {
+        return '₹' . number_format((float) $this->wallet_balance, 2);
+    }
+
+    public function walletUsedAmount(): float
+    {
+        return max(0, (float) $this->wallet_total - (float) $this->wallet_balance);
+    }
+
+    public function walletUsedPercent(): float
+    {
+        if (!$this->wallet_total || $this->wallet_total == 0) return 0;
+        return round(($this->walletUsedAmount() / $this->wallet_total) * 100, 1);
+    }
+
+    public function walletRemainingPercent(): float
+    {
+        return max(0, 100 - $this->walletUsedPercent());
+    }
+
+    /**
+     * Debit wallet for a delivery. Returns false if insufficient balance.
+     */
+    public function debitWallet(float $litres, string $date, ?int $markedBy = null): bool
+    {
+        $pricePerLitre = (float) $this->price_per_litre;
+        $amount        = round($litres * $pricePerLitre, 2);
+        $newBalance    = round((float) $this->wallet_balance - $amount, 2);
+
+        if ($newBalance < 0) return false;
+
+        $this->update(['wallet_balance' => $newBalance]);
+
+        MilkWalletTransaction::create([
+            'user_id'              => $this->user_id,
+            'user_subscription_id' => $this->id,
+            'type'                 => 'debit',
+            'amount'               => $amount,
+            'litres'               => $litres,
+            'balance_after'        => $newBalance,
+            'description'          => number_format($litres, 2) . 'L milk delivered',
+            'transaction_date'     => $date,
+        ]);
+
+        return true;
+    }
+
+    /**
+     * Credit wallet (top-up on new payment)
+     */
+    public function creditWallet(float $amount, string $description = 'Pack purchased'): void
+    {
+        $newBalance = round((float) $this->wallet_balance + $amount, 2);
+        $this->update([
+            'wallet_balance' => $newBalance,
+            'wallet_total'   => round((float) $this->wallet_total + $amount, 2),
+        ]);
+
+        MilkWalletTransaction::create([
+            'user_id'              => $this->user_id,
+            'user_subscription_id' => $this->id,
+            'type'                 => 'credit',
+            'amount'               => $amount,
+            'balance_after'        => $newBalance,
+            'description'          => $description,
+            'transaction_date'     => now()->toDateString(),
+        ]);
     }
 }

@@ -51,7 +51,31 @@ class DashboardController extends Controller
             ->get()
             ->keyBy('membership_plan_id');
 
-        return view('member-dashboard', compact('subscriptionHistory', 'onDemandPlans', 'onDemandSubscriptions'));
+        // Active on-demand wallet subscription (most recent active)
+        $walletSubscription = \App\Models\UserSubscription::with(['membershipPlan', 'walletTransactions'])
+            ->where('user_id', $user->id)
+            ->where('status', 'active')
+            ->whereHas('membershipPlan', fn($q) => $q->where('plan_type', 'on_demand'))
+            ->whereNotNull('wallet_balance')
+            ->latest()
+            ->first();
+
+        // Wallet calendar: transactions for current month
+        $walletCalendarData = [];
+        if ($walletSubscription) {
+            $today = now();
+            $walletCalendarData = \App\Models\MilkWalletTransaction::where('user_subscription_id', $walletSubscription->id)
+                ->whereYear('transaction_date', $today->year)
+                ->whereMonth('transaction_date', $today->month)
+                ->orderBy('transaction_date')
+                ->get()
+                ->keyBy(fn($t) => $t->transaction_date->format('Y-m-d'));
+        }
+
+        return view('member-dashboard', compact(
+            'subscriptionHistory', 'onDemandPlans', 'onDemandSubscriptions',
+            'walletSubscription', 'walletCalendarData'
+        ));
     }
 
     public function delivery()
@@ -235,6 +259,15 @@ class DashboardController extends Controller
             'marked_by'          => $user->id,
             'marked_at'          => now(),
         ]);
+
+        // Auto-debit wallet for on-demand subscriptions when marked delivered
+        if ($validated['status'] === 'delivered') {
+            $subscription = $delivery->subscription;
+            if ($subscription && $subscription->isOnDemand() && $subscription->wallet_balance !== null) {
+                $qty = (float) ($validated['quantity_delivered'] ?? $delivery->quantity_delivered);
+                $subscription->debitWallet($qty, $delivery->delivery_date->toDateString(), $user->id);
+            }
+        }
 
         return redirect()->back()->with('success', 'Delivery updated successfully.');
     }

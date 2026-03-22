@@ -69,6 +69,13 @@
                     class="tab-btn flex-1 py-3.5 text-sm font-semibold transition-all flex items-center justify-center gap-2">
                 <i class="fa-solid fa-cart-shopping"></i><span>Milk Packs</span>
             </button>
+            <button onclick="switchTab('wallet')" id="tab-wallet"
+                    class="tab-btn flex-1 py-3.5 text-sm font-semibold transition-all flex items-center justify-center gap-2">
+                <i class="fa-solid fa-wallet"></i><span>Wallet</span>
+                @if($walletSubscription && $walletSubscription->wallet_balance > 0)
+                <span class="w-2 h-2 rounded-full" style="background: var(--green);"></span>
+                @endif
+            </button>
             <button onclick="switchTab('plan')" id="tab-plan"
                     class="tab-btn flex-1 py-3.5 text-sm font-semibold transition-all flex items-center justify-center gap-2">
                 <i class="fa-solid fa-calendar-check"></i><span>Active Plan</span>
@@ -154,6 +161,172 @@
                 </div>
                 @endforelse
             </div>
+        </div>
+
+        {{-- ===== TAB: WALLET ===== --}}
+        <div id="panel-wallet" class="tab-panel p-4 lg:p-6 hidden">
+        @if($walletSubscription)
+        @php
+            $ws = $walletSubscription;
+            $wPlan = $ws->membershipPlan;
+            $walletPct = $ws->walletRemainingPercent();
+            $today = now();
+            $startOfMonth = $today->copy()->startOfMonth();
+            $endOfMonth   = $today->copy()->endOfMonth();
+            $daysInCal = [];
+            $cur = $startOfMonth->copy()->startOfWeek();
+            while ($cur <= $endOfMonth->copy()->endOfWeek()) { $daysInCal[] = $cur->copy(); $cur->addDay(); }
+        @endphp
+
+        {{-- Wallet Balance Card --}}
+        <div class="rounded-2xl p-5 mb-5 border-2" style="border-color: var(--green); background: linear-gradient(135deg,#f0fdf4,#fff);">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+                <div>
+                    <div class="flex items-center gap-2 mb-1">
+                        <i class="fa-solid fa-wallet text-lg" style="color: var(--green);"></i>
+                        <h2 class="font-bold text-base" style="color: var(--text);">Milk Wallet</h2>
+                        <span class="px-2 py-0.5 text-xs rounded-full font-bold" style="background: rgba(47,74,30,0.1); color: var(--green);">{{ $wPlan->name }}</span>
+                    </div>
+                    <p class="text-xs" style="color: var(--muted);">
+                        {{ $ws->milk_type ? ucfirst(str_replace('_',' ',$ws->milk_type)) : 'Milk' }} ·
+                        {{ $ws->quantity_per_day ? $ws->quantity_per_day.'L/day' : '' }} ·
+                        {{ $ws->delivery_slot ? ucfirst($ws->delivery_slot) : '' }}
+                    </p>
+                    <p class="text-xs mt-1" style="color: var(--muted);">
+                        Valid: {{ $ws->start_date->format('d M') }} – {{ $ws->end_date->format('d M Y') }} · {{ $ws->daysRemaining() }} days left
+                    </p>
+                </div>
+                <div class="text-center sm:text-right">
+                    <p class="text-3xl font-bold" style="color: var(--green);">₹{{ number_format($ws->wallet_balance, 2) }}</p>
+                    <p class="text-xs" style="color: var(--muted);">of ₹{{ number_format($ws->wallet_total, 2) }} remaining</p>
+                    @if($ws->price_per_litre)
+                    <p class="text-xs mt-0.5 font-semibold" style="color: var(--green);">₹{{ number_format($ws->price_per_litre, 2) }}/litre</p>
+                    @endif
+                </div>
+            </div>
+            {{-- Progress bar --}}
+            <div class="mb-3">
+                <div class="flex justify-between text-xs mb-1" style="color: var(--muted);">
+                    <span>Used: ₹{{ number_format($ws->walletUsedAmount(), 2) }}</span>
+                    <span>{{ $walletPct }}% remaining</span>
+                </div>
+                <div class="w-full rounded-full h-3" style="background: #e5e7eb;">
+                    <div class="h-3 rounded-full transition-all" style="width: {{ $walletPct }}%; background: linear-gradient(90deg, var(--green), #5a9e3a);"></div>
+                </div>
+            </div>
+            {{-- Stats row --}}
+            <div class="grid grid-cols-3 gap-3">
+                <div class="bg-white rounded-xl p-3 border text-center" style="border-color: var(--border);">
+                    <p class="text-lg font-bold" style="color: var(--green);">{{ number_format($ws->walletTransactions->where('type','debit')->sum('litres'), 1) }}L</p>
+                    <p class="text-[10px] mt-0.5" style="color: var(--muted);">Milk Used</p>
+                </div>
+                <div class="bg-white rounded-xl p-3 border text-center" style="border-color: var(--border);">
+                    <p class="text-lg font-bold" style="color: var(--green);">{{ $ws->walletTransactions->where('type','debit')->count() }}</p>
+                    <p class="text-[10px] mt-0.5" style="color: var(--muted);">Deliveries</p>
+                </div>
+                <div class="bg-white rounded-xl p-3 border text-center" style="border-color: var(--border);">
+                    <p class="text-lg font-bold" style="color: var(--green);">{{ $ws->walletTransactions->where('type','credit')->count() }}</p>
+                    <p class="text-[10px] mt-0.5" style="color: var(--muted);">Top-ups</p>
+                </div>
+            </div>
+        </div>
+
+        {{-- Wallet Calendar --}}
+        <div class="mb-5">
+            <div class="flex items-center justify-between mb-3">
+                <h3 class="font-bold text-sm" style="color: var(--text);"><i class="fa-solid fa-calendar-days mr-2" style="color: var(--green);"></i>Wallet Calendar</h3>
+                <span class="text-sm font-semibold" style="color: var(--green);">{{ now()->format('F Y') }}</span>
+            </div>
+            <div class="grid grid-cols-7 gap-1 mb-2">
+                @foreach(['Sun','Mon','Tue','Wed','Thu','Fri','Sat'] as $d)
+                <div class="text-center py-1.5 text-[10px] font-bold rounded" style="background: rgba(47,74,30,0.05); color: var(--green);">{{ $d }}</div>
+                @endforeach
+            </div>
+            <div class="grid grid-cols-7 gap-1">
+                @foreach($daysInCal as $calDate)
+                @php
+                    $isCurrentMonth = $calDate->month === $today->month;
+                    $isToday = $calDate->isToday();
+                    $dateKey = $calDate->format('Y-m-d');
+                    $txn = $walletCalendarData->get($dateKey);
+                    $isFuture = $calDate->isFuture() && !$isToday;
+                @endphp
+                <div class="min-h-[64px] p-1.5 rounded-lg border-2 text-center transition-all {{ $isToday ? 'scale-105 shadow-md' : '' }}"
+                     style="@if($isToday) background: linear-gradient(135deg,var(--green),#3d6b2e); border-color: var(--green);
+                            @elseif($txn && $txn->type === 'debit') background:#fef3c7; border-color:#d97706;
+                            @elseif($txn && $txn->type === 'credit') background:#dcfce7; border-color:#16a34a;
+                            @else background:{{ $isCurrentMonth ? '#fff' : '#fafafa' }}; border-color:#e5e7eb; @endif">
+                    <span class="text-xs font-bold block" style="color: {{ $isToday ? '#fff' : ($isCurrentMonth ? '#1f2937' : '#9ca3af') }};">{{ $calDate->day }}</span>
+                    @if($isCurrentMonth && $txn)
+                        @if($txn->type === 'debit')
+                            <i class="fa-solid fa-droplet text-[9px]" style="color:#d97706;"></i>
+                            <p class="text-[9px] font-bold leading-tight" style="color:#92400e;">{{ number_format($txn->litres,1) }}L</p>
+                            <p class="text-[8px] leading-tight" style="color:#b45309;">−₹{{ number_format($txn->amount,0) }}</p>
+                        @else
+                            <i class="fa-solid fa-plus text-[9px]" style="color:#16a34a;"></i>
+                            <p class="text-[8px] font-bold leading-tight" style="color:#15803d;">+₹{{ number_format($txn->amount,0) }}</p>
+                        @endif
+                    @elseif($isCurrentMonth && $isToday)
+                        <i class="fa-solid fa-star text-[9px] text-white"></i>
+                    @endif
+                </div>
+                @endforeach
+            </div>
+            <div class="mt-3 flex flex-wrap gap-3">
+                <div class="flex items-center gap-1.5 text-xs"><div class="w-4 h-4 rounded border-2 border-yellow-500" style="background:#fef3c7;"></div><span style="color:var(--muted);">Milk Delivered (debit)</span></div>
+                <div class="flex items-center gap-1.5 text-xs"><div class="w-4 h-4 rounded border-2 border-green-600" style="background:#dcfce7;"></div><span style="color:var(--muted);">Top-up (credit)</span></div>
+                <div class="flex items-center gap-1.5 text-xs"><div class="w-4 h-4 rounded" style="background:var(--green);"></div><span style="color:var(--muted);">Today</span></div>
+            </div>
+        </div>
+
+        {{-- Transaction History --}}
+        <div>
+            <h3 class="font-bold text-sm mb-3" style="color: var(--text);"><i class="fa-solid fa-list-ul mr-2" style="color: var(--green);"></i>Transaction History</h3>
+            @php $allTxns = $ws->walletTransactions->sortByDesc('transaction_date'); @endphp
+            @if($allTxns->count() > 0)
+            <div class="space-y-2">
+                @foreach($allTxns->take(20) as $txn)
+                <div class="flex items-center justify-between px-4 py-3 rounded-xl border" style="border-color: var(--border); background: {{ $txn->isCredit() ? '#f0fdf4' : '#fffbeb' }};">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
+                             style="background: {{ $txn->isCredit() ? 'rgba(22,163,74,0.12)' : 'rgba(217,119,6,0.12)' }};">
+                            <i class="fa-solid {{ $txn->isCredit() ? 'fa-arrow-down' : 'fa-droplet' }} text-xs"
+                               style="color: {{ $txn->isCredit() ? '#16a34a' : '#d97706' }};"></i>
+                        </div>
+                        <div>
+                            <p class="text-xs font-semibold" style="color: var(--text);">{{ $txn->description }}</p>
+                            <p class="text-[10px]" style="color: var(--muted);">{{ $txn->transaction_date->format('d M Y') }}</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-sm font-bold" style="color: {{ $txn->isCredit() ? '#16a34a' : '#d97706' }};">
+                            {{ $txn->isCredit() ? '+' : '−' }}₹{{ number_format($txn->amount, 2) }}
+                        </p>
+                        <p class="text-[10px]" style="color: var(--muted);">Bal: ₹{{ number_format($txn->balance_after, 2) }}</p>
+                    </div>
+                </div>
+                @endforeach
+            </div>
+            @else
+            <div class="text-center py-8">
+                <i class="fa-solid fa-receipt text-3xl mb-2" style="color: var(--muted);"></i>
+                <p class="text-sm" style="color: var(--muted);">No transactions yet.</p>
+            </div>
+            @endif
+        </div>
+
+        @else
+        <div class="text-center py-16">
+            <div class="w-20 h-20 rounded-full mx-auto mb-4 flex items-center justify-center" style="background: rgba(47,74,30,0.08);">
+                <i class="fa-solid fa-wallet text-3xl" style="color: var(--muted);"></i>
+            </div>
+            <h3 class="text-lg font-bold mb-2" style="color: var(--text);">No Active Wallet</h3>
+            <p class="text-sm mb-5" style="color: var(--muted);">Buy an on-demand milk pack to activate your milk wallet.</p>
+            <button onclick="switchTab('packs')" class="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-sm transition-all hover:shadow-lg" style="background: var(--green); color: #fff;">
+                <i class="fa-solid fa-cart-shopping"></i>Browse Milk Packs
+            </button>
+        </div>
+        @endif
         </div>
 
         {{-- ===== TAB: ACTIVE PLAN ===== --}}

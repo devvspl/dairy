@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Coupon;
 use App\Models\CouponUsage;
+use App\Models\MilkWalletTransaction;
 use App\Models\Order;
 use App\Models\MembershipPlan;
 use App\Models\Product;
@@ -253,21 +254,72 @@ class PaymentController extends Controller
         if ($quantityPerDay) $notes .= ' | Qty/day: ' . $quantityPerDay . 'L';
         if ($deliverySlot)   $notes .= ' | Slot: ' . $deliverySlot;
 
-        // Create user subscription
-        UserSubscription::create([
-            'user_id'            => $user->id,
-            'membership_plan_id' => $plan->id,
-            'location_id'        => $locationId,
-            'start_date'         => $startDate,
-            'end_date'           => $endDate,
-            'status'             => 'active',
-            'payment_method'     => 'phonepe',
-            'payment_status'     => 'paid',
-            'delivery_address'   => $deliveryAddress,
-            'amount_paid'        => $order->amount,
-            'transaction_id'     => $order->transaction_id,
-            'notes'              => $notes,
-        ]);
+        // For on-demand plans: calculate price per litre from plan price / duration_days / qty_per_day
+        $walletTotal    = null;
+        $walletBalance  = null;
+        $pricePerLitre  = null;
+        if ($plan->isOnDemand()) {
+            $walletTotal   = (float) $order->amount;
+            $walletBalance = (float) $order->amount;
+            // price per litre = total / (duration_days * qty_per_day)
+            $qtyPerDay     = (float) ($quantityPerDay ?: 1);
+            $totalLitres   = $plan->duration_days * $qtyPerDay;
+            $pricePerLitre = $totalLitres > 0 ? round($walletTotal / $totalLitres, 2) : null;
+        }
+
+        // Check if user already has an on-demand subscription for this plan (top-up scenario)
+        $existingSub = null;
+        if ($plan->isOnDemand()) {
+            $existingSub = UserSubscription::where('user_id', $user->id)
+                ->where('membership_plan_id', $plan->id)
+                ->whereIn('status', ['active', 'pending'])
+                ->first();
+        }
+
+        if ($existingSub && $plan->isOnDemand()) {
+            // Top-up: extend end date and credit wallet
+            $existingSub->update([
+                'end_date' => $existingSub->end_date->addDays($plan->duration_days),
+                'status'   => 'active',
+            ]);
+            $existingSub->creditWallet((float) $order->amount, 'Pack top-up: ' . $plan->name . ' | Order: ' . $order->order_id);
+            $subscription = $existingSub;
+        } else {
+            // Create new subscription
+            $subscription = UserSubscription::create([
+                'user_id'            => $user->id,
+                'membership_plan_id' => $plan->id,
+                'location_id'        => $locationId,
+                'start_date'         => $startDate,
+                'end_date'           => $endDate,
+                'status'             => 'active',
+                'payment_method'     => 'phonepe',
+                'payment_status'     => 'paid',
+                'delivery_address'   => $deliveryAddress,
+                'amount_paid'        => $order->amount,
+                'transaction_id'     => $order->transaction_id,
+                'notes'              => $notes,
+                'wallet_total'       => $walletTotal,
+                'wallet_balance'     => $walletBalance,
+                'price_per_litre'    => $pricePerLitre,
+                'milk_type'          => $milkType,
+                'quantity_per_day'   => $quantityPerDay,
+                'delivery_slot'      => $deliverySlot,
+            ]);
+
+            // Record initial wallet credit transaction for on-demand
+            if ($plan->isOnDemand()) {
+                \App\Models\MilkWalletTransaction::create([
+                    'user_id'              => $user->id,
+                    'user_subscription_id' => $subscription->id,
+                    'type'                 => 'credit',
+                    'amount'               => $walletTotal,
+                    'balance_after'        => $walletBalance,
+                    'description'          => 'Pack purchased: ' . $plan->name . ' | Order: ' . $order->order_id,
+                    'transaction_date'     => now()->toDateString(),
+                ]);
+            }
+        }
 
         // Clear session data
         session()->forget([
@@ -282,6 +334,7 @@ class PaymentController extends Controller
         Log::info('Membership Activated', [
             'user_id'    => $user->id,
             'plan_id'    => $plan->id,
+            'plan_type'  => $plan->plan_type,
             'location_id'=> $locationId,
             'order_id'   => $order->order_id,
         ]);
