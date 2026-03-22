@@ -141,17 +141,21 @@
                             {{ $delivery->markedBy ? $delivery->markedBy->name : '-' }}
                         </td>
                         <td class="px-4 py-3">
-                            <div class="flex gap-2">
-                                <button onclick="openUpdateModal({{ $delivery->id }}, '{{ $delivery->status }}', '{{ $delivery->quantity_delivered }}', '{{ $delivery->delivery_time }}')" 
-                                        class="text-sm font-semibold hover:underline" style="color: var(--green);">
-                                    <i class="fa-solid fa-edit mr-1"></i>Update
+                            <div class="flex items-center gap-2">
+                                <button onclick="openUpdateModal({{ $delivery->id }}, '{{ $delivery->status }}', '{{ $delivery->quantity_delivered }}', '{{ $delivery->delivery_time }}')"
+                                        title="Update"
+                                        class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors hover:opacity-80"
+                                        style="background: rgba(47,74,30,0.1); color: var(--green);">
+                                    <i class="fa-solid fa-pen-to-square"></i> Update
                                 </button>
-                                @if($delivery->status === 'pending' && $delivery->delivery_date->isFuture())
-                                <form method="POST" action="{{ route('admin.deliveries.forward', $delivery) }}" 
-                                      onsubmit="return confirm('Forward this delivery to the next scheduled day?')" class="inline">
+                                @if($delivery->status === 'pending')
+                                <form method="POST" action="{{ route('admin.deliveries.forward', $delivery) }}"
+                                      onsubmit="return confirm('Forward this delivery to the next day?')" class="inline">
                                     @csrf
-                                    <button type="submit" class="text-sm font-semibold hover:underline text-blue-600">
-                                        <i class="fa-solid fa-forward mr-1"></i>Forward
+                                    <button type="submit" title="Forward to next day"
+                                            class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors hover:opacity-80"
+                                            style="background: rgba(59,130,246,0.1); color: #2563eb;">
+                                        <i class="fa-solid fa-forward-step"></i> Forward
                                     </button>
                                 </form>
                                 @endif
