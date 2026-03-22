@@ -110,7 +110,8 @@ class DeliveryLogController extends Controller
             }
 
             $startDate = $subscription->start_date->copy();
-            $endDate   = $subscription->end_date->copy();
+            // Use duration_days to compute correct end (inclusive), don't trust stored end_date
+            $endDate = $startDate->copy()->addDays($plan->duration_days - 1);
             $generated = 0;
 
             while ($startDate->lte($endDate)) {
