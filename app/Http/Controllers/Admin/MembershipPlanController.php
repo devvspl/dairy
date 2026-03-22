@@ -24,8 +24,9 @@ class MembershipPlanController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'slug' => 'nullable|string|max:255|unique:membership_plans',
+            'plan_type' => 'required|in:scheduled,on_demand',
             'price' => 'required|numeric|min:0',
-            'duration' => 'required|string',
+            'duration' => 'required|in:7_days,15_days,1_month,3_months,6_months,1_year',
             'badge' => 'nullable|string|max:255',
             'icon' => 'nullable|string|max:255',
             'description' => 'nullable|string',
@@ -72,8 +73,9 @@ class MembershipPlanController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'slug' => 'nullable|string|max:255|unique:membership_plans,slug,' . $id,
+            'plan_type' => 'required|in:scheduled,on_demand',
             'price' => 'required|numeric|min:0',
-            'duration' => 'required|string',
+            'duration' => 'required|in:7_days,15_days,1_month,3_months,6_months,1_year',
             'badge' => 'nullable|string|max:255',
             'icon' => 'nullable|string|max:255',
             'description' => 'nullable|string',
