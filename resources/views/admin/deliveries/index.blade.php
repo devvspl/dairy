@@ -17,15 +17,24 @@
 
     <!-- Subscription Info -->
     <div class="bg-white rounded-lg shadow-sm p-4 border" style="border-color: var(--border);">
-        <div class="flex items-center justify-between">
+        <div class="flex items-center justify-between flex-wrap gap-3">
             <div>
                 <h3 class="font-bold text-lg" style="color: var(--text);">{{ $subscription->user->name }}</h3>
-                <p class="text-sm" style="color: var(--muted);">{{ $subscription->membershipPlan->name }} - {{ $subscription->start_date->format('M d, Y') }} to {{ $subscription->end_date->format('M d, Y') }}</p>
+                <p class="text-sm" style="color: var(--muted);">{{ $subscription->membershipPlan->name }} — {{ $subscription->start_date->format('M d, Y') }} to {{ $subscription->end_date->format('M d, Y') }}</p>
+                @if($subscription->membershipPlan->isOnDemand())
+                <div class="flex items-center gap-3 mt-2 flex-wrap">
+                    <span class="px-2 py-0.5 text-xs rounded-full font-semibold bg-blue-100 text-blue-800">🛒 On-Demand / Wallet</span>
+                    <span class="text-sm" style="color: var(--muted);">Qty/day: <strong style="color:var(--text);">{{ $subscription->quantity_per_day }} L</strong></span>
+                    <span class="text-sm" style="color: var(--muted);">Rate: <strong style="color:var(--text);">₹{{ number_format($subscription->price_per_litre, 2) }}/L</strong></span>
+                    <span class="text-sm" style="color: var(--muted);">Wallet: <strong style="color:var(--green);">₹{{ number_format($subscription->wallet_balance, 2) }}</strong> / ₹{{ number_format($subscription->wallet_total, 2) }}</span>
+                </div>
+                @endif
             </div>
             <form method="POST" action="{{ route('admin.subscriptions.deliveries.generate', $subscription) }}">
                 @csrf
                 <button type="submit" class="px-4 py-2 rounded-lg font-semibold" style="background-color: var(--green); color: #fff;">
-                    <i class="fa-solid fa-calendar-plus mr-2"></i>Generate Schedule
+                    <i class="fa-solid fa-calendar-plus mr-2"></i>
+                    {{ $subscription->membershipPlan->isOnDemand() ? 'Generate Daily Entries' : 'Generate Schedule' }}
                 </button>
             </form>
         </div>
@@ -92,6 +101,9 @@
                         <th class="px-4 py-3 text-left text-sm font-semibold" style="color: var(--text);">Date</th>
                         <th class="px-4 py-3 text-left text-sm font-semibold" style="color: var(--text);">Day</th>
                         <th class="px-4 py-3 text-left text-sm font-semibold" style="color: var(--text);">Quantity</th>
+                        @if($subscription->membershipPlan->isOnDemand())
+                        <th class="px-4 py-3 text-left text-sm font-semibold" style="color: var(--text);">Wallet Debit</th>
+                        @endif
                         <th class="px-4 py-3 text-left text-sm font-semibold" style="color: var(--text);">Status</th>
                         <th class="px-4 py-3 text-left text-sm font-semibold" style="color: var(--text);">Time</th>
                         <th class="px-4 py-3 text-left text-sm font-semibold" style="color: var(--text);">Marked By</th>
@@ -104,6 +116,15 @@
                         <td class="px-4 py-3 text-sm" style="color: var(--text);">{{ $delivery->delivery_date->format('M d, Y') }}</td>
                         <td class="px-4 py-3 text-sm" style="color: var(--muted);">{{ $delivery->delivery_date->format('l') }}</td>
                         <td class="px-4 py-3 text-sm font-semibold" style="color: var(--green);">{{ $delivery->quantity_delivered }} L</td>
+                        @if($subscription->membershipPlan->isOnDemand())
+                        <td class="px-4 py-3 text-sm font-semibold text-red-600">
+                            @if($delivery->status === 'delivered')
+                                ₹{{ number_format($delivery->quantity_delivered * $subscription->price_per_litre, 2) }}
+                            @else
+                                <span style="color:var(--muted);">—</span>
+                            @endif
+                        </td>
+                        @endif
                         <td class="px-4 py-3">
                             <span class="px-2 py-1 text-xs rounded-full font-semibold
                                 {{ $delivery->status === 'delivered' ? 'bg-green-100 text-green-800' : '' }}
@@ -139,8 +160,8 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="7" class="px-4 py-8 text-center" style="color: var(--muted);">
-                            No delivery logs found. Click "Generate Schedule" to create delivery entries.
+                        <td colspan="{{ $subscription->membershipPlan->isOnDemand() ? 8 : 7 }}" class="px-4 py-8 text-center" style="color: var(--muted);">
+                            No delivery logs found. Click "{{ $subscription->membershipPlan->isOnDemand() ? 'Generate Daily Entries' : 'Generate Schedule' }}" to create delivery entries.
                         </td>
                     </tr>
                     @endforelse

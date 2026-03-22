@@ -6,6 +6,7 @@ use App\Exports\TodayDeliveriesExport;
 use App\Http\Controllers\Controller;
 use App\Models\DeliveryLog;
 use App\Models\ExportLog;
+use App\Models\MilkWalletTransaction;
 use App\Models\UserSubscription;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
@@ -45,20 +46,55 @@ class DeliveryLogController extends Controller
     public function updateStatus(Request $request, DeliveryLog $delivery)
     {
         $validated = $request->validate([
-            'status' => 'required|in:pending,delivered,skipped,failed',
-            'delivery_time' => 'nullable|date_format:H:i',
+            'status'             => 'required|in:pending,delivered,skipped,failed',
+            'delivery_time'      => 'nullable|date_format:H:i',
             'quantity_delivered' => 'nullable|numeric|min:0|max:100',
-            'notes' => 'nullable|string|max:500',
+            'notes'              => 'nullable|string|max:500',
         ]);
 
+        $oldStatus  = $delivery->status;
+        $newStatus  = $validated['status'];
+        $qty        = $validated['quantity_delivered'] ?? $delivery->quantity_delivered;
+        $subscription = $delivery->subscription;
+
         $delivery->update([
-            'status' => $validated['status'],
-            'delivery_time' => $validated['delivery_time'] ?? $delivery->delivery_time,
-            'quantity_delivered' => $validated['quantity_delivered'] ?? $delivery->quantity_delivered,
-            'notes' => $validated['notes'] ?? $delivery->notes,
-            'marked_by' => auth()->id(),
-            'marked_at' => now(),
+            'status'             => $newStatus,
+            'delivery_time'      => $validated['delivery_time'] ?? $delivery->delivery_time,
+            'quantity_delivered' => $qty,
+            'notes'              => $validated['notes'] ?? $delivery->notes,
+            'marked_by'          => auth()->id(),
+            'marked_at'          => now(),
         ]);
+
+        // Auto-debit wallet for on-demand plans when marked delivered (only once)
+        if ($newStatus === 'delivered' && $oldStatus !== 'delivered') {
+            $plan = $subscription->membershipPlan;
+            if ($plan && $plan->isOnDemand() && $subscription->wallet_balance > 0) {
+                $debitAmt = round((float) $qty * (float) $subscription->price_per_litre, 2);
+                if ($debitAmt > 0) {
+                    $subscription->debitWallet(
+                        $debitAmt,
+                        (float) $qty,
+                        'Delivery on ' . $delivery->delivery_date->format('d M Y') . ' (admin)'
+                    );
+                }
+            }
+        }
+
+        // If reverting from delivered → pending/skipped, credit back
+        if ($oldStatus === 'delivered' && in_array($newStatus, ['pending', 'skipped', 'failed'])) {
+            $plan = $subscription->membershipPlan;
+            if ($plan && $plan->isOnDemand()) {
+                $creditAmt = round((float) $qty * (float) $subscription->price_per_litre, 2);
+                if ($creditAmt > 0) {
+                    $subscription->creditWallet(
+                        $creditAmt,
+                        (float) $qty,
+                        'Delivery reversed on ' . $delivery->delivery_date->format('d M Y') . ' (admin)'
+                    );
+                }
+            }
+        }
 
         return redirect()->back()->with('success', 'Delivery status updated successfully!');
     }
@@ -69,38 +105,67 @@ class DeliveryLogController extends Controller
     public function generateSchedule(UserSubscription $subscription)
     {
         $plan = $subscription->membershipPlan;
-        
+
+        // ── On-Demand: generate one entry per day from start_date up to today ──
+        if ($plan->isOnDemand()) {
+            $qty = (float) ($subscription->quantity_per_day ?? 1);
+            if ($qty <= 0) {
+                return redirect()->back()->with('error', 'Subscription has no quantity_per_day set.');
+            }
+
+            $startDate = $subscription->start_date->copy();
+            // Only generate up to today (wallet controls the rest)
+            $endDate = now()->startOfDay();
+            // But never beyond the subscription end_date
+            if ($subscription->end_date->lt($endDate)) {
+                $endDate = $subscription->end_date->copy();
+            }
+
+            $generated = 0;
+            while ($startDate->lte($endDate)) {
+                DeliveryLog::firstOrCreate(
+                    [
+                        'user_subscription_id' => $subscription->id,
+                        'delivery_date'        => $startDate->format('Y-m-d'),
+                    ],
+                    [
+                        'quantity_delivered' => $qty,
+                        'status'             => 'pending',
+                    ]
+                );
+                $generated++;
+                $startDate->addDay();
+            }
+
+            return redirect()->back()->with('success', "Generated {$generated} on-demand delivery entries (up to today).");
+        }
+
+        // ── Scheduled: use day_wise_schedule ────────────────────────────────
         if (!$plan->day_wise_schedule) {
             return redirect()->back()->with('error', 'No delivery schedule found for this plan.');
         }
 
         $startDate = $subscription->start_date->copy();
-        $endDate = $subscription->end_date->copy();
+        $endDate   = $subscription->end_date->copy();
         $generated = 0;
 
-        // Loop through each day from start to end
-        while ($startDate <= $endDate) {
-            $dayKey = $startDate->format('D'); // Mon, Tue, Wed, etc.
-            
-            // Check if delivery is scheduled for this day
+        while ($startDate->lte($endDate)) {
+            $dayKey = $startDate->format('D'); // Mon, Tue, etc.
+
             if ($plan->hasDeliveryOnDay($dayKey)) {
-                $quantity = $plan->getDayQuantity($dayKey);
-                
-                // Create delivery log if it doesn't exist
                 DeliveryLog::firstOrCreate(
                     [
                         'user_subscription_id' => $subscription->id,
-                        'delivery_date' => $startDate->format('Y-m-d'),
+                        'delivery_date'        => $startDate->format('Y-m-d'),
                     ],
                     [
-                        'quantity_delivered' => $quantity,
-                        'status' => $startDate->isPast() ? 'pending' : 'pending',
+                        'quantity_delivered' => $plan->getDayQuantity($dayKey),
+                        'status'             => 'pending',
                     ]
                 );
-                
                 $generated++;
             }
-            
+
             $startDate->addDay();
         }
 
