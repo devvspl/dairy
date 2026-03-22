@@ -61,7 +61,8 @@ class DashboardController extends Controller
             ->first();
 
         // Wallet calendar: transactions for current month
-        $walletCalendarData = [];
+        $walletCalendarData = collect();
+        $deliveryCalendarData = collect();
         if ($walletSubscription) {
             $today = now();
             $walletCalendarData = \App\Models\MilkWalletTransaction::where('user_subscription_id', $walletSubscription->id)
@@ -70,11 +71,17 @@ class DashboardController extends Controller
                 ->orderBy('transaction_date')
                 ->get()
                 ->keyBy(fn($t) => $t->transaction_date->format('Y-m-d'));
+
+            $deliveryCalendarData = \App\Models\DeliveryLog::where('user_subscription_id', $walletSubscription->id)
+                ->whereYear('delivery_date', $today->year)
+                ->whereMonth('delivery_date', $today->month)
+                ->get()
+                ->keyBy(fn($d) => $d->delivery_date->format('Y-m-d'));
         }
 
         return view('member-dashboard', compact(
             'subscriptionHistory', 'onDemandPlans', 'onDemandSubscriptions',
-            'walletSubscription', 'walletCalendarData'
+            'walletSubscription', 'walletCalendarData', 'deliveryCalendarData'
         ));
     }
 

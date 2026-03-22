@@ -249,12 +249,15 @@
                     $isToday = $calDate->isToday();
                     $dateKey = $calDate->format('Y-m-d');
                     $txn = $walletCalendarData->get($dateKey);
+                    $delivery = $deliveryCalendarData->get($dateKey) ?? null;
                     $isFuture = $calDate->isFuture() && !$isToday;
                 @endphp
-                <div class="min-h-[64px] p-1.5 rounded-lg border-2 text-center transition-all {{ $isToday ? 'scale-105 shadow-md' : '' }}"
+                <div class="min-h-[72px] p-1.5 rounded-lg border-2 text-center transition-all {{ $isToday ? 'scale-105 shadow-md' : '' }}"
                      style="@if($isToday) background: linear-gradient(135deg,var(--green),#3d6b2e); border-color: var(--green);
                             @elseif($txn && $txn->type === 'debit') background:#fef3c7; border-color:#d97706;
                             @elseif($txn && $txn->type === 'credit') background:#dcfce7; border-color:#16a34a;
+                            @elseif($delivery && $delivery->status === 'pending' && $isCurrentMonth && !$isFuture) background:#eff6ff; border-color:#93c5fd;
+                            @elseif($delivery && $delivery->status === 'skipped' && $isCurrentMonth) background:#f3f4f6; border-color:#d1d5db;
                             @else background:{{ $isCurrentMonth ? '#fff' : '#fafafa' }}; border-color:#e5e7eb; @endif">
                     <span class="text-xs font-bold block" style="color: {{ $isToday ? '#fff' : ($isCurrentMonth ? '#1f2937' : '#9ca3af') }};">{{ $calDate->day }}</span>
                     @if($isCurrentMonth && $txn)
@@ -266,6 +269,18 @@
                             <i class="fa-solid fa-plus text-[9px]" style="color:#16a34a;"></i>
                             <p class="text-[8px] font-bold leading-tight" style="color:#15803d;">+₹{{ number_format($txn->amount,0) }}</p>
                         @endif
+                    @elseif($isCurrentMonth && $delivery && !$isFuture)
+                        @if($delivery->status === 'pending')
+                            <i class="fa-solid fa-clock text-[9px]" style="color:#3b82f6;"></i>
+                            <p class="text-[8px] leading-tight font-semibold" style="color:#1d4ed8;">{{ number_format($delivery->quantity_delivered,1) }}L</p>
+                            <p class="text-[8px] leading-tight" style="color:#3b82f6;">Pending</p>
+                        @elseif($delivery->status === 'skipped')
+                            <i class="fa-solid fa-ban text-[9px]" style="color:#9ca3af;"></i>
+                            <p class="text-[8px] leading-tight" style="color:#6b7280;">Skipped</p>
+                        @elseif($delivery->status === 'failed')
+                            <i class="fa-solid fa-circle-xmark text-[9px]" style="color:#ef4444;"></i>
+                            <p class="text-[8px] leading-tight" style="color:#dc2626;">Failed</p>
+                        @endif
                     @elseif($isCurrentMonth && $isToday)
                         <i class="fa-solid fa-star text-[9px] text-white"></i>
                     @endif
@@ -273,8 +288,10 @@
                 @endforeach
             </div>
             <div class="mt-3 flex flex-wrap gap-3">
-                <div class="flex items-center gap-1.5 text-xs"><div class="w-4 h-4 rounded border-2 border-yellow-500" style="background:#fef3c7;"></div><span style="color:var(--muted);">Milk Delivered (debit)</span></div>
+                <div class="flex items-center gap-1.5 text-xs"><div class="w-4 h-4 rounded border-2 border-yellow-500" style="background:#fef3c7;"></div><span style="color:var(--muted);">Delivered (debit)</span></div>
                 <div class="flex items-center gap-1.5 text-xs"><div class="w-4 h-4 rounded border-2 border-green-600" style="background:#dcfce7;"></div><span style="color:var(--muted);">Top-up (credit)</span></div>
+                <div class="flex items-center gap-1.5 text-xs"><div class="w-4 h-4 rounded border-2 border-blue-400" style="background:#eff6ff;"></div><span style="color:var(--muted);">Pending delivery</span></div>
+                <div class="flex items-center gap-1.5 text-xs"><div class="w-4 h-4 rounded border-2 border-gray-300" style="background:#f3f4f6;"></div><span style="color:var(--muted);">Skipped</span></div>
                 <div class="flex items-center gap-1.5 text-xs"><div class="w-4 h-4 rounded" style="background:var(--green);"></div><span style="color:var(--muted);">Today</span></div>
             </div>
         </div>
