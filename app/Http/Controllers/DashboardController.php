@@ -39,7 +39,19 @@ class DashboardController extends Controller
             ->orderByDesc('created_at')
             ->get();
 
-        return view('member-dashboard', compact('subscriptionHistory'));
+        $onDemandPlans = \App\Models\MembershipPlan::active()
+            ->where('plan_type', 'on_demand')
+            ->orderBy('order')
+            ->get();
+
+        $onDemandSubscriptions = \App\Models\UserSubscription::with('membershipPlan')
+            ->where('user_id', $user->id)
+            ->whereHas('membershipPlan', fn($q) => $q->where('plan_type', 'on_demand'))
+            ->orderByDesc('created_at')
+            ->get()
+            ->keyBy('membership_plan_id');
+
+        return view('member-dashboard', compact('subscriptionHistory', 'onDemandPlans', 'onDemandSubscriptions'));
     }
 
     public function delivery()

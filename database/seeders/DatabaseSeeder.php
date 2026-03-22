@@ -25,6 +25,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             HomePageSeeder::class,
             BlogSeeder::class,
+            OnDemandMilkPlanSeeder::class,
         ]);
     }
 }

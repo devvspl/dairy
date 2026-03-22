@@ -59,7 +59,7 @@ class PublicController extends Controller
 
     public function membership()
     {
-        $plans = \App\Models\MembershipPlan::active()->orderBy('order')->get();
+        $plans = \App\Models\MembershipPlan::active()->where('plan_type', 'scheduled')->orderBy('order')->get();
         $benefits = \App\Models\MembershipBenefit::active()->orderBy('order')->get();
         $steps = \App\Models\MembershipStep::active()->orderBy('order')->get();
         $faqs = \App\Models\MembershipFaq::active()->orderBy('order')->get();

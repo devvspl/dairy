@@ -107,6 +107,7 @@ Route::middleware('auth')->group(function () {
 
     // Payments
     Route::prefix('payment')->name('payment.')->group(function () {
+        Route::post('/apply-coupon', [App\Http\Controllers\PaymentController::class, 'applyCouponMembership'])->name('apply-coupon');
         Route::post('/initiate', [App\Http\Controllers\PaymentController::class, 'initiate'])->name('initiate');
         Route::any('/callback', [App\Http\Controllers\PaymentController::class, 'callback'])->name('callback');
         Route::get('/success/{order}', [App\Http\Controllers\PaymentController::class, 'success'])->name('success');

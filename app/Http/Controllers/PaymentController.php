@@ -29,38 +29,70 @@ class PaymentController extends Controller
     public function initiate(Request $request)
     {
         $request->validate([
-            'plan_id' => 'required|exists:membership_plans,id',
-            'location_id' => 'required|exists:locations,id',
-            'delivery_address' => 'required|string|max:500'
+            'plan_id'          => 'required|exists:membership_plans,id',
+            'location_id'      => 'required|exists:locations,id',
+            'delivery_address' => 'required|string|max:500',
+            'milk_type'        => 'nullable|string|max:100',
+            'quantity_per_day' => 'nullable|numeric|min:0.5|max:20',
+            'start_date'       => 'nullable|date|after_or_equal:today',
+            'delivery_slot'    => 'nullable|string|max:50',
+            'coupon_code'      => 'nullable|string|max:50',
         ]);
 
         $user = auth()->user();
         $plan = MembershipPlan::findOrFail($request->plan_id);
         $location = \App\Models\Location::findOrFail($request->location_id);
 
-        // Check if user already has an active subscription
-        $activeSubscription = $user->activeSubscription()->first();
-        if ($activeSubscription) {
-            return redirect()->route('member.dashboard')
-                ->with('error', 'You already have an active subscription.');
+        // For scheduled plans only: block if already has an active scheduled subscription
+        if ($plan->isScheduled()) {
+            $activeSubscription = $user->activeSubscription()->first();
+            if ($activeSubscription && $activeSubscription->membershipPlan->isScheduled()) {
+                return redirect()->route('member.dashboard')
+                    ->with('error', 'You already have an active scheduled subscription.');
+            }
+        }
+
+        // Apply coupon if provided
+        $couponCode     = null;
+        $discountAmount = 0;
+        $finalAmount    = $plan->price;
+
+        if ($request->filled('coupon_code')) {
+            $coupon = Coupon::where('code', strtoupper(trim($request->coupon_code)))->first();
+            if ($coupon && $coupon->isValid() && $coupon->applicable_to !== 'products') {
+                if ($coupon->canBeUsedBy($user->id)) {
+                    $calculated = $coupon->calculateDiscount($plan->price);
+                    if ($calculated > 0) {
+                        $discountAmount = min($calculated, $plan->price - 1);
+                        $couponCode     = $coupon->code;
+                        $finalAmount    = $plan->price - $discountAmount;
+                    }
+                }
+            }
         }
 
         DB::beginTransaction();
         try {
             // Create order
             $order = Order::create([
-                'user_id' => $user->id,
+                'user_id'            => $user->id,
                 'membership_plan_id' => $plan->id,
-                'order_id' => Order::generateOrderId(),
-                'amount' => $plan->price,
-                'status' => 'pending',
-                'payment_method' => 'phonepe',
+                'order_id'           => Order::generateOrderId(),
+                'amount'             => $finalAmount,
+                'coupon_code'        => $couponCode,
+                'discount_amount'    => $discountAmount,
+                'status'             => 'pending',
+                'payment_method'     => 'phonepe',
             ]);
 
-            // Store delivery address and location in session for later use
+            // Store delivery details in session for later use
             session([
                 'delivery_address_' . $order->id => $request->delivery_address,
-                'location_id_' . $order->id => $request->location_id
+                'location_id_' . $order->id      => $request->location_id,
+                'milk_type_' . $order->id         => $request->milk_type,
+                'quantity_per_day_' . $order->id  => $request->quantity_per_day,
+                'start_date_' . $order->id        => $request->start_date,
+                'delivery_slot_' . $order->id     => $request->delivery_slot,
             ]);
 
             // Initiate PhonePe payment
@@ -203,65 +235,77 @@ class PaymentController extends Controller
         $plan = $order->membershipPlan;
         $user = $order->user;
 
-        // Get delivery address and location from session
+        // Get delivery details from session
         $deliveryAddress = session('delivery_address_' . $order->id, '');
-        $locationId = session('location_id_' . $order->id);
+        $locationId      = session('location_id_' . $order->id);
+        $milkType        = session('milk_type_' . $order->id);
+        $quantityPerDay  = session('quantity_per_day_' . $order->id);
+        $requestedStart  = session('start_date_' . $order->id);
+        $deliverySlot    = session('delivery_slot_' . $order->id);
 
         // Calculate start and end dates
-        $startDate = now();
-        $endDate = $this->calculateEndDate($startDate, $plan->duration);
+        $startDate = $requestedStart ? \Carbon\Carbon::parse($requestedStart) : now();
+        $endDate   = $startDate->copy()->addDays($plan->duration_days);
+
+        // Build notes
+        $notes = 'Activated via PhonePe. Order ID: ' . $order->order_id;
+        if ($milkType)       $notes .= ' | Milk: ' . $milkType;
+        if ($quantityPerDay) $notes .= ' | Qty/day: ' . $quantityPerDay . 'L';
+        if ($deliverySlot)   $notes .= ' | Slot: ' . $deliverySlot;
 
         // Create user subscription
         UserSubscription::create([
-            'user_id' => $user->id,
+            'user_id'            => $user->id,
             'membership_plan_id' => $plan->id,
-            'location_id' => $locationId,
-            'start_date' => $startDate,
-            'end_date' => $endDate,
-            'status' => 'active',
-            'payment_method' => 'phonepe',
-            'payment_status' => 'paid',
-            'delivery_address' => $deliveryAddress,
-            'amount_paid' => $order->amount,
-            'transaction_id' => $order->transaction_id,
-            'notes' => 'Activated via PhonePe payment. Order ID: ' . $order->order_id
+            'location_id'        => $locationId,
+            'start_date'         => $startDate,
+            'end_date'           => $endDate,
+            'status'             => 'active',
+            'payment_method'     => 'phonepe',
+            'payment_status'     => 'paid',
+            'delivery_address'   => $deliveryAddress,
+            'amount_paid'        => $order->amount,
+            'transaction_id'     => $order->transaction_id,
+            'notes'              => $notes,
         ]);
 
         // Clear session data
-        session()->forget(['delivery_address_' . $order->id, 'location_id_' . $order->id]);
+        session()->forget([
+            'delivery_address_' . $order->id,
+            'location_id_' . $order->id,
+            'milk_type_' . $order->id,
+            'quantity_per_day_' . $order->id,
+            'start_date_' . $order->id,
+            'delivery_slot_' . $order->id,
+        ]);
 
         Log::info('Membership Activated', [
-            'user_id' => $user->id,
-            'plan_id' => $plan->id,
-            'location_id' => $locationId,
-            'order_id' => $order->order_id
+            'user_id'    => $user->id,
+            'plan_id'    => $plan->id,
+            'location_id'=> $locationId,
+            'order_id'   => $order->order_id,
         ]);
+
+        // Record coupon usage
+        if ($order->coupon_code) {
+            $coupon = Coupon::where('code', $order->coupon_code)->first();
+            if ($coupon) {
+                CouponUsage::create([
+                    'coupon_id'       => $coupon->id,
+                    'user_id'         => $user->id,
+                    'discount_amount' => $order->discount_amount,
+                ]);
+                $coupon->increment('times_used');
+            }
+        }
     }
 
     /**
-     * Calculate end date based on duration
+     * Calculate end date based on plan duration_days accessor
      */
-    private function calculateEndDate($startDate, $duration)
+    private function calculateEndDate($startDate, $plan)
     {
-        $duration = strtolower($duration);
-        
-        if (str_contains($duration, 'month')) {
-            $months = (int) filter_var($duration, FILTER_SANITIZE_NUMBER_INT);
-            return $startDate->copy()->addMonths($months ?: 1);
-        }
-        
-        if (str_contains($duration, 'week')) {
-            $weeks = (int) filter_var($duration, FILTER_SANITIZE_NUMBER_INT);
-            return $startDate->copy()->addWeeks($weeks ?: 1);
-        }
-        
-        if (str_contains($duration, 'day')) {
-            $days = (int) filter_var($duration, FILTER_SANITIZE_NUMBER_INT);
-            return $startDate->copy()->addDays($days ?: 1);
-        }
-
-        // Default to 1 month
-        return $startDate->copy()->addMonth();
+        return $startDate->copy()->addDays($plan->duration_days);
     }
 
 
@@ -325,6 +369,53 @@ class PaymentController extends Controller
     // =========================================================
     // Product Cart Payment
     // =========================================================
+
+    /**
+     * Validate and apply a coupon to a membership/milk order (AJAX)
+     */
+    public function applyCouponMembership(Request $request)
+    {
+        $request->validate([
+            'code'    => 'required|string',
+            'plan_id' => 'required|exists:membership_plans,id',
+        ]);
+
+        $plan   = MembershipPlan::findOrFail($request->plan_id);
+        $coupon = Coupon::where('code', strtoupper(trim($request->code)))->first();
+
+        if (!$coupon) {
+            return response()->json(['success' => false, 'message' => 'Invalid coupon code.']);
+        }
+        if (!$coupon->isValid()) {
+            return response()->json(['success' => false, 'message' => 'This coupon has expired or is no longer active.']);
+        }
+        if ($coupon->applicable_to === 'products') {
+            return response()->json(['success' => false, 'message' => 'This coupon is only valid for product orders.']);
+        }
+        if (!$coupon->canBeUsedBy(auth()->id())) {
+            return response()->json(['success' => false, 'message' => 'You have already used this coupon.']);
+        }
+
+        $discount = $coupon->calculateDiscount($plan->price);
+        if ($discount <= 0) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Minimum order amount of ₹' . number_format($coupon->min_purchase_amount, 0) . ' required.',
+            ]);
+        }
+
+        $discount    = min($discount, $plan->price - 1);
+        $finalAmount = $plan->price - $discount;
+
+        return response()->json([
+            'success'      => true,
+            'discount'     => $discount,
+            'final_amount' => $finalAmount,
+            'coupon_code'  => $coupon->code,
+            'coupon_name'  => $coupon->name,
+            'message'      => 'Coupon applied! You save ₹' . number_format($discount, 2),
+        ]);
+    }
 
     /**
      * Validate and apply a coupon to a product cart (AJAX)
