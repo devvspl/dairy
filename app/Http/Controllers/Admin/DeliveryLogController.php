@@ -106,7 +106,7 @@ class DeliveryLogController extends Controller
     {
         $plan = $subscription->membershipPlan;
 
-        // ── On-Demand: generate one entry per day from start_date up to today ──
+        // ── On-Demand: generate one entry per day for the full subscription period ──
         if ($plan->isOnDemand()) {
             $qty = (float) ($subscription->quantity_per_day ?? 1);
             if ($qty <= 0) {
@@ -114,14 +114,9 @@ class DeliveryLogController extends Controller
             }
 
             $startDate = $subscription->start_date->copy();
-            // Only generate up to today (wallet controls the rest)
-            $endDate = now()->startOfDay();
-            // But never beyond the subscription end_date
-            if ($subscription->end_date->lt($endDate)) {
-                $endDate = $subscription->end_date->copy();
-            }
-
+            $endDate   = $subscription->end_date->copy();
             $generated = 0;
+
             while ($startDate->lte($endDate)) {
                 DeliveryLog::firstOrCreate(
                     [
@@ -137,7 +132,7 @@ class DeliveryLogController extends Controller
                 $startDate->addDay();
             }
 
-            return redirect()->back()->with('success', "Generated {$generated} on-demand delivery entries (up to today).");
+            return redirect()->back()->with('success', "Generated {$generated} on-demand delivery entries.");
         }
 
         // ── Scheduled: use day_wise_schedule ────────────────────────────────
