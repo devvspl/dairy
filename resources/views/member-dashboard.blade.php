@@ -256,7 +256,7 @@
                      style="@if($isToday) background: linear-gradient(135deg,var(--green),#3d6b2e); border-color: var(--green);
                             @elseif($txn && $txn->type === 'debit') background:#fef3c7; border-color:#d97706;
                             @elseif($txn && $txn->type === 'credit') background:#dcfce7; border-color:#16a34a;
-                            @elseif($delivery && $delivery->status === 'pending' && $isCurrentMonth && !$isFuture) background:#eff6ff; border-color:#93c5fd;
+                            @elseif($delivery && $delivery->status === 'pending' && $isCurrentMonth) background:#eff6ff; border-color:#93c5fd;
                             @elseif($delivery && $delivery->status === 'skipped' && $isCurrentMonth) background:#f3f4f6; border-color:#d1d5db;
                             @else background:{{ $isCurrentMonth ? '#fff' : '#fafafa' }}; border-color:#e5e7eb; @endif">
                     <span class="text-xs font-bold block" style="color: {{ $isToday ? '#fff' : ($isCurrentMonth ? '#1f2937' : '#9ca3af') }};">{{ $calDate->day }}</span>
@@ -269,7 +269,7 @@
                             <i class="fa-solid fa-plus text-[9px]" style="color:#16a34a;"></i>
                             <p class="text-[8px] font-bold leading-tight" style="color:#15803d;">+₹{{ number_format($txn->amount,0) }}</p>
                         @endif
-                    @elseif($isCurrentMonth && $delivery && !$isFuture)
+                    @elseif($isCurrentMonth && $delivery)
                         @if($delivery->status === 'pending')
                             <i class="fa-solid fa-clock text-[9px]" style="color:#3b82f6;"></i>
                             <p class="text-[8px] leading-tight font-semibold" style="color:#1d4ed8;">{{ number_format($delivery->quantity_delivered,1) }}L</p>
