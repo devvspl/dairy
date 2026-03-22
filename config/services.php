@@ -43,10 +43,11 @@ return [
     ],
 
     'otp' => [
-        'provider' => env('OTP_SERVICE_PROVIDER'),
-        'api_key' => env('OTP_API_KEY'),
-        'sender_id' => env('OTP_SENDER_ID'),
+        'user_id'     => env('OTP_USER_ID'),
+        'password'    => env('OTP_PASSWORD'),
+        'sender_id'   => env('OTP_SENDER_ID'),
         'template_id' => env('OTP_TEMPLATE_ID'),
+        'entity_id'   => env('OTP_ENTITY_ID'),
     ],
 
     'shiprocket' => [

@@ -94,12 +94,13 @@
 
     <button 
         type="button"
+        id="resendOtpBtn"
         onclick="resendOtp()"
-        class="w-full py-2 sm:py-2.5 text-xs sm:text-sm rounded-lg font-semibold border transition-colors hover:bg-gray-50"
+        class="w-full py-2 sm:py-2.5 text-xs sm:text-sm rounded-lg font-semibold border transition-colors hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
         style="border-color: var(--border-color); color: var(--text-dark);"
     >
         <i class="fa-solid fa-rotate-right mr-1.5 sm:mr-2"></i>
-        Resend OTP
+        <span id="resendOtpText">Resend OTP</span>
     </button>
 
     <button 
@@ -123,6 +124,8 @@
 @push('scripts')
 <script>
 let currentPhone = '';
+let resendTimer = 0;
+let resendInterval = null;
 
 function showMessage(message, type = 'success') {
     const container = document.getElementById('messageContainer');
@@ -139,6 +142,25 @@ function showMessage(message, type = 'success') {
     setTimeout(() => {
         container.innerHTML = '';
     }, 5000);
+}
+
+function startResendTimer() {
+    resendTimer = 60;
+    const btn = document.getElementById('resendOtpBtn');
+    const btnText = document.getElementById('resendOtpText');
+    
+    btn.disabled = true;
+    
+    resendInterval = setInterval(() => {
+        resendTimer--;
+        btnText.textContent = `Resend OTP (${resendTimer}s)`;
+        
+        if (resendTimer <= 0) {
+            clearInterval(resendInterval);
+            btn.disabled = false;
+            btnText.textContent = 'Resend OTP';
+        }
+    }, 1000);
 }
 
 function sendOtp() {
@@ -184,6 +206,7 @@ function sendOtp() {
                 document.getElementById('otpStep').classList.remove('hidden');
                 showMessage(data.message + (data.otp ? ' — OTP: <strong>' + data.otp + '</strong>' : ''));
                 document.getElementById('otp').focus();
+                startResendTimer();
             }
         } else {
             showMessage(data.message, 'error');
@@ -250,6 +273,10 @@ function verifyOtp() {
 }
 
 function resendOtp() {
+    // Clear existing timer
+    if (resendInterval) {
+        clearInterval(resendInterval);
+    }
     document.getElementById('otp').value = '';
     sendOtp();
 }
