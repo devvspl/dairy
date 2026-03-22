@@ -70,14 +70,11 @@ class DeliveryLogController extends Controller
         if ($newStatus === 'delivered' && $oldStatus !== 'delivered') {
             $plan = $subscription->membershipPlan;
             if ($plan && $plan->isOnDemand() && $subscription->wallet_balance > 0) {
-                $debitAmt = round((float) $qty * (float) $subscription->price_per_litre, 2);
-                if ($debitAmt > 0) {
-                    $subscription->debitWallet(
-                        $debitAmt,
-                        (float) $qty,
-                        'Delivery on ' . $delivery->delivery_date->format('d M Y') . ' (admin)'
-                    );
-                }
+                $subscription->debitWallet(
+                    (float) $qty,
+                    $delivery->delivery_date->toDateString(),
+                    auth()->id()
+                );
             }
         }
 
@@ -89,7 +86,6 @@ class DeliveryLogController extends Controller
                 if ($creditAmt > 0) {
                     $subscription->creditWallet(
                         $creditAmt,
-                        (float) $qty,
                         'Delivery reversed on ' . $delivery->delivery_date->format('d M Y') . ' (admin)'
                     );
                 }
