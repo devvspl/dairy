@@ -193,6 +193,7 @@ Route::middleware('auth')->group(function () {
             Route::post('{subscription}/note', [App\Http\Controllers\Admin\UserSubscriptionController::class, 'addNote'])->name('add-note');
             Route::get('{subscription}/deliveries', [App\Http\Controllers\Admin\DeliveryLogController::class, 'index'])->name('deliveries.index');
             Route::post('{subscription}/deliveries/generate', [App\Http\Controllers\Admin\DeliveryLogController::class, 'generateSchedule'])->name('deliveries.generate');
+            Route::delete('{subscription}/deliveries/reset', [App\Http\Controllers\Admin\DeliveryLogController::class, 'resetSchedule'])->name('deliveries.reset');
         });
         // Deliveries
         Route::prefix('deliveries')->name('deliveries.')->group(function () {

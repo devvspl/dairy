@@ -164,6 +164,17 @@ class DeliveryLogController extends Controller
     }
 
     /**
+     * Reset (delete all) delivery entries for a subscription
+     */
+    public function resetSchedule(UserSubscription $subscription)
+    {
+        $count = $subscription->deliveryLogs()->count();
+        $subscription->deliveryLogs()->delete();
+
+        return redirect()->back()->with('success', "Deleted {$count} delivery entries. You can now regenerate the schedule.");
+    }
+
+    /**
      * Bulk update deliveries for today
      */
     public function bulkUpdateToday(Request $request)

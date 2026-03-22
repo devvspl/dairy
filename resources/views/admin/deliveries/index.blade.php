@@ -30,6 +30,7 @@
                 </div>
                 @endif
             </div>
+        <div class="flex items-center gap-2 flex-wrap">
             <form method="POST" action="{{ route('admin.subscriptions.deliveries.generate', $subscription) }}">
                 @csrf
                 <button type="submit" class="px-4 py-2 rounded-lg font-semibold" style="background-color: var(--green); color: #fff;">
@@ -37,6 +38,14 @@
                     {{ $subscription->membershipPlan->isOnDemand() ? 'Generate Daily Entries' : 'Generate Schedule' }}
                 </button>
             </form>
+            <form method="POST" action="{{ route('admin.subscriptions.deliveries.reset', $subscription) }}"
+                  onsubmit="return confirm('Delete ALL delivery entries for this subscription? This cannot be undone.')">
+                @csrf @method('DELETE')
+                <button type="submit" class="px-4 py-2 rounded-lg font-semibold" style="background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5;">
+                    <i class="fa-solid fa-rotate-left mr-2"></i>Reset
+                </button>
+            </form>
+        </div>
         </div>
     </div>
 
