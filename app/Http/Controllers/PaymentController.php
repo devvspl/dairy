@@ -246,7 +246,7 @@ class PaymentController extends Controller
 
         // Calculate start and end dates
         $startDate = $requestedStart ? \Carbon\Carbon::parse($requestedStart) : now();
-        $endDate   = $startDate->copy()->addDays($plan->duration_days);
+        $endDate   = $startDate->copy()->addDays($plan->duration_days - 1);
 
         // Build notes
         $notes = 'Activated via PhonePe. Order ID: ' . $order->order_id;
@@ -279,7 +279,7 @@ class PaymentController extends Controller
         if ($existingSub && $plan->isOnDemand()) {
             // Top-up: extend end date and credit wallet
             $existingSub->update([
-                'end_date' => $existingSub->end_date->addDays($plan->duration_days),
+                'end_date' => $existingSub->end_date->addDays($plan->duration_days - 1),
                 'status'   => 'active',
             ]);
             $existingSub->creditWallet((float) $order->amount, 'Pack top-up: ' . $plan->name . ' | Order: ' . $order->order_id);
@@ -358,7 +358,7 @@ class PaymentController extends Controller
      */
     private function calculateEndDate($startDate, $plan)
     {
-        return $startDate->copy()->addDays($plan->duration_days);
+        return $startDate->copy()->addDays($plan->duration_days - 1);
     }
 
 
