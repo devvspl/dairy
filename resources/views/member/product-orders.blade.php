@@ -30,10 +30,10 @@
                    class="px-3 py-2 border rounded-lg text-sm min-w-[180px]" style="border-color: var(--border);">
             <select name="status" class="px-3 py-2 border rounded-lg text-sm" style="border-color: var(--border);">
                 <option value="">All Status</option>
-                <option value="pending"   {{ request('status') === 'pending'   ? 'selected' : '' }}>Pending</option>
+                {{-- <option value="pending"   {{ request('status') === 'pending'   ? 'selected' : '' }}>Pending</option> --}}
                 <option value="success"   {{ request('status') === 'success'   ? 'selected' : '' }}>Success</option>
                 <option value="failed"    {{ request('status') === 'failed'    ? 'selected' : '' }}>Failed</option>
-                <option value="cancelled" {{ request('status') === 'cancelled' ? 'selected' : '' }}>Cancelled</option>
+                {{-- <option value="cancelled" {{ request('status') === 'cancelled' ? 'selected' : '' }}>Cancelled</option> --}}
             </select>
             <button type="submit" class="px-4 py-2 rounded-lg font-semibold text-sm text-white" style="background-color: var(--green);">
                 Filter
