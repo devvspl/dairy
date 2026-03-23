@@ -406,7 +406,7 @@
                             </a>
 
                             <!-- Referral Codes -->
-                            <a href="{{ route('admin.referral-codes.index') }}"
+                            {{-- <a href="{{ route('admin.referral-codes.index') }}"
                                 class="sidebar-link {{ request()->routeIs('admin.referral-codes.*') ? 'active' : '' }} flex items-center rounded-lg transition-all hover:bg-gray-50 text-sm"
                                 :class="sidebarCollapsed ? 'justify-center p-3' : 'px-3 py-2 pl-6'"
                                 style="{{ request()->routeIs('admin.referral-codes.*') ? '' : 'color: var(--muted);' }}"
@@ -418,10 +418,10 @@
                                     </path>
                                 </svg>
                                 <span class="ml-3 font-medium" x-show="!sidebarCollapsed">Referral Codes</span>
-                            </a>
+                            </a> --}}
 
                             <!-- Loyalty Points -->
-                            <a href="{{ route('admin.loyalty-points.index') }}"
+                            {{-- <a href="{{ route('admin.loyalty-points.index') }}"
                                 class="sidebar-link {{ request()->routeIs('admin.loyalty-points.*') ? 'active' : '' }} flex items-center rounded-lg transition-all hover:bg-gray-50 text-sm"
                                 :class="sidebarCollapsed ? 'justify-center p-3' : 'px-3 py-2 pl-6'"
                                 style="{{ request()->routeIs('admin.loyalty-points.*') ? '' : 'color: var(--muted);' }}"
@@ -433,7 +433,7 @@
                                     </path>
                                 </svg>
                                 <span class="ml-3 font-medium" x-show="!sidebarCollapsed">Loyalty Points</span>
-                            </a>
+                            </a> --}}
 
                             <!-- Locations -->
                             <div x-show="!sidebarCollapsed" class="px-3 pt-3 pb-1">
