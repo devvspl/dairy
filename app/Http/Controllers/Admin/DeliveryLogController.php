@@ -210,6 +210,7 @@ class DeliveryLogController extends Controller
                 'subscription' => fn($q) => $q->select('id','user_id','membership_plan_id','location_id','delivery_address')
                     ->with(['user:id,name,phone', 'membershipPlan:id,name', 'location:id,name']),
             ])
+            ->whereHas('subscription.user')
             ->whereDate('delivery_date', $date)
             ->orderBy('status');
 
@@ -229,7 +230,7 @@ class DeliveryLogController extends Controller
         $deliveries = $query->paginate(50)->withQueryString();
 
         // Stats for selected date (optionally filtered by location)
-        $statsBase = DeliveryLog::whereDate('delivery_date', $date);
+        $statsBase = DeliveryLog::whereHas('subscription.user')->whereDate('delivery_date', $date);
         if ($locationId) {
             $statsBase->whereHas('subscription', fn($q) => $q->where('location_id', $locationId));
         }

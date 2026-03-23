@@ -145,12 +145,10 @@
                         </td>
                         <td class="px-4 py-3">
                             <button onclick="openModal({{ $delivery->id }}, '{{ $delivery->status }}', '{{ $delivery->quantity_delivered }}', '{{ $delivery->delivery_time }}', '{{ addslashes($delivery->notes ?? '') }}')"
-                                    class="text-sm font-semibold hover:underline" style="color: var(--green);">
-                                @if($delivery->status === 'pending')
-                                    <i class="fa-solid fa-check mr-1"></i>Mark
-                                @else
-                                    <i class="fa-solid fa-edit mr-1"></i>Edit
-                                @endif
+                                    class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors hover:opacity-80"
+                                    style="background: rgba(47,74,30,0.1); color: var(--green);">
+                                <i class="fa-solid {{ $delivery->status === 'pending' ? 'fa-check' : 'fa-pen-to-square' }}"></i>
+                                {{ $delivery->status === 'pending' ? 'Mark' : 'Edit' }}
                             </button>
                         </td>
                     </tr>
