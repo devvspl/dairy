@@ -201,23 +201,27 @@ class DeliveryLogController extends Controller
      */
     public function todayDeliveries(Request $request)
     {
-        $query = DeliveryLog::with(['subscription.user', 'subscription.membershipPlan'])
-            ->today()
+        $today = now()->toDateString();
+
+        $query = DeliveryLog::with(['subscription' => fn($q) => $q->select('id','user_id','membership_plan_id')->with(['user:id,name,phone', 'membershipPlan:id,name'])])
+            ->whereDate('delivery_date', $today)
             ->orderBy('status', 'asc');
 
-        // Filter by status
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
 
-        $deliveries = $query->paginate(50);
+        // Load all for stats, paginate for display
+        $allToday = DeliveryLog::whereDate('delivery_date', $today)->get(['status', 'quantity_delivered']);
 
         $stats = [
-            'total' => DeliveryLog::today()->count(),
-            'delivered' => DeliveryLog::today()->delivered()->count(),
-            'pending' => DeliveryLog::today()->pending()->count(),
-            'total_quantity' => DeliveryLog::today()->sum('quantity_delivered'),
+            'total'          => $allToday->count(),
+            'delivered'      => $allToday->where('status', 'delivered')->count(),
+            'pending'        => $allToday->where('status', 'pending')->count(),
+            'total_quantity' => $allToday->where('status', 'delivered')->sum('quantity_delivered'),
         ];
+
+        $deliveries = $query->paginate(50);
 
         return view('admin.deliveries.today', compact('deliveries', 'stats'));
     }
