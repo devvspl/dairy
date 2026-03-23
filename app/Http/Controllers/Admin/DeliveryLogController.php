@@ -197,6 +197,57 @@ class DeliveryLogController extends Controller
     }
 
     /**
+     * Admin: all-locations delivery report
+     */
+    public function allLocationsReport(Request $request)
+    {
+        $date       = $request->get('date', now()->format('Y-m-d'));
+        $locationId = $request->get('location_id');
+        $status     = $request->get('status');
+        $search     = $request->get('search', '');
+
+        $query = DeliveryLog::with([
+                'subscription' => fn($q) => $q->select('id','user_id','membership_plan_id','location_id','delivery_address')
+                    ->with(['user:id,name,phone', 'membershipPlan:id,name', 'location:id,name']),
+            ])
+            ->whereDate('delivery_date', $date)
+            ->orderBy('status');
+
+        if ($locationId) {
+            $query->whereHas('subscription', fn($q) => $q->where('location_id', $locationId));
+        }
+        if ($status) {
+            $query->where('status', $status);
+        }
+        if ($search) {
+            $query->whereHas('subscription.user', fn($q) => $q
+                ->where('name', 'like', "%{$search}%")
+                ->orWhere('phone', 'like', "%{$search}%")
+            );
+        }
+
+        $deliveries = $query->paginate(50)->withQueryString();
+
+        // Stats for selected date (optionally filtered by location)
+        $statsBase = DeliveryLog::whereDate('delivery_date', $date);
+        if ($locationId) {
+            $statsBase->whereHas('subscription', fn($q) => $q->where('location_id', $locationId));
+        }
+        $allForStats = (clone $statsBase)->get(['status', 'quantity_delivered']);
+        $stats = [
+            'total'     => $allForStats->count(),
+            'delivered' => $allForStats->where('status', 'delivered')->count(),
+            'pending'   => $allForStats->where('status', 'pending')->count(),
+            'skipped'   => $allForStats->where('status', 'skipped')->count(),
+            'quantity'  => $allForStats->where('status', 'delivered')->sum('quantity_delivered'),
+        ];
+
+        $locations = \App\Models\Location::orderBy('name')->get(['id', 'name']);
+
+        return view('admin.deliveries.locations', compact('deliveries', 'stats', 'locations', 'date'));
+    }
+
+    /**
      * Show today's deliveries dashboard
      */
     public function todayDeliveries(Request $request)

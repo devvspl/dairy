@@ -544,6 +544,15 @@
                                 <span class="ml-3 font-medium" x-show="!sidebarCollapsed">Today's Deliveries</span>
                             </a> --}}
 
+                            <a href="{{ route('admin.deliveries.locations') }}"
+                                class="sidebar-link {{ request()->routeIs('admin.deliveries.locations') ? 'active' : '' }} flex items-center rounded-lg transition-all hover:bg-gray-50 text-sm"
+                                :class="sidebarCollapsed ? 'justify-center p-3' : 'px-3 py-2 pl-6'"
+                                style="{{ request()->routeIs('admin.deliveries.locations') ? '' : 'color: var(--muted);' }}"
+                                :title="sidebarCollapsed ? 'Delivery Report' : ''">
+                                <i class="fa-solid fa-truck-fast w-5 flex-shrink-0 text-center"></i>
+                                <span class="ml-3 font-medium" x-show="!sidebarCollapsed">Delivery Report</span>
+                            </a>
+
                             <!-- Legal Pages Subsection -->
                             <div x-show="!sidebarCollapsed" class="px-3 pt-3 pb-1">
                                 <p class="text-xs font-medium" style="color: var(--muted);">Legal</p>
