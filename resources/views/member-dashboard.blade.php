@@ -76,11 +76,7 @@
                 <span class="w-2 h-2 rounded-full" style="background: var(--green);"></span>
                 @endif
             </button>
-            <button onclick="switchTab('plan')" id="tab-plan"
-                    class="tab-btn flex-1 py-3.5 text-sm font-semibold transition-all flex items-center justify-center gap-2">
-                <i class="fa-solid fa-calendar-check"></i><span>Active Plan</span>
-                @if($hasScheduled)<span class="w-2 h-2 rounded-full" style="background: var(--green);"></span>@endif
-            </button>
+            {{-- Active Plan tab hidden --}}
             <button onclick="switchTab('history')" id="tab-history"
                     class="tab-btn flex-1 py-3.5 text-sm font-semibold transition-all flex items-center justify-center gap-2">
                 <i class="fa-solid fa-receipt"></i><span>History</span>
@@ -346,7 +342,7 @@
         @endif
         </div>
 
-        {{-- ===== TAB: ACTIVE PLAN ===== --}}
+        {{-- ===== TAB: ACTIVE PLAN (hidden) ===== --}}
         <div id="panel-plan" class="tab-panel p-4 lg:p-6 hidden">
             @if($hasScheduled && $activeSubscription)
             <div class="rounded-2xl p-5 mb-5 border-2" style="border-color: var(--green); background: linear-gradient(135deg,#f0fdf4,#fff);">
