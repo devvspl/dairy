@@ -38,7 +38,7 @@
             <select name="status" class="px-3 py-2 border rounded-lg text-sm" style="border-color: var(--border);">
                 <option value="">All Status</option>
                 <option value="pending"   {{ request('status') === 'pending'   ? 'selected' : '' }}>Pending</option>
-                <option value="success"   {{ request('status') === 'success'   ? 'selected' : '' }}>Success</option>
+                <option value="success"   {{ (request('status') === 'success' || !request()->hasAny(['search','product_id','date_from','date_to','status'])) ? 'selected' : '' }}>Success</option>
                 <option value="failed"    {{ request('status') === 'failed'    ? 'selected' : '' }}>Failed</option>
                 <option value="cancelled" {{ request('status') === 'cancelled' ? 'selected' : '' }}>Cancelled</option>
             </select>

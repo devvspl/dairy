@@ -18,6 +18,9 @@ class ProductOrderController extends Controller
 
         if ($request->filled('status')) {
             $query->where('status', $request->status);
+        } elseif (!$request->hasAny(['search', 'product_id', 'date_from', 'date_to', 'status'])) {
+            // Default to success when no filters applied at all
+            $query->where('status', 'success');
         }
         if ($request->filled('product_id')) {
             $product = \App\Models\Product::find($request->product_id);
