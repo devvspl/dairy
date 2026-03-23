@@ -413,8 +413,10 @@ document.getElementById('statusSelect').addEventListener('change', function () {
 function openModal(id, status, qty, time, notes) {
     document.getElementById('statusSelect').value = status;
     document.getElementById('qtyInput').value     = qty;
-    // Strip seconds from time if present (e.g. "11:35:00" → "11:35")
-    document.getElementById('timeInput').value    = time ? time.substring(0, 5) : '';
+    // Strip seconds from time if present (e.g. "11:35:00" → "11:35"), default to current time
+    const now = new Date();
+    const currentTime = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+    document.getElementById('timeInput').value    = time ? time.substring(0, 5) : currentTime;
     // Show existing note or the default for the current status
     const note = notes || DEFAULT_NOTES[status] || '';
     document.getElementById('notesInput').value   = note;
