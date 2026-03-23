@@ -14,6 +14,8 @@ class ProductOrderController extends Controller
 
         if ($request->filled('status')) {
             $query->where('status', $request->status);
+        } else {
+            $query->whereIn('status', ['success', 'failed']);
         }
 
         if ($request->filled('search')) {
