@@ -18,7 +18,8 @@ class AllLocationsDeliveriesExport implements FromCollection, WithHeadings, With
     public int $rowCount = 0;
 
     public function __construct(
-        protected string $date,
+        protected string $dateFrom,
+        protected string $dateTo,
         protected string $status     = '',
         protected int    $locationId = 0,
         protected string $search     = ''
@@ -26,9 +27,11 @@ class AllLocationsDeliveriesExport implements FromCollection, WithHeadings, With
 
     public function collection()
     {
-        $query = DeliveryLog::with(['subscription.user', 'subscription.membershipPlan', 'subscription.location'])
+        $query = DeliveryLog::with(['subscription.user', 'subscription.membershipPlan', 'subscription.location', 'markedBy'])
             ->whereHas('subscription.user')
-            ->whereDate('delivery_date', $this->date)
+            ->whereDate('delivery_date', '>=', $this->dateFrom)
+            ->whereDate('delivery_date', '<=', $this->dateTo)
+            ->orderBy('delivery_date', 'desc')
             ->orderBy('status');
 
         if ($this->locationId) {
@@ -45,17 +48,19 @@ class AllLocationsDeliveriesExport implements FromCollection, WithHeadings, With
         }
 
         $rows = $query->get()->map(fn($d) => [
-            'Customer'  => $d->subscription->user->name ?? '-',
-            'Phone'     => $d->subscription->user->phone ?? '-',
-            'Location'  => $d->subscription->location->name ?? '-',
-            'Address'   => $d->subscription->delivery_address ?? '-',
-            'Plan'      => $d->subscription->membershipPlan->name ?? '-',
-            'Qty (L)'   => $d->quantity_delivered,
-            'Status'    => ucfirst($d->status),
-            'Time'      => $d->delivery_time
+            'Date'       => $d->delivery_date->format('d M Y'),
+            'Customer'   => $d->subscription->user->name ?? '-',
+            'Phone'      => $d->subscription->user->phone ?? '-',
+            'Location'   => $d->subscription->location->name ?? '-',
+            'Address'    => $d->subscription->delivery_address ?? '-',
+            'Plan'       => $d->subscription->membershipPlan->name ?? '-',
+            'Qty (L)'    => $d->quantity_delivered,
+            'Status'     => ucfirst($d->status),
+            'Time'       => $d->delivery_time
                             ? \Carbon\Carbon::parse($d->delivery_time)->format('h:i A')
                             : '-',
-            'Notes'     => $d->notes ?? '-',
+            'Marked By'  => $d->markedBy->name ?? '-',
+            'Notes'      => $d->notes ?? '-',
         ]);
 
         $this->rowCount = $rows->count();
@@ -64,24 +69,26 @@ class AllLocationsDeliveriesExport implements FromCollection, WithHeadings, With
 
     public function headings(): array
     {
-        return ['Customer', 'Phone', 'Location', 'Address', 'Plan', 'Qty (L)', 'Status', 'Time', 'Notes'];
+        return ['Date', 'Customer', 'Phone', 'Location', 'Address', 'Plan', 'Qty (L)', 'Status', 'Time', 'Marked By', 'Notes'];
     }
 
     public function title(): string
     {
-        return 'All Locations ' . \Carbon\Carbon::parse($this->date)->format('d-M-Y');
+        $from = \Carbon\Carbon::parse($this->dateFrom)->format('d-M-Y');
+        $to   = \Carbon\Carbon::parse($this->dateTo)->format('d-M-Y');
+        return $from === $to ? "Deliveries {$from}" : "Deliveries {$from} to {$to}";
     }
 
     public function columnWidths(): array
     {
-        return ['A' => 24, 'B' => 15, 'C' => 18, 'D' => 30, 'E' => 22, 'F' => 10, 'G' => 12, 'H' => 12, 'I' => 28];
+        return ['A' => 14, 'B' => 24, 'C' => 15, 'D' => 18, 'E' => 30, 'F' => 22, 'G' => 10, 'H' => 12, 'I' => 12, 'J' => 20, 'K' => 28];
     }
 
     public function styles(Worksheet $sheet)
     {
         $last = $sheet->getHighestRow();
 
-        $sheet->getStyle('A1:I1')->applyFromArray([
+        $sheet->getStyle('A1:K1')->applyFromArray([
             'font'      => ['bold' => true, 'color' => ['argb' => 'FFFFFFFF'], 'size' => 11],
             'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => 'FF2F4A1E']],
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
@@ -90,7 +97,7 @@ class AllLocationsDeliveriesExport implements FromCollection, WithHeadings, With
         $sheet->getRowDimension(1)->setRowHeight(22);
 
         for ($row = 2; $row <= $last; $row++) {
-            $status = strtolower((string) $sheet->getCell("G{$row}")->getValue());
+            $status = strtolower((string) $sheet->getCell("H{$row}")->getValue());
             $bg = match ($status) {
                 'delivered' => 'FFD1FAE5',
                 'pending'   => 'FFFEF9C3',
@@ -105,19 +112,19 @@ class AllLocationsDeliveriesExport implements FromCollection, WithHeadings, With
                 'failed'    => 'FF991B1B',
                 default     => 'FF111827',
             };
-            $sheet->getStyle("A{$row}:I{$row}")->applyFromArray([
+            $sheet->getStyle("A{$row}:K{$row}")->applyFromArray([
                 'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => $bg]],
                 'borders'   => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['argb' => 'FFD1D5DB']]],
                 'alignment' => ['vertical' => Alignment::VERTICAL_CENTER],
             ]);
-            $sheet->getStyle("G{$row}")->applyFromArray([
+            $sheet->getStyle("H{$row}")->applyFromArray([
                 'font'      => ['bold' => true, 'color' => ['argb' => $fg]],
                 'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
             ]);
             $sheet->getRowDimension($row)->setRowHeight(18);
         }
 
-        $sheet->getStyle("A1:I{$last}")->applyFromArray([
+        $sheet->getStyle("A1:K{$last}")->applyFromArray([
             'borders' => ['outline' => ['borderStyle' => Border::BORDER_MEDIUM, 'color' => ['argb' => 'FF2F4A1E']]],
         ]);
         $sheet->freezePane('A2');

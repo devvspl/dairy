@@ -202,7 +202,8 @@ class DeliveryLogController extends Controller
      */
     public function allLocationsReport(Request $request)
     {
-        $date       = $request->get('date', now()->format('Y-m-d'));
+        $dateFrom   = $request->get('date_from', now()->format('Y-m-d'));
+        $dateTo     = $request->get('date_to',   now()->format('Y-m-d'));
         $locationId = $request->get('location_id');
         $status     = $request->get('status');
         $search     = $request->get('search', '');
@@ -210,9 +211,12 @@ class DeliveryLogController extends Controller
         $query = DeliveryLog::with([
                 'subscription' => fn($q) => $q->select('id','user_id','membership_plan_id','location_id','delivery_address')
                     ->with(['user:id,name,phone', 'membershipPlan:id,name', 'location:id,name']),
+                'markedBy:id,name',
             ])
             ->whereHas('subscription.user')
-            ->whereDate('delivery_date', $date)
+            ->whereDate('delivery_date', '>=', $dateFrom)
+            ->whereDate('delivery_date', '<=', $dateTo)
+            ->orderBy('delivery_date', 'desc')
             ->orderBy('status');
 
         if ($locationId) {
@@ -230,8 +234,10 @@ class DeliveryLogController extends Controller
 
         $deliveries = $query->paginate(50)->withQueryString();
 
-        // Stats for selected date (optionally filtered by location)
-        $statsBase = DeliveryLog::whereHas('subscription.user')->whereDate('delivery_date', $date);
+        // Stats for selected date range (optionally filtered by location)
+        $statsBase = DeliveryLog::whereHas('subscription.user')
+            ->whereDate('delivery_date', '>=', $dateFrom)
+            ->whereDate('delivery_date', '<=', $dateTo);
         if ($locationId) {
             $statsBase->whereHas('subscription', fn($q) => $q->where('location_id', $locationId));
         }
@@ -246,7 +252,7 @@ class DeliveryLogController extends Controller
 
         $locations = \App\Models\Location::orderBy('name')->get(['id', 'name']);
 
-        return view('admin.deliveries.locations', compact('deliveries', 'stats', 'locations', 'date'));
+        return view('admin.deliveries.locations', compact('deliveries', 'stats', 'locations', 'dateFrom', 'dateTo'));
     }
 
     /**
@@ -254,14 +260,15 @@ class DeliveryLogController extends Controller
      */
     public function exportLocations(Request $request)
     {
-        $date       = $request->get('date', now()->format('Y-m-d'));
+        $dateFrom   = $request->get('date_from', now()->format('Y-m-d'));
+        $dateTo     = $request->get('date_to',   now()->format('Y-m-d'));
         $status     = (string) ($request->get('status') ?? '');
         $locationId = (int)   ($request->get('location_id') ?? 0);
         $search     = (string) ($request->get('search') ?? '');
 
-        $exporter = new AllLocationsDeliveriesExport($date, $status, $locationId, $search);
+        $exporter = new AllLocationsDeliveriesExport($dateFrom, $dateTo, $status, $locationId, $search);
 
-        $filename = 'all-locations-deliveries-' . $date . '-' . now()->format('His') . '.xlsx';
+        $filename = 'all-locations-deliveries-' . $dateFrom . '-to-' . $dateTo . '-' . now()->format('His') . '.xlsx';
         $path     = 'exports/deliveries/' . $filename;
 
         Excel::store($exporter, $path, 'public_folder');
@@ -270,7 +277,7 @@ class DeliveryLogController extends Controller
             'type'          => 'delivery_all_locations',
             'filename'      => $filename,
             'path'          => $path,
-            'filter_status' => trim(($status ?: 'All') . ' | ' . $date),
+            'filter_status' => trim(($status ?: 'All') . ' | ' . $dateFrom . ' to ' . $dateTo),
             'row_count'     => $exporter->rowCount,
             'generated_by'  => auth()->id(),
         ]);

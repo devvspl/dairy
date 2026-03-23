@@ -40,8 +40,13 @@
     <div class="bg-white rounded-xl shadow-sm p-4 border" style="border-color: var(--border);">
         <form method="GET" action="{{ route('admin.deliveries.locations') }}" class="flex flex-wrap gap-2 items-end">
             <div>
-                <label class="block text-xs font-medium mb-1" style="color: var(--muted);">Date</label>
-                <input type="date" name="date" value="{{ $date }}"
+                <label class="block text-xs font-medium mb-1" style="color: var(--muted);">From</label>
+                <input type="date" name="date_from" value="{{ $dateFrom }}"
+                       class="px-3 py-2 border rounded-lg text-sm" style="border-color: var(--border);">
+            </div>
+            <div>
+                <label class="block text-xs font-medium mb-1" style="color: var(--muted);">To</label>
+                <input type="date" name="date_to" value="{{ $dateTo }}"
                        class="px-3 py-2 border rounded-lg text-sm" style="border-color: var(--border);">
             </div>
             <div>
@@ -99,6 +104,7 @@
                 <thead class="border-b" style="border-color: var(--border); background: rgba(47,74,30,0.05);">
                     <tr>
                         <th class="px-4 py-3 text-left text-sm font-semibold" style="color: var(--text);">#</th>
+                        <th class="px-4 py-3 text-left text-sm font-semibold" style="color: var(--text);">Date</th>
                         <th class="px-4 py-3 text-left text-sm font-semibold" style="color: var(--text);">Customer</th>
                         <th class="px-4 py-3 text-left text-sm font-semibold" style="color: var(--text);">Location</th>
                         <th class="px-4 py-3 text-left text-sm font-semibold" style="color: var(--text);">Address</th>
@@ -106,6 +112,7 @@
                         <th class="px-4 py-3 text-left text-sm font-semibold" style="color: var(--text);">Qty</th>
                         <th class="px-4 py-3 text-left text-sm font-semibold" style="color: var(--text);">Status</th>
                         <th class="px-4 py-3 text-left text-sm font-semibold" style="color: var(--text);">Time</th>
+                        <th class="px-4 py-3 text-left text-sm font-semibold" style="color: var(--text);">Marked By</th>
                         <th class="px-4 py-3 text-left text-sm font-semibold" style="color: var(--text);">Action</th>
                     </tr>
                 </thead>
@@ -114,6 +121,7 @@
                     @php $sub = $delivery->subscription; @endphp
                     <tr class="border-b hover:bg-gray-50" style="border-color: var(--border);">
                         <td class="px-4 py-3 text-sm" style="color: var(--muted);">{{ $deliveries->firstItem() + $i }}</td>
+                        <td class="px-4 py-3 text-sm font-medium" style="color: var(--text);">{{ $delivery->delivery_date->format('d M') }}</td>
                         <td class="px-4 py-3">
                             <div class="font-medium text-sm" style="color: var(--text);">{{ $sub?->user?->name ?? '—' }}</div>
                             <div class="text-xs" style="color: var(--muted);"><i class="fa-solid fa-phone mr-1"></i>{{ $sub?->user?->phone ?? '—' }}</div>
@@ -134,6 +142,9 @@
                         <td class="px-4 py-3 text-sm" style="color: var(--muted);">
                             {{ $delivery->delivery_time ? \Carbon\Carbon::parse($delivery->delivery_time)->format('h:i A') : '—' }}
                         </td>
+                        <td class="px-4 py-3 text-sm" style="color: var(--muted);">
+                            {{ $delivery->markedBy?->name ?? '—' }}
+                        </td>
                         <td class="px-4 py-3">
                             <button onclick="openEditModal({{ $delivery->id }}, '{{ $delivery->status }}', '{{ $delivery->quantity_delivered }}', '{{ $delivery->delivery_time }}', '{{ addslashes($delivery->notes ?? '') }}')"
                                     class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors hover:opacity-80"
@@ -145,7 +156,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="9" class="px-4 py-12 text-center" style="color: var(--muted);">
+                        <td colspan="11" class="px-4 py-12 text-center" style="color: var(--muted);">
                             <i class="fa-solid fa-truck text-4xl mb-3 block"></i>
                             No deliveries found for this date / filter.
                         </td>
@@ -243,7 +254,8 @@ const CSRF_TOKEN       = '{{ csrf_token() }}';
 function getFilters() {
     const form = document.querySelector('form[action*="locations"]');
     const p = new URLSearchParams();
-    p.set('date',        form.querySelector('[name=date]').value);
+    p.set('date_from',   form.querySelector('[name=date_from]').value);
+    p.set('date_to',     form.querySelector('[name=date_to]').value);
     p.set('location_id', form.querySelector('[name=location_id]').value);
     p.set('status',      form.querySelector('[name=status]').value);
     p.set('search',      form.querySelector('[name=search]').value);
