@@ -82,12 +82,13 @@
                 </thead>
                 <tbody>
                     @forelse($deliveries as $delivery)
+                    @php $sub = $delivery->subscription; @endphp
                     <tr class="border-b hover:bg-gray-50" style="border-color: var(--border);">
                         <td class="px-4 py-3">
-                            <div class="text-sm font-medium" style="color: var(--text);">{{ $delivery->subscription->user->name }}</div>
-                            <div class="text-xs" style="color: var(--muted);">{{ $delivery->subscription->user->phone }}</div>
+                            <div class="text-sm font-medium" style="color: var(--text);">{{ $sub?->user?->name ?? '—' }}</div>
+                            <div class="text-xs" style="color: var(--muted);">{{ $sub?->user?->phone ?? '—' }}</div>
                         </td>
-                        <td class="px-4 py-3 text-sm" style="color: var(--text);">{{ $delivery->subscription->membershipPlan->name }}</td>
+                        <td class="px-4 py-3 text-sm" style="color: var(--text);">{{ $sub?->membershipPlan?->name ?? '—' }}</td>
                         <td class="px-4 py-3 text-sm font-semibold" style="color: var(--green);">{{ $delivery->quantity_delivered }} L</td>
                         <td class="px-4 py-3">
                             <span class="px-2 py-1 text-xs rounded-full font-semibold
