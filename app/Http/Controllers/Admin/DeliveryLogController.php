@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Exports\AllLocationsDeliveriesExport;
 use App\Exports\TodayDeliveriesExport;
 use App\Http\Controllers\Controller;
 use App\Models\DeliveryLog;
@@ -246,6 +247,75 @@ class DeliveryLogController extends Controller
         $locations = \App\Models\Location::orderBy('name')->get(['id', 'name']);
 
         return view('admin.deliveries.locations', compact('deliveries', 'stats', 'locations', 'date'));
+    }
+
+    /**
+     * Export all-locations delivery report to Excel
+     */
+    public function exportLocations(Request $request)
+    {
+        $date       = $request->get('date', now()->format('Y-m-d'));
+        $status     = (string) ($request->get('status') ?? '');
+        $locationId = (int)   ($request->get('location_id') ?? 0);
+        $search     = (string) ($request->get('search') ?? '');
+
+        $exporter = new AllLocationsDeliveriesExport($date, $status, $locationId, $search);
+
+        $filename = 'all-locations-deliveries-' . $date . '-' . now()->format('His') . '.xlsx';
+        $path     = 'exports/deliveries/' . $filename;
+
+        Excel::store($exporter, $path, 'public_folder');
+
+        ExportLog::create([
+            'type'          => 'delivery_all_locations',
+            'filename'      => $filename,
+            'path'          => $path,
+            'filter_status' => trim(($status ?: 'All') . ' | ' . $date),
+            'row_count'     => $exporter->rowCount,
+            'generated_by'  => auth()->id(),
+        ]);
+
+        return response()->json([
+            'success'      => true,
+            'download_url' => asset($path),
+            'filename'     => $filename,
+        ]);
+    }
+
+    /**
+     * List stored all-locations export files (AJAX)
+     */
+    public function exportLocationsList()
+    {
+        $exports = ExportLog::where('type', 'delivery_all_locations')
+            ->with('generatedBy:id,name')
+            ->latest()
+            ->take(30)
+            ->get()
+            ->map(fn($e) => [
+                'id'            => $e->id,
+                'filename'      => $e->filename,
+                'filter_status' => $e->filter_status ?? 'All',
+                'row_count'     => $e->row_count,
+                'file_size'     => $e->file_size,
+                'generated_by'  => $e->generatedBy->name ?? '-',
+                'created_at'    => $e->created_at->format('d M Y, h:i A'),
+                'download_url'  => $e->download_url,
+                'exists'        => file_exists(public_path($e->path)),
+            ]);
+
+        return response()->json(['success' => true, 'exports' => $exports]);
+    }
+
+    /**
+     * Delete a stored all-locations export file
+     */
+    public function exportLocationsDelete(ExportLog $export)
+    {
+        $full = public_path($export->path);
+        if (file_exists($full)) unlink($full);
+        $export->delete();
+        return response()->json(['success' => true]);
     }
 
     /**

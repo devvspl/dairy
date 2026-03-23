@@ -199,6 +199,9 @@ Route::middleware('auth')->group(function () {
         Route::prefix('deliveries')->name('deliveries.')->group(function () {
             Route::get('today', [App\Http\Controllers\Admin\DeliveryLogController::class, 'todayDeliveries'])->name('today');
             Route::get('locations', [App\Http\Controllers\Admin\DeliveryLogController::class, 'allLocationsReport'])->name('locations');
+            Route::post('locations/export', [App\Http\Controllers\Admin\DeliveryLogController::class, 'exportLocations'])->name('locations.export');
+            Route::get('locations/exports', [App\Http\Controllers\Admin\DeliveryLogController::class, 'exportLocationsList'])->name('locations.exports.list');
+            Route::delete('locations/exports/{export}', [App\Http\Controllers\Admin\DeliveryLogController::class, 'exportLocationsDelete'])->name('locations.exports.delete');
             Route::post('today/export', [App\Http\Controllers\Admin\DeliveryLogController::class, 'exportToday'])->name('today.export');
             Route::get('exports', [App\Http\Controllers\Admin\DeliveryLogController::class, 'exportList'])->name('exports.list');
             Route::delete('exports/{export}', [App\Http\Controllers\Admin\DeliveryLogController::class, 'exportDelete'])->name('exports.delete');
