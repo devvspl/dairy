@@ -530,7 +530,7 @@
                                 <span class="ml-3 font-medium" x-show="!sidebarCollapsed">Subscriptions</span>
                             </a>
 
-                            <a href="{{ route('admin.deliveries.today') }}"
+                            {{-- <a href="{{ route('admin.deliveries.today') }}"
                                 class="sidebar-link {{ request()->routeIs('admin.deliveries.today') ? 'active' : '' }} flex items-center rounded-lg transition-all hover:bg-gray-50 text-sm"
                                 :class="sidebarCollapsed ? 'justify-center p-3' : 'px-3 py-2 pl-6'"
                                 style="{{ request()->routeIs('admin.deliveries.today') ? '' : 'color: var(--muted);' }}"
@@ -542,7 +542,7 @@
                                     </path>
                                 </svg>
                                 <span class="ml-3 font-medium" x-show="!sidebarCollapsed">Today's Deliveries</span>
-                            </a>
+                            </a> --}}
 
                             <!-- Legal Pages Subsection -->
                             <div x-show="!sidebarCollapsed" class="px-3 pt-3 pb-1">
