@@ -69,9 +69,6 @@
                 <a href="{{ route('about') }}" style="color: #2f4a1e; text-decoration: none; font-size: 14px; font-weight: 700; transition: opacity 0.2s;">
                     About Us
                 </a>
-                <a href="{{ route('membership') }}" style="color: #2f4a1e; text-decoration: none; font-size: 14px; font-weight: 700; transition: opacity 0.2s;">
-                    Membership
-                </a>
                 <a href="{{ route('blogs') }}" style="color: #2f4a1e; text-decoration: none; font-size: 14px; font-weight: 700; transition: opacity 0.2s;">
                     Blogs
                 </a>

@@ -21,6 +21,7 @@ Route::post('/contact', [PublicController::class, 'submitContactInquiry'])->name
 Route::get('/privacy-policy', [PublicController::class, 'privacyPolicy'])->name('privacy-policy');
 Route::get('/terms-and-conditions', [PublicController::class, 'termsConditions'])->name('terms-conditions');
 Route::get('/location/{slug}', [PublicController::class, 'locationDetail'])->name('location.detail');
+Route::get('/scanner', [PublicController::class, 'scanner'])->name('scanner');
 
 // Products
 Route::get('/products', [PublicController::class, 'products'])->name('products');

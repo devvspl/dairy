@@ -54,11 +54,11 @@
                style="background: rgba(255,255,255,0.15); color: #fff; border: 1px solid rgba(255,255,255,0.3);">
                 <i class="fa-solid fa-box"></i><span class="hidden sm:inline">My Orders</span>
             </a>
-            <a href="{{ route('member.support-tickets.index') }}"
+            {{-- <a href="{{ route('member.support-tickets.index') }}"
                class="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all hover:scale-105"
                style="background: rgba(255,255,255,0.15); color: #fff; border: 1px solid rgba(255,255,255,0.3);">
                 <i class="fa-solid fa-headset"></i><span class="hidden sm:inline">Support</span>
-            </a>
+            </a> --}}
         </div>
     </div>
 

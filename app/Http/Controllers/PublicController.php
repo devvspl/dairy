@@ -360,4 +360,9 @@ class PublicController extends Controller
 
         return view('pages.location', compact('location'));
     }
+
+    public function scanner()
+    {
+        return view('pages.scanner');
+    }
 }

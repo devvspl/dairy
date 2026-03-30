@@ -1530,8 +1530,8 @@
                   <h4 class="search-result-name">${highlightText(product.name, query)}</h4>
                   <p class="search-result-desc">${product.short_description || ''}</p>
                   <div class="search-result-price">
-                    <span class="search-result-price-current">â‚¹${Math.round(product.price)}</span>
-                    ${product.mrp ? `<span class="search-result-price-old">â‚¹${Math.round(product.mrp)}</span>` : ''}
+                    <span class="search-result-price-current">₹${Math.round(product.price)}</span>
+                    ${product.mrp ? `<span class="search-result-price-old">₹${Math.round(product.mrp)}</span>` : ''}
                     ${product.badge ? `<span class="search-result-badge">${product.badge}</span>` : ''}
                   </div>
                 </div>
@@ -1830,7 +1830,7 @@
               `;
             });
             cartBody.innerHTML = html;
-            cartTotal.textContent = `â‚¹${total.toFixed(0)}`;
+            cartTotal.textContent = `₹${total.toFixed(0)}`;
             cartFooter.style.display = 'block';
           }
 
@@ -1934,7 +1934,7 @@
                   <img src="${itemImage}" alt="${itemName}" class="dairy-offcanvas-img" onerror="this.src='{{ asset('images/products-1.png') }}'">
                   <div class="dairy-offcanvas-info">
                     <a href="${productUrl}" class="dairy-offcanvas-name">${itemName}</a>
-                    <div class="dairy-offcanvas-price">â‚¹${itemPrice.toFixed(0)}</div>
+                    <div class="dairy-offcanvas-price">₹${itemPrice.toFixed(0)}</div>
                     <button class="dairy-offcanvas-btn" onclick="moveToCart(${item.id})" style="margin-top: 8px; padding: 8px 12px; font-size: 13px;">
                       <i class="fa-solid fa-bag-shopping"></i> Add to Cart
                     </button>
