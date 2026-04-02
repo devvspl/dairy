@@ -24,7 +24,7 @@
 
     <!-- Filters -->
     <div class="bg-white rounded-lg shadow-sm p-4 border" style="border-color: var(--border);">
-        <form method="GET" class="flex flex-wrap gap-2 items-center">
+        <form method="GET" class="flex flex-wrap gap-1 items-center">
             <input type="text" name="search" value="{{ request('search') }}"
                    placeholder="Search order ID..."
                    class="px-3 py-2 border rounded-lg text-sm min-w-[180px]" style="border-color: var(--border);">

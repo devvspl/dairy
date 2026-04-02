@@ -11,6 +11,7 @@ use App\Models\Product;
 use App\Models\ProductOrder;
 use App\Models\UserSubscription;
 use App\Services\PhonePeService;
+use App\Services\ShiprocketService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -121,7 +122,6 @@ class PaymentController extends Controller
                 return redirect()->route('member.dashboard')
                     ->with('error', $paymentResponse['message'] ?? 'Payment initiation failed.');
             }
-
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Payment Initiation Error', [
@@ -211,7 +211,6 @@ class PaymentController extends Controller
                 DB::commit();
 
                 return redirect()->route('payment.failure')->with('error', 'Payment verification failed.');
-
             } catch (\Exception $e) {
                 DB::rollBack();
                 Log::error('PhonePe: Callback processing error', [
@@ -220,7 +219,6 @@ class PaymentController extends Controller
                 ]);
                 return redirect()->route('payment.failure')->with('error', 'An error occurred while processing payment.');
             }
-
         } catch (\Exception $e) {
             Log::error('PhonePe: Callback error', ['error' => $e->getMessage()]);
             return redirect()->route('payment.failure')->with('error', 'Payment processing failed.');
@@ -335,7 +333,7 @@ class PaymentController extends Controller
             'user_id'    => $user->id,
             'plan_id'    => $plan->id,
             'plan_type'  => $plan->plan_type,
-            'location_id'=> $locationId,
+            'location_id' => $locationId,
             'order_id'   => $order->order_id,
         ]);
 
@@ -480,7 +478,7 @@ class PaymentController extends Controller
             'total' => 'required|numeric|min:0',
         ]);
 
-        $coupon = \App\Models\Coupon::where('code', strtoupper(trim($request->code)))->first();
+        $coupon = Coupon::where('code', strtoupper(trim($request->code)))->first();
 
         if (!$coupon) {
             return response()->json(['success' => false, 'message' => 'Invalid coupon code.']);
@@ -631,7 +629,6 @@ class PaymentController extends Controller
 
             DB::rollBack();
             return response()->json(['success' => false, 'message' => $paymentResponse['message'] ?? 'Payment initiation failed.'], 500);
-
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Product Order Payment Error', ['error' => $e->getMessage()]);
@@ -697,6 +694,30 @@ class PaymentController extends Controller
                     }
                 }
 
+                // Assign shiprocket 
+                $shiprocket = app(ShiprocketService::class);
+
+                if ($shiprocket->isEnabled() && !$order->isShiprocketAssigned()) {
+                    $shipment = $shiprocket->createOrder($order);
+
+                    if ($shipment['success']) {
+                        $order->update([
+                            'shiprocket_order_id'    => $shipment['order_id'],
+                            'shiprocket_shipment_id' => $shipment['shipment_id'],
+                            'shiprocket_awb'         => $shipment['awb_code'],
+                            'shiprocket_courier'     => $shipment['courier'],
+                            'shiprocket_status'      => $shipment['status'] ?? 'NEW',
+                            'shiprocket_assigned_at' => now(),
+                        ]);
+                    } else {
+                        Log::error('Shiprocket Assign Failed', [
+                            'order_id' => $order->id,
+                            'error'    => $shipment['message'] ?? 'Unknown error',
+                        ]);
+                    }
+                }
+
+
                 DB::commit();
                 return redirect()->route('payment.product.success', $order->id);
             }
@@ -704,7 +725,6 @@ class PaymentController extends Controller
             $order->update(['status' => 'failed']);
             DB::commit();
             return redirect()->route('payment.failure')->with('error', 'Payment verification failed.');
-
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Product Order Callback Error', ['error' => $e->getMessage()]);

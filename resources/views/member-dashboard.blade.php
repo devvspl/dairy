@@ -621,16 +621,16 @@
                 <div>
                     <label class="block text-xs font-semibold mb-2" style="color: var(--text);"><i class="fa-solid fa-scale-balanced mr-1" style="color: var(--green);"></i>Quantity per Day</label>
                     <div class="flex items-center gap-3">
-                        <button type="button" onclick="changeQty(-0.5)" class="w-10 h-10 rounded-xl border-2 flex items-center justify-center font-bold text-lg transition-all hover:border-green-500" style="border-color: var(--border); color: var(--text);">−</button>
+                        <button type="button" onclick="changeQty(-1)" class="w-10 h-10 rounded-xl border-2 flex items-center justify-center font-bold text-lg transition-all hover:border-green-500" style="border-color: var(--border); color: var(--text);">−</button>
                         <div class="flex-1 text-center">
-                            <span id="qtyDisplay" class="text-2xl font-bold" style="color: var(--green);">0.5</span>
+                            <span id="qtyDisplay" class="text-2xl font-bold" style="color: var(--green);">1</span>
                             <span class="text-sm font-semibold ml-1" style="color: var(--muted);">Litre</span>
                         </div>
-                        <button type="button" onclick="changeQty(0.5)" class="w-10 h-10 rounded-xl border-2 flex items-center justify-center font-bold text-lg transition-all hover:border-green-500" style="border-color: var(--border); color: var(--text);">+</button>
-                        <input type="hidden" name="quantity_per_day" id="qtyInput" value="0.5">
+                        <button type="button" onclick="changeQty(1)" class="w-10 h-10 rounded-xl border-2 flex items-center justify-center font-bold text-lg transition-all hover:border-green-500" style="border-color: var(--border); color: var(--text);">+</button>
+                        <input type="hidden" name="quantity_per_day" id="qtyInput" value="1">
                     </div>
                     <div class="flex justify-between mt-2 gap-1">
-                        @foreach([0.5, 1, 1.5, 2, 3] as $q)
+                        @foreach([1, 1.5, 2, 3, 4] as $q)
                         <button type="button" onclick="setQty({{ $q }})" class="qty-preset flex-1 py-1.5 rounded-lg text-xs font-semibold border transition-all" style="border-color: var(--border); color: var(--muted);">{{ $q }}L</button>
                         @endforeach
                     </div>
@@ -911,15 +911,15 @@ function formatDate(d) {
 }
 
 // ── Quantity ──────────────────────────────────────────────────
-let qty = 0.5;
+let qty = 1;
 function changeQty(delta) { setQty(Math.round((qty + delta) * 10) / 10); }
 function setQty(val) {
-    qty = Math.max(0.5, Math.min(10, val));
+    qty = Math.max(1, Math.min(10, val));
     document.getElementById('qtyDisplay').textContent = qty % 1 === 0 ? qty.toFixed(0) : qty.toFixed(1);
     document.getElementById('qtyInput').value = qty;
     document.querySelectorAll('.qty-preset').forEach(b => b.classList.toggle('active', parseFloat(b.textContent) === qty));
 }
-setQty(0.5);
+setQty(1);
 
 // ── Coupon ────────────────────────────────────────────────────
 function applyCoupon() {

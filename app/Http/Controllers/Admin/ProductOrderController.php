@@ -6,6 +6,7 @@ use App\Exports\ProductOrdersExport;
 use App\Http\Controllers\Controller;
 use App\Models\ExportLog;
 use App\Models\ProductOrder;
+use App\Models\ShiprocketSetting;
 use App\Services\ShiprocketService;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
@@ -61,7 +62,8 @@ class ProductOrderController extends Controller
     public function show(ProductOrder $productOrder)
     {
         $productOrder->load('user');
-        return view('admin.product-orders.show', compact('productOrder'));
+        $shiprocketSetting = ShiprocketSetting::instance();
+        return view('admin.product-orders.show', compact('productOrder', 'shiprocketSetting'));
     }
 
     public function updateStatus(Request $request, ProductOrder $productOrder)

@@ -163,14 +163,13 @@
             </div>
 
             <!-- Shiprocket Card -->
-            @php $srEnabled = \App\Models\ShiprocketSetting::instance()->enabled; @endphp
             <div class="bg-white rounded-lg shadow-sm border" style="border-color: var(--border);">
                 <div class="px-5 py-4 border-b flex items-center justify-between" style="border-color: var(--border);">
                     <div class="flex items-center gap-2">
                         <i class="fa-solid fa-truck-fast" style="color: var(--green);"></i>
                         <h3 class="font-bold" style="color: var(--text);">Shiprocket Delivery</h3>
                     </div>
-                    @if($srEnabled)
+                    @if($shiprocketSetting)
                         <span class="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700 font-semibold">Active</span>
                     @else
                         <a href="{{ route('admin.settings.shiprocket') }}"
@@ -244,7 +243,7 @@
                             </div>
                         </div>
 
-                    @elseif($srEnabled)
+                    @elseif($shiprocketSetting)
                         <!-- Assign checkbox -->
                         <div class="space-y-4">
                             <p class="text-sm" style="color: var(--muted);">Assign this order to Shiprocket for courier delivery.</p>
@@ -310,7 +309,7 @@
 <script>
 const CSRF = '{{ csrf_token() }}';
 
-@if(!$productOrder->isShiprocketAssigned() && \App\Models\Setting::get('shiprocket_enabled', false))
+@if(!$productOrder->isShiprocketAssigned() && $shiprocketSetting->enabled)
 document.getElementById('srAssignCheck').addEventListener('change', function () {
     document.getElementById('srAssignBtn').disabled = !this.checked;
 });
