@@ -1516,7 +1516,7 @@
 
         function wiSubmit() {
             const amount = document.getElementById('wi-amount')?.value;
-            if (!amount || parseFloat(amount) < 50) { alert('Please enter a valid amount (min ₹50).'); return; }
+            if (!amount || parseFloat(amount) < 1) { alert('Please enter a valid amount (min ₹50).'); return; }
             document.getElementById('walletInitForm').submit();
         }
 
