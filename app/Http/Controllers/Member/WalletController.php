@@ -22,7 +22,7 @@ class WalletController extends Controller
     public function initiate(Request $request)
     {
         $request->validate([
-            'amount'           => 'required|numeric|min:50|max:500000',
+            'amount'           => 'required|numeric|min:1|max:500000',
             'milk_type'        => 'required|string|max:50',
             'quantity_per_day' => 'required|numeric|min:0.5|max:20',
             'delivery_slot'    => 'required|in:morning,afternoon,evening',
@@ -62,7 +62,7 @@ class WalletController extends Controller
 
             $paymentResponse = $this->phonePeService->initiatePayment(
                 $order->order_id,
-                $order->amount,
+                $amount,
                 $user->id,
                 $user->name,
                 $user->phone ?? '9999999999'
@@ -137,7 +137,7 @@ class WalletController extends Controller
 
             $paymentResponse = $this->phonePeService->initiatePayment(
                 $order->order_id,
-                $order->amount,
+                $amount,
                 $user->id,
                 $user->name,
                 $user->phone ?? '9999999999'
