@@ -109,8 +109,13 @@
                                     <div class="flex items-center gap-2 mb-1">
                                         <i class="fa-solid fa-wallet text-sm" style="color: var(--green);"></i>
                                         <span class="text-sm font-medium" style="color: var(--text);">Milk Wallet</span>
+                                        @if($wPlan)
                                         <span class="text-[11px] font-medium px-2 py-0.5 rounded-full"
-                                            style="background: rgba(47,74,30,0.1); color: var(--green);">{{ $wPlan->name ?? 'Milk Plan' }}</span>
+                                            style="background: rgba(47,74,30,0.1); color: var(--green);">{{ $wPlan->name }}</span>
+                                        @elseif($ws->milk_type)
+                                        <span class="text-[11px] font-medium px-2 py-0.5 rounded-full"
+                                            style="background: rgba(47,74,30,0.1); color: var(--green);">{{ ucfirst(str_replace('_',' ',$ws->milk_type)) }}</span>
+                                        @endif
                                         {{-- Dynamic status badge --}}
                                         <span class="text-[11px] font-medium px-2 py-0.5 rounded-full"
                                             style="
@@ -125,9 +130,17 @@
                                         {{ $ws->delivery_slot ? ucfirst($ws->delivery_slot) : '' }}
                                     </p>
                                     <p class="text-xs mt-0.5" style="color: var(--muted);">
-                                        {{ $ws->start_date->format('d M') }} – {{ $ws->end_date->format('d M Y') }} ·
-                                        <span class="font-medium" style="color: var(--text);">{{ $ws->daysRemaining() }} days
-                                            left</span>
+                                        {{ $ws->start_date->format('d M') }} –
+                                        @if(!$ws->membership_plan_id && $ws->price_per_litre && $ws->quantity_per_day)
+                                            @php
+                                                $dailyCost = (float)$ws->price_per_litre * (float)$ws->quantity_per_day;
+                                                $estDays = $dailyCost > 0 ? floor((float)$ws->wallet_balance / $dailyCost) : 0;
+                                            @endphp
+                                            <span class="font-medium" style="color: var(--text);">≈ {{ $estDays }} days remaining</span>
+                                        @else
+                                            {{ $ws->end_date->format('d M Y') }} ·
+                                            <span class="font-medium" style="color: var(--text);">{{ $ws->daysRemaining() }} days left</span>
+                                        @endif
                                     </p>
                                 </div>
                                 <div class="text-right">
@@ -1162,7 +1175,7 @@
             document.getElementById('summaryPlanName').textContent = document.getElementById('modalPlanName').textContent;
             document.getElementById('summaryPlanDuration').textContent = currentPlanDuration;
             document.getElementById('summaryMilkType').textContent = milkLabels[milkRadio?.value] || '—';
-            document.getElementById('summaryQty').textContent = document.getElementById('qtyDisplay').textContent + ' Litre';
+            document.getElementById('summaryQty').textContent = qty + ' Litre';
             document.getElementById('summaryStartDate').textContent = formatDate(document.getElementById('startDate').value);
             document.getElementById('summarySlot').textContent = slotLabels[slotRadio?.value] || '—';
             document.getElementById('summaryLocation').textContent = locText;
@@ -1523,59 +1536,4 @@
         wiSetQty(1);
     </script>
 
-    {{-- ===== WALLET TOP-UP MODAL ===== --}}
-    <div id="topupModal" class="fixed inset-0 bg-black bg-opacity-60 z-50 hidden items-center justify-center p-4"
-        style="backdrop-filter: blur(6px);">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 relative" onclick="event.stopPropagation()">
-            <button onclick="closeTopupModal()" class="absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-100">
-                <i class="fa-solid fa-times text-sm" style="color: var(--muted);"></i>
-            </button>
-            <div class="flex items-center gap-3 mb-5">
-                <div class="w-10 h-10 rounded-full flex items-center justify-center" style="background: rgba(47,74,30,0.1);">
-                    <i class="fa-solid fa-arrow-up" style="color: var(--green);"></i>
-                </div>
-                <div>
-                    <h3 class="font-bold text-base" style="color: var(--text);">Top Up Wallet</h3>
-                    <p class="text-xs" style="color: var(--muted);">Add balance to continue milk deliveries</p>
-                </div>
-            </div>
-            <form id="topupForm" method="POST" action="" class="space-y-4">
-                @csrf
-                <input type="hidden" id="topupSubId" name="subscription_id">
-                <div>
-                    <label class="block text-xs font-semibold mb-2" style="color: var(--text);">Select Amount</label>
-                    <div class="grid grid-cols-3 gap-2 mb-3">
-                        @foreach([200, 500, 1000, 1500, 2000, 3000] as $amt)
-                        <button type="button" onclick="setTopupAmount({{ $amt }})"
-                            class="topup-preset py-2 rounded-xl text-sm font-semibold border-2 transition-all"
-                            style="border-color: var(--border); color: var(--muted);">
-                            ₹{{ number_format($amt) }}
-                        </button>
-                        @endforeach
-                    </div>
-                    <input type="number" name="amount" id="topupAmount" placeholder="Or enter custom amount"
-                        min="50" max="50000" step="1" required
-                        class="w-full px-3 py-2.5 text-sm border-2 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                        style="border-color: var(--border);">
-                    <p class="text-[10px] mt-1" style="color: var(--muted);">Min ₹50 · Max ₹50,000</p>
-                </div>
-                <button type="submit" class="w-full py-3 rounded-xl font-bold text-sm text-white transition-all hover:shadow-lg"
-                    style="background: var(--green);">
-                    <i class="fa-solid fa-lock mr-1"></i> Pay & Top Up
-                </button>
-            </form>
-        </div>
-    </div>
-
-    <script>
-        function setTopupAmount(amt) {
-            document.getElementById('topupAmount').value = amt;
-            document.querySelectorAll('.topup-preset').forEach(b => {
-                const isActive = parseInt(b.textContent.replace(/[^0-9]/g, '')) === amt;
-                b.style.background = isActive ? 'var(--green)' : '';
-                b.style.color = isActive ? '#fff' : 'var(--muted)';
-                b.style.borderColor = isActive ? 'var(--green)' : 'var(--border)';
-            });
-        }
-    </script>
 @endsection
