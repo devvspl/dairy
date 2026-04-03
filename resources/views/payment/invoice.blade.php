@@ -129,7 +129,7 @@
                     <tbody>
                         <tr class="border-b" style="border-color: var(--border);">
                             <td class="py-4 px-4">
-                                <p class="font-bold text-lg" style="color: var(--text);">{{ $order->membershipPlan->name }} Membership</p>
+                                <p class="font-bold text-lg" style="color: var(--text);">{{ $order->membershipPlan->name ?? 'Milk Plan' }}</p>
                                 <p class="text-sm mt-1" style="color: var(--muted);">{{ $order->membershipPlan->description }}</p>
                                 @if($order->membershipPlan->features && count($order->membershipPlan->features) > 0)
                                 <ul class="mt-2 space-y-1">
