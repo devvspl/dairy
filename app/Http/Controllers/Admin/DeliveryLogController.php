@@ -53,44 +53,46 @@ class DeliveryLogController extends Controller
             'notes'              => 'nullable|string|max:500',
         ]);
 
-        $oldStatus  = $delivery->status;
-        $newStatus  = $validated['status'];
-        $qty        = $validated['quantity_delivered'] ?? $delivery->quantity_delivered;
+        $oldStatus    = $delivery->status;
+        $newStatus    = $validated['status'];
+        $oldQty       = (float) $delivery->quantity_delivered;
+        $newQty       = (float) ($validated['quantity_delivered'] ?? $oldQty);
         $subscription = $delivery->subscription;
 
         $delivery->update([
             'status'             => $newStatus,
             'delivery_time'      => $validated['delivery_time'] ?? $delivery->delivery_time,
-            'quantity_delivered' => $qty,
+            'quantity_delivered' => $newQty,
             'notes'              => $validated['notes'] ?? $delivery->notes,
             'marked_by'          => auth()->id(),
             'marked_at'          => now(),
         ]);
 
-        // Auto-debit wallet for on-demand plans when marked delivered (only once)
-        if ($newStatus === 'delivered' && $oldStatus !== 'delivered') {
-            $plan = $subscription->membershipPlan;
-            if ($plan && $plan->isOnDemand() && $subscription->wallet_balance > 0) {
-                $subscription->debitWallet(
-                    (float) $qty,
-                    $delivery->delivery_date->toDateString(),
-                    auth()->id()
-                );
-            }
-        }
+        // ── Wallet debit/credit logic ─────────────────────────────────
+        if ($subscription && $subscription->isOnDemand() && $subscription->price_per_litre > 0) {
+            $dateStr = $delivery->delivery_date->toDateString();
 
-        // If reverting from delivered → pending/skipped, credit back
-        if ($oldStatus === 'delivered' && in_array($newStatus, ['pending', 'skipped', 'failed'])) {
-            $plan = $subscription->membershipPlan;
-            if ($plan && $plan->isOnDemand()) {
-                $creditAmt = round((float) $qty * (float) $subscription->price_per_litre, 2);
+            if ($newStatus === 'delivered' && $oldStatus !== 'delivered') {
+                $subscription->debitWallet($newQty, $dateStr, auth()->id());
+
+            } elseif ($newStatus === 'delivered' && $oldStatus === 'delivered' && $newQty !== $oldQty) {
+                $diff = $newQty - $oldQty;
+                if ($diff > 0) {
+                    $subscription->debitWallet($diff, $dateStr, auth()->id());
+                } else {
+                    $creditAmt = round(abs($diff) * (float) $subscription->price_per_litre, 2);
+                    $subscription->creditWallet($creditAmt, "Qty adjusted on {$dateStr} (admin)");
+                }
+
+            } elseif ($oldStatus === 'delivered' && $newStatus !== 'delivered') {
+                $creditAmt = round($oldQty * (float) $subscription->price_per_litre, 2);
                 if ($creditAmt > 0) {
-                    $subscription->creditWallet(
-                        $creditAmt,
-                        'Delivery reversed on ' . $delivery->delivery_date->format('d M Y') . ' (admin)'
-                    );
+                    $subscription->creditWallet($creditAmt, "Delivery reversed on {$dateStr} (admin)");
                 }
             }
+
+            $subscription->refresh();
+            \App\Models\DeliveryLog::autoGenerate($subscription);
         }
 
         return redirect()->back()->with('success', 'Delivery status updated successfully!');

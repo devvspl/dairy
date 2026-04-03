@@ -202,6 +202,72 @@ class WalletController extends Controller
             ->with('success', 'Deliveries stopped. Your wallet balance is safe. Add money anytime to restart.');
     }
 
+    /** PATCH /wallet/{subscription}/update — update delivery preferences */
+    public function update(Request $request, UserSubscription $subscription)
+    {
+        $this->authorizeSubscription($subscription);
+
+        $data = $request->validate([
+            'delivery_address' => 'nullable|string|max:500',
+            'milk_type'        => 'nullable|string|max:50',
+            'quantity_per_day' => 'nullable|integer|min:1|max:20',
+            'delivery_slot'    => 'nullable|in:morning,evening',
+            'location_id'      => 'nullable|exists:locations,id',
+        ]);
+
+        $changes = array_filter($data, fn($v) => $v !== null);
+        if (empty($changes)) {
+            return redirect()->route('member.dashboard')->with('error', 'No changes provided.');
+        }
+
+        // If qty changed, update future pending delivery logs too
+        if (isset($changes['quantity_per_day']) && $changes['quantity_per_day'] != $subscription->quantity_per_day) {
+            \App\Models\DeliveryLog::where('user_subscription_id', $subscription->id)
+                ->where('status', 'pending')
+                ->whereDate('delivery_date', '>=', now()->toDateString())
+                ->update(['quantity_delivered' => $changes['quantity_per_day']]);
+        }
+
+        // If milk_type changed, update price_per_litre from milk_prices table
+        if (isset($changes['milk_type'])) {
+            $mp = \App\Models\MilkPrice::forType($changes['milk_type']);
+            if ($mp) $changes['price_per_litre'] = (float) $mp->price_per_litre;
+        }
+
+        $subscription->update($changes);
+
+        return redirect()->route('member.dashboard')->with('success', 'Delivery preferences updated.');
+    }
+
+    /** POST /wallet/{subscription}/extra — request extra milk for a specific date */
+    public function extra(Request $request, UserSubscription $subscription)
+    {
+        $this->authorizeSubscription($subscription);
+
+        $data = $request->validate([
+            'date'     => 'required|date|after_or_equal:today',
+            'extra_qty'=> 'required|numeric|min:0.5|max:20',
+        ]);
+
+        $date    = $data['date'];
+        $extra   = (float) $data['extra_qty'];
+        $baseQty = (float) ($subscription->quantity_per_day ?? 1);
+
+        // Find or create the delivery log for that date
+        $log = \App\Models\DeliveryLog::firstOrCreate(
+            ['user_subscription_id' => $subscription->id, 'delivery_date' => $date],
+            ['quantity_delivered' => $baseQty, 'status' => 'pending']
+        );
+
+        // Add extra quantity
+        $log->update([
+            'quantity_delivered' => $log->quantity_delivered + $extra,
+            'notes'              => ($log->notes ? $log->notes . ' | ' : '') . "Extra {$extra}L requested by member",
+        ]);
+
+        return redirect()->route('member.dashboard')->with('success', "Extra {$extra}L added for " . \Carbon\Carbon::parse($date)->format('d M Y') . '.');
+    }
+
     /** PATCH /wallet/{subscription}/restart — restart after stop */
     public function restart(UserSubscription $subscription)
     {

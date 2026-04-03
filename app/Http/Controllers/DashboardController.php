@@ -249,6 +249,11 @@ class DashboardController extends Controller
             'notes'              => 'nullable|string|max:500',
         ]);
 
+        $oldStatus = $delivery->status;
+        $newStatus = $validated['status'];
+        $oldQty    = (float) $delivery->quantity_delivered;
+        $newQty    = (float) ($validated['quantity_delivered'] ?? $oldQty);
+
         $deliveryTime = null;
         if (!empty($validated['delivery_time'])) {
             try {
@@ -260,7 +265,6 @@ class DashboardController extends Controller
             $deliveryTime = now()->format('H:i');
         }
 
-        // Default note based on status if no custom note provided
         $defaultNotes = [
             'delivered' => 'Delivered successfully.',
             'skipped'   => 'Delivery skipped.',
@@ -269,24 +273,47 @@ class DashboardController extends Controller
         ];
         $notes = !empty($validated['notes'])
             ? $validated['notes']
-            : ($defaultNotes[$validated['status']] ?? null);
+            : ($defaultNotes[$newStatus] ?? null);
 
         $delivery->update([
-            'status'             => $validated['status'],
-            'quantity_delivered' => $validated['quantity_delivered'] ?? $delivery->quantity_delivered,
+            'status'             => $newStatus,
+            'quantity_delivered' => $newQty,
             'delivery_time'      => $deliveryTime,
             'notes'              => $notes,
             'marked_by'          => $user->id,
             'marked_at'          => now(),
         ]);
 
-        // Auto-debit wallet for on-demand subscriptions when marked delivered
-        if ($validated['status'] === 'delivered') {
-            $subscription = $delivery->subscription;
-            if ($subscription && $subscription->isOnDemand() && $subscription->wallet_balance !== null) {
-                $qty = (float) ($validated['quantity_delivered'] ?? $delivery->quantity_delivered);
-                $subscription->debitWallet($qty, $delivery->delivery_date->toDateString(), $user->id);
+        // ── Wallet debit/credit logic ─────────────────────────────────
+        $subscription = $delivery->subscription;
+        if ($subscription && $subscription->isOnDemand() && $subscription->price_per_litre > 0) {
+            $dateStr = $delivery->delivery_date->toDateString();
+
+            if ($newStatus === 'delivered' && $oldStatus !== 'delivered') {
+                // Newly marked delivered → debit full qty
+                $subscription->debitWallet($newQty, $dateStr, $user->id);
+
+            } elseif ($newStatus === 'delivered' && $oldStatus === 'delivered' && $newQty !== $oldQty) {
+                // Already delivered, qty changed → adjust difference
+                $diff = $newQty - $oldQty;
+                if ($diff > 0) {
+                    $subscription->debitWallet($diff, $dateStr, $user->id);
+                } else {
+                    $creditAmt = round(abs($diff) * (float) $subscription->price_per_litre, 2);
+                    $subscription->creditWallet($creditAmt, "Qty adjusted on {$dateStr}");
+                }
+
+            } elseif ($oldStatus === 'delivered' && $newStatus !== 'delivered') {
+                // Reverting from delivered → credit back old qty
+                $creditAmt = round($oldQty * (float) $subscription->price_per_litre, 2);
+                if ($creditAmt > 0) {
+                    $subscription->creditWallet($creditAmt, "Delivery reversed on {$dateStr}");
+                }
             }
+
+            // After balance change, extend delivery schedule if needed
+            $subscription->refresh();
+            \App\Models\DeliveryLog::autoGenerate($subscription);
         }
 
         return redirect()->back()->with('success', 'Delivery updated successfully.');

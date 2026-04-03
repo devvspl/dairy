@@ -268,6 +268,113 @@
                         </div>
                     </div>
 
+                    {{-- ── Settings Panel ── --}}
+                    <div class="mt-3 rounded-2xl border overflow-hidden" style="border-color:var(--border);">
+                        {{-- Toggle header --}}
+                        <button onclick="document.getElementById('ws-settings-{{ $ws->id }}').classList.toggle('hidden')"
+                            class="w-full flex items-center justify-between px-4 py-3 text-xs font-semibold hover:bg-gray-50 transition-colors"
+                            style="color:var(--text);">
+                            <span><i class="fa-solid fa-sliders mr-2" style="color:var(--green);"></i>Delivery Settings</span>
+                            <i class="fa-solid fa-chevron-down text-[10px]" style="color:var(--muted);"></i>
+                        </button>
+
+                        <div id="ws-settings-{{ $ws->id }}" class="hidden border-t" style="border-color:var(--border);">
+                            <form method="POST" action="{{ route('wallet.update', $ws->id) }}" class="p-4 space-y-4">
+                                @csrf @method('PATCH')
+
+                                {{-- Milk type --}}
+                                <div>
+                                    <label class="block text-xs font-semibold mb-2" style="color:var(--text);"><i class="fa-solid fa-cow mr-1" style="color:var(--green);"></i>Milk Type</label>
+                                    <div class="grid grid-cols-2 gap-2">
+                                        @foreach($milkPrices as $mp)
+                                        @php $icons=['cow'=>'fa-cow','buffalo'=>'fa-hippo','toned'=>'fa-droplet','full_fat'=>'fa-bottle-water']; @endphp
+                                        <label class="flex items-center gap-2 p-2.5 rounded-xl border-2 cursor-pointer transition-all hover:border-green-400"
+                                            style="border-color:{{ $ws->milk_type === $mp->milk_type ? 'var(--green)' : 'var(--border)' }}; background:{{ $ws->milk_type === $mp->milk_type ? 'rgba(47,74,30,0.04)' : '#fff' }};">
+                                            <input type="radio" name="milk_type" value="{{ $mp->milk_type }}" class="hidden"
+                                                {{ $ws->milk_type === $mp->milk_type ? 'checked' : '' }}>
+                                            <i class="fas {{ $icons[$mp->milk_type] ?? 'fa-droplet' }} text-xs" style="color:var(--green);"></i>
+                                            <div class="flex-1 min-w-0">
+                                                <p class="text-xs font-bold leading-tight" style="color:var(--text);">{{ $mp->label }}</p>
+                                                <p class="text-[10px]" style="color:var(--green);">₹{{ number_format($mp->price_per_litre,2) }}/L</p>
+                                            </div>
+                                        </label>
+                                        @endforeach
+                                    </div>
+                                </div>
+
+                                {{-- Quantity per day --}}
+                                <div>
+                                    <label class="block text-xs font-semibold mb-2" style="color:var(--text);"><i class="fa-solid fa-scale-balanced mr-1" style="color:var(--green);"></i>Quantity per Day</label>
+                                    <div class="grid grid-cols-5 gap-2">
+                                        @foreach([1,2,3,5,8] as $q)
+                                        <label class="text-center py-2.5 rounded-xl border-2 cursor-pointer text-sm font-bold transition-all"
+                                            style="border-color:{{ (int)$ws->quantity_per_day === $q ? 'var(--green)' : 'var(--border)' }}; background:{{ (int)$ws->quantity_per_day === $q ? 'var(--green)' : '#fff' }}; color:{{ (int)$ws->quantity_per_day === $q ? '#fff' : 'var(--muted)' }};">
+                                            <input type="radio" name="quantity_per_day" value="{{ $q }}" class="hidden"
+                                                {{ (int)$ws->quantity_per_day === $q ? 'checked' : '' }}>
+                                            {{ $q }}L
+                                        </label>
+                                        @endforeach
+                                    </div>
+                                </div>
+
+                                {{-- Delivery slot --}}
+                                <div>
+                                    <label class="block text-xs font-semibold mb-2" style="color:var(--text);"><i class="fa-solid fa-clock mr-1" style="color:var(--green);"></i>Delivery Slot</label>
+                                    <div class="grid grid-cols-2 gap-2">
+                                        @foreach([['value'=>'morning','label'=>'Morning','time'=>'5–8 AM','icon'=>'fa-sun'],['value'=>'evening','label'=>'Evening','time'=>'5–8 PM','icon'=>'fa-moon']] as $slot)
+                                        <label class="flex flex-col items-center gap-1 p-3 rounded-xl border-2 cursor-pointer text-center transition-all"
+                                            style="border-color:{{ $ws->delivery_slot === $slot['value'] ? 'var(--green)' : 'var(--border)' }}; background:{{ $ws->delivery_slot === $slot['value'] ? 'rgba(47,74,30,0.04)' : '#fff' }};">
+                                            <input type="radio" name="delivery_slot" value="{{ $slot['value'] }}" class="hidden"
+                                                {{ $ws->delivery_slot === $slot['value'] ? 'checked' : '' }}>
+                                            <i class="fas {{ $slot['icon'] }} text-base" style="color:{{ $ws->delivery_slot === $slot['value'] ? 'var(--green)' : 'var(--muted)' }};"></i>
+                                            <p class="text-xs font-bold" style="color:var(--text);">{{ $slot['label'] }}</p>
+                                            <p class="text-[10px]" style="color:var(--muted);">{{ $slot['time'] }}</p>
+                                        </label>
+                                        @endforeach
+                                    </div>
+                                </div>
+
+                                {{-- Delivery address --}}
+                                <div>
+                                    <label class="block text-xs font-semibold mb-1.5" style="color:var(--text);"><i class="fa-solid fa-location-dot mr-1" style="color:var(--green);"></i>Delivery Address</label>
+                                    <textarea name="delivery_address" rows="2"
+                                        class="w-full px-3 py-2.5 text-sm border-2 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none"
+                                        style="border-color:var(--border);">{{ $ws->delivery_address }}</textarea>
+                                </div>
+
+                                <button type="submit" class="w-full py-2.5 rounded-xl font-bold text-sm text-white hover:shadow-md" style="background:var(--green);">
+                                    <i class="fa-solid fa-check mr-1"></i> Save Changes
+                                </button>
+                            </form>
+
+                            {{-- Extra milk for a day --}}
+                            <div class="border-t px-4 py-4" style="border-color:var(--border);">
+                                <p class="text-xs font-semibold mb-3" style="color:var(--text);"><i class="fa-solid fa-plus-circle mr-1" style="color:var(--green);"></i>Request Extra Milk for a Day</p>
+                                <form method="POST" action="{{ route('wallet.extra', $ws->id) }}" class="flex gap-2 items-end">
+                                    @csrf
+                                    <div class="flex-1">
+                                        <label class="block text-[10px] font-semibold mb-1" style="color:var(--muted);">Date</label>
+                                        <input type="date" name="date" required
+                                            min="{{ now()->format('Y-m-d') }}" max="{{ now()->addDays(30)->format('Y-m-d') }}"
+                                            value="{{ now()->addDay()->format('Y-m-d') }}"
+                                            class="w-full px-3 py-2 text-sm border-2 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                            style="border-color:var(--border);">
+                                    </div>
+                                    <div style="width:90px;">
+                                        <label class="block text-[10px] font-semibold mb-1" style="color:var(--muted);">Extra (L)</label>
+                                        <input type="number" name="extra_qty" required min="0.5" max="20" step="0.5" value="1"
+                                            class="w-full px-3 py-2 text-sm border-2 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                            style="border-color:var(--border);">
+                                    </div>
+                                    <button type="submit" class="px-4 py-2 rounded-xl text-sm font-bold text-white flex-shrink-0" style="background:var(--green);">
+                                        Add
+                                    </button>
+                                </form>
+                                <p class="text-[10px] mt-1.5" style="color:var(--muted);">Extra milk will be added to that day's delivery and deducted from your wallet.</p>
+                            </div>
+                        </div>
+                    </div>
+
                     {{-- Wallet Calendar --}}
                     <div class="mb-5">
                         <div class="flex items-center justify-between mb-3">
