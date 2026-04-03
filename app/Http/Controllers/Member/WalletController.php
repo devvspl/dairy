@@ -184,9 +184,36 @@ class WalletController extends Controller
     {
         $this->authorizeSubscription($subscription);
 
+        // Cancel all future pending delivery logs
+        \App\Models\DeliveryLog::where('user_subscription_id', $subscription->id)
+            ->where('status', 'pending')
+            ->whereDate('delivery_date', '>', now()->toDateString())
+            ->update(['status' => 'skipped', 'notes' => 'Stopped by member', 'marked_at' => now()]);
+
+        // Also skip today if pending
+        \App\Models\DeliveryLog::where('user_subscription_id', $subscription->id)
+            ->whereDate('delivery_date', now())
+            ->where('status', 'pending')
+            ->update(['status' => 'skipped', 'notes' => 'Stopped by member', 'marked_at' => now()]);
+
         $subscription->update(['delivery_status' => 'stopped']);
 
-        return redirect()->route('member.dashboard')->with('success', 'Deliveries stopped. Your wallet balance is safe.');
+        return redirect()->route('member.dashboard')
+            ->with('success', 'Deliveries stopped. Your wallet balance is safe. Add money anytime to restart.');
+    }
+
+    /** PATCH /wallet/{subscription}/restart — restart after stop */
+    public function restart(UserSubscription $subscription)
+    {
+        $this->authorizeSubscription($subscription);
+
+        $subscription->update(['delivery_status' => 'active']);
+
+        // Re-generate delivery logs from tomorrow based on remaining balance
+        \App\Models\DeliveryLog::autoGenerate($subscription);
+
+        return redirect()->route('member.dashboard')
+            ->with('success', 'Deliveries restarted. Schedule has been regenerated from tomorrow.');
     }
 
     /** POST /wallet/{subscription}/topup — initiate PhonePe top-up */
@@ -195,7 +222,7 @@ class WalletController extends Controller
         $this->authorizeSubscription($subscription);
 
         $request->validate([
-            'amount' => 'required|numeric|min:50|max:50000',
+            'amount' => 'required|numeric|min:1|max:500000',
         ]);
 
         $user   = auth()->user();

@@ -105,8 +105,35 @@ class DeliveryLogController extends Controller
 
         // ── Wallet-only (no plan): generate based on wallet balance ──
         if (!$plan) {
-            $generated = \App\Models\DeliveryLog::autoGenerate($subscription);
-            return redirect()->back()->with('success', "Generated {$generated} wallet delivery entries (based on current balance).");
+            $qty           = (float) ($subscription->quantity_per_day ?? 1);
+            $pricePerLitre = (float) ($subscription->price_per_litre ?? 0);
+            $balance       = (float) ($subscription->wallet_balance ?? 0);
+
+            if ($qty <= 0 || $pricePerLitre <= 0) {
+                return redirect()->back()->with('error', 'Subscription is missing milk price or quantity configuration.');
+            }
+            if ($balance <= 0) {
+                return redirect()->back()->with('error', 'Wallet balance is ₹0 — top up first before generating deliveries.');
+            }
+
+            $dailyCost    = round($qty * $pricePerLitre, 2);
+            $totalCovered = (int) floor($balance / $dailyCost);
+            $pending      = DeliveryLog::where('user_subscription_id', $subscription->id)
+                ->where('status', 'pending')
+                ->whereDate('delivery_date', '>=', now()->toDateString())
+                ->count();
+
+            if ($pending >= $totalCovered) {
+                return redirect()->back()->with('info',
+                    "Already have {$pending} pending entries scheduled — wallet balance covers {$totalCovered} days. No new entries needed."
+                );
+            }
+
+            $generated = DeliveryLog::autoGenerate($subscription);
+            return redirect()->back()->with('success',
+                "Generated {$generated} new delivery entries. " .
+                "Wallet covers {$totalCovered} days total (₹" . number_format($balance, 2) . " ÷ ₹{$dailyCost}/day)."
+            );
         }
 
         // ── On-Demand plan ──

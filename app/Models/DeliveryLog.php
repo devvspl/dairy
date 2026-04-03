@@ -44,9 +44,15 @@ class DeliveryLog extends Model
 
     /**
      * Auto-generate delivery logs for a wallet subscription.
-     * Number of days = floor(wallet_balance / daily_cost).
-     * Extends from the last existing entry date (or start_date if none).
-     * Safe to call multiple times — uses firstOrCreate.
+     *
+     * Logic:
+     * - daily_cost = price_per_litre × quantity_per_day
+     * - total_days_covered = floor(wallet_balance / daily_cost)
+     * - already_pending = count of future pending entries (already committed, not yet delivered)
+     * - net_new_days = total_days_covered - already_pending
+     * - Generates net_new_days entries starting after the last existing entry
+     *
+     * Safe to call multiple times. Uses firstOrCreate to avoid duplicates.
      */
     public static function autoGenerate(UserSubscription $subscription): int
     {
@@ -57,11 +63,22 @@ class DeliveryLog extends Model
         if ($qty <= 0 || $pricePerLitre <= 0 || $balance <= 0) return 0;
 
         $dailyCost = round($qty * $pricePerLitre, 2);
-        $days      = (int) floor($balance / $dailyCost);
 
-        if ($days <= 0) return 0;
+        // Total days the current balance can cover
+        $totalDaysCovered = (int) floor($balance / $dailyCost);
+        if ($totalDaysCovered <= 0) return 0;
 
-        // Find the last existing delivery log to extend from
+        // Count future pending entries (already scheduled, not yet delivered)
+        $alreadyPending = static::where('user_subscription_id', $subscription->id)
+            ->where('status', 'pending')
+            ->whereDate('delivery_date', '>=', now()->toDateString())
+            ->count();
+
+        // Net new days to generate
+        $netNew = $totalDaysCovered - $alreadyPending;
+        if ($netNew <= 0) return 0;
+
+        // Start from the day after the last existing entry (any status)
         $lastDate = static::where('user_subscription_id', $subscription->id)
             ->orderByDesc('delivery_date')
             ->value('delivery_date');
@@ -74,7 +91,7 @@ class DeliveryLog extends Model
                 : now()->addDay()->startOfDay();
         }
 
-        $end = $start->copy()->addDays($days - 1);
+        $end = $start->copy()->addDays($netNew - 1);
 
         $generated = 0;
         $cur = $start->copy();

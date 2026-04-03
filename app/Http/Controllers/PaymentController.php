@@ -311,7 +311,12 @@ class PaymentController extends Controller
             'Wallet top-up | Order: ' . $order->order_id
         );
 
-        // Extend delivery log window by 90 more days from the last existing entry
+        // If wallet was stopped/paused, auto-restart on top-up
+        if (in_array($subscription->delivery_status, ['stopped', 'paused'])) {
+            $subscription->update(['delivery_status' => 'active']);
+        }
+
+        // Extend delivery log window based on new balance
         \App\Models\DeliveryLog::autoGenerate($subscription);
 
         Log::info('Wallet Top-up Processed', [

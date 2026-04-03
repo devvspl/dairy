@@ -200,29 +200,48 @@
                                 Top up
                             </button>
 
-                            {{-- Pause / Resume toggle --}}
-                            <form method="POST" action="{{ route('wallet.pause', $ws->id) }}" class="contents">
-                                @csrf
-                                @method($ws->delivery_status === 'paused' ? 'PATCH' : 'PATCH')
-                                <input type="hidden" name="action"
-                                    value="{{ $ws->delivery_status === 'paused' ? 'resume' : 'pause' }}">
-                                <button type="submit"
-                                    class="flex items-center justify-center gap-1.5 py-3 text-xs font-medium transition-colors hover:bg-yellow-50 active:bg-yellow-100"
-                                    style="color: #b46000; background: transparent; border: none; cursor: pointer;">
-                                    <i
-                                        class="fa-solid {{ $ws->delivery_status === 'paused' ? 'fa-play' : 'fa-pause' }} text-xs"></i>
-                                    {{ $ws->delivery_status === 'paused' ? 'Resume' : 'Pause' }}
-                                </button>
-                            </form>
+                            {{-- Pause / Resume / Restart toggle --}}
+                            @if($ws->delivery_status === 'stopped')
+                                <form method="POST" action="{{ route('wallet.restart', $ws->id) }}" class="contents">
+                                    @csrf @method('PATCH')
+                                    <button type="submit"
+                                        class="flex items-center justify-center gap-1.5 py-3 text-xs font-medium transition-colors hover:bg-green-50 active:bg-green-100"
+                                        style="color: var(--green); background: transparent; border: none; cursor: pointer;">
+                                        <i class="fa-solid fa-play text-xs"></i>
+                                        Restart
+                                    </button>
+                                </form>
+                            @else
+                                <form method="POST" action="{{ route('wallet.pause', $ws->id) }}" class="contents">
+                                    @csrf @method('PATCH')
+                                    <input type="hidden" name="action"
+                                        value="{{ $ws->delivery_status === 'paused' ? 'resume' : 'pause' }}">
+                                    <button type="submit"
+                                        class="flex items-center justify-center gap-1.5 py-3 text-xs font-medium transition-colors hover:bg-yellow-50 active:bg-yellow-100"
+                                        style="color: #b46000; background: transparent; border: none; cursor: pointer;">
+                                        <i class="fa-solid {{ $ws->delivery_status === 'paused' ? 'fa-play' : 'fa-pause' }} text-xs"></i>
+                                        {{ $ws->delivery_status === 'paused' ? 'Resume' : 'Pause' }}
+                                    </button>
+                                </form>
+                            @endif
 
-                            {{-- Stop --}}
-                            <button onclick="document.getElementById('stop-confirm-{{ $ws->id }}').classList.remove('hidden')"
-                                class="flex items-center justify-center gap-1.5 py-3 text-xs font-medium transition-colors hover:bg-red-50 active:bg-red-100"
-                                style="color: #b40000; background: transparent; border: none; cursor: pointer;
-                     {{ $ws->delivery_status === 'stopped' ? 'opacity:0.4; pointer-events:none;' : '' }}">
-                                <i class="fa-solid fa-stop text-xs"></i>
-                                Stop
-                            </button>
+                            {{-- Stop (hidden when already stopped) --}}
+                            @if($ws->delivery_status !== 'stopped')
+                                <button onclick="document.getElementById('stop-confirm-{{ $ws->id }}').classList.remove('hidden')"
+                                    class="flex items-center justify-center gap-1.5 py-3 text-xs font-medium transition-colors hover:bg-red-50 active:bg-red-100"
+                                    style="color: #b40000; background: transparent; border: none; cursor: pointer;">
+                                    <i class="fa-solid fa-stop text-xs"></i>
+                                    Stop
+                                </button>
+                            @else
+                                {{-- Add money prompt when stopped --}}
+                                <button onclick="openTopupModal({{ $ws->id }})"
+                                    class="flex items-center justify-center gap-1.5 py-3 text-xs font-medium transition-colors hover:bg-green-50"
+                                    style="color: var(--green); background: transparent; border: none; cursor: pointer;">
+                                    <i class="fa-solid fa-plus text-xs"></i>
+                                    Add Money
+                                </button>
+                            @endif
 
                         </div>
                     </div>
