@@ -32,8 +32,8 @@
                     </div>
                     <div>
                         <p class="text-sm font-medium mb-1" style="color: var(--muted);">Membership Plan</p>
-                        <p class="font-semibold" style="color: var(--text);">{{ $subscription->membershipPlan->name }}</p>
-                        <p class="text-sm" style="color: var(--muted);">{{ $subscription->membershipPlan->duration }}</p>
+                        <p class="font-semibold" style="color: var(--text);">{{ $subscription->membershipPlan->name ?? 'Milk Wallet' }}</p>
+                        <p class="text-sm" style="color: var(--muted);">{{ $subscription->membershipPlan->duration ?? '—' }}</p>
                     </div>
                 </div>
 
@@ -149,7 +149,7 @@
             @endif
 
             <!-- Monthly Delivery Calendar -->
-            @if($subscription->membershipPlan->day_wise_schedule)
+            @if($subscription->membershipPlan?->day_wise_schedule)
             <div class="bg-white rounded-lg shadow-sm p-6 border" style="border-color: var(--border);">
                 <div class="flex items-center justify-between mb-6">
                     <div>
@@ -318,7 +318,7 @@
                     </div>
                     <div>
                         <p class="text-sm font-medium" style="color: var(--muted);">Amount</p>
-                        <p class="text-xl font-bold" style="color: var(--green);">₹{{ number_format($subscription->amount_paid ?? $subscription->membershipPlan->price, 2) }}</p>
+                        <p class="text-xl font-bold" style="color: var(--green);">₹{{ number_format($subscription->amount_paid ?? $subscription->membershipPlan?->price ?? 0, 2) }}</p>
                     </div>
                     @if($subscription->transaction_id)
                     <div>
@@ -346,7 +346,7 @@
                     </div>
                     <div>
                         <label class="block text-sm font-medium mb-1" style="color: var(--text);">Amount Paid</label>
-                        <input type="number" step="0.01" name="amount_paid" value="{{ $subscription->amount_paid ?? $subscription->membershipPlan->price }}" 
+                        <input type="number" step="0.01" name="amount_paid" value="{{ $subscription->amount_paid ?? $subscription->membershipPlan?->price ?? 0 }}" 
                                class="w-full px-3 py-2 border rounded-lg" style="border-color: var(--border);">
                     </div>
                     <button type="submit" class="w-full px-4 py-2 rounded-lg font-semibold" style="background-color: var(--green); color: #fff;">

@@ -10,13 +10,14 @@ class Order extends Model
         'user_id', 'order_type', 'user_subscription_id',
         'membership_plan_id', 'order_id', 'transaction_id',
         'amount', 'coupon_code', 'discount_amount',
-        'status', 'payment_method', 'payment_response', 'paid_at',
+        'status', 'payment_method', 'payment_response', 'wallet_meta', 'paid_at',
     ];
 
     protected $casts = [
         'amount'           => 'decimal:2',
         'discount_amount'  => 'decimal:2',
         'payment_response' => 'array',
+        'wallet_meta'      => 'array',
         'paid_at'          => 'datetime',
         'created_at'       => 'datetime',
         'updated_at'       => 'datetime',

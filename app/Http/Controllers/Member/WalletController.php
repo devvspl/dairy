@@ -47,17 +47,15 @@ class WalletController extends Controller
                 'amount'         => $amount,
                 'status'         => 'pending',
                 'payment_method' => 'phonepe',
-            ]);
-
-            // Store setup details in session for callback
-            session([
-                'wallet_init_milk_type_'        . $order->id => $request->milk_type,
-                'wallet_init_qty_'              . $order->id => $request->quantity_per_day,
-                'wallet_init_slot_'             . $order->id => $request->delivery_slot,
-                'wallet_init_location_id_'      . $order->id => $request->location_id,
-                'wallet_init_delivery_address_' . $order->id => $request->delivery_address,
-                'wallet_init_start_date_'       . $order->id => $request->start_date,
-                'wallet_init_price_per_litre_'  . $order->id => $pricePerLitre,
+                'wallet_meta'    => [
+                    'milk_type'        => $request->milk_type,
+                    'quantity_per_day' => $request->quantity_per_day,
+                    'delivery_slot'    => $request->delivery_slot,
+                    'location_id'      => $request->location_id,
+                    'delivery_address' => $request->delivery_address,
+                    'start_date'       => $request->start_date,
+                    'price_per_litre'  => $pricePerLitre,
+                ],
             ]);
 
             $paymentResponse = $this->phonePeService->initiatePayment(

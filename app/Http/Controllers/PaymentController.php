@@ -239,15 +239,17 @@ class PaymentController extends Controller
 
         // ── First-time wallet creation (no subscription yet) ──────────
         if (!$order->user_subscription_id) {
-            $milkType        = session('wallet_init_milk_type_'        . $order->id);
-            $qtyPerDay       = session('wallet_init_qty_'              . $order->id);
-            $slot            = session('wallet_init_slot_'             . $order->id);
-            $locationId      = session('wallet_init_location_id_'      . $order->id);
-            $deliveryAddress = session('wallet_init_delivery_address_' . $order->id);
-            $startDate       = session('wallet_init_start_date_'       . $order->id);
-            $pricePerLitre   = session('wallet_init_price_per_litre_'  . $order->id);
+            $meta = $order->wallet_meta ?? [];
 
-            // Fallback: look up from milk_prices if session expired
+            $milkType        = $meta['milk_type']        ?? null;
+            $qtyPerDay       = $meta['quantity_per_day'] ?? null;
+            $slot            = $meta['delivery_slot']    ?? null;
+            $locationId      = $meta['location_id']      ?? null;
+            $deliveryAddress = $meta['delivery_address'] ?? null;
+            $startDate       = $meta['start_date']       ?? null;
+            $pricePerLitre   = $meta['price_per_litre']  ?? null;
+
+            // Fallback: look up from milk_prices if not stored
             if (!$pricePerLitre && $milkType) {
                 $mp = \App\Models\MilkPrice::forType($milkType);
                 $pricePerLitre = $mp ? (float) $mp->price_per_litre : null;
@@ -291,17 +293,6 @@ class PaymentController extends Controller
                 'balance_after'        => (float) $order->amount,
                 'description'          => 'Wallet opened | Order: ' . $order->order_id,
                 'transaction_date'     => now()->toDateString(),
-            ]);
-
-            // Clear session
-            session()->forget([
-                'wallet_init_milk_type_'        . $order->id,
-                'wallet_init_qty_'              . $order->id,
-                'wallet_init_slot_'             . $order->id,
-                'wallet_init_location_id_'      . $order->id,
-                'wallet_init_delivery_address_' . $order->id,
-                'wallet_init_start_date_'       . $order->id,
-                'wallet_init_price_per_litre_'  . $order->id,
             ]);
 
             Log::info('Wallet Created', ['user_id' => $user->id, 'subscription_id' => $subscription->id]);

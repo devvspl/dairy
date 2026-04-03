@@ -141,7 +141,9 @@
                         @foreach($userSubs as $subscription)
                         <tr class="hover:bg-gray-50">
                             <td class="px-4 py-3 text-sm" style="color: var(--muted);">#{{ $subscription->id }}</td>
-                            <td class="px-4 py-3 text-sm font-medium" style="color: var(--text);">{{ $subscription->membershipPlan->name }}</td>
+                            <td class="px-4 py-3 text-sm font-medium" style="color: var(--text);">
+                                {{ $subscription->membershipPlan->name ?? 'Milk Wallet' }}
+                            </td>
                             <td class="px-4 py-3 text-sm">
                                 @if($subscription->location)
                                     <div class="font-medium" style="color: var(--text);">{{ $subscription->location->name }}</div>
@@ -176,7 +178,7 @@
                                 </span>
                             </td>
                             <td class="px-4 py-3 text-sm font-semibold" style="color: var(--green);">
-                                ₹{{ number_format($subscription->amount_paid ?? $subscription->membershipPlan->price, 2) }}
+                                ₹{{ number_format($subscription->amount_paid ?? $subscription->membershipPlan?->price ?? 0, 2) }}
                             </td>
                             <td class="px-4 py-3">
                                 <a href="{{ route('admin.subscriptions.show', $subscription) }}"

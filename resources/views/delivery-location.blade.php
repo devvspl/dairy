@@ -101,8 +101,9 @@
                         <th class="px-4 py-3 text-left text-sm font-semibold" style="color: var(--text);">#</th>
                         <th class="px-4 py-3 text-left text-sm font-semibold" style="color: var(--text);">Customer</th>
                         <th class="px-4 py-3 text-left text-sm font-semibold" style="color: var(--text);">Address</th>
-                        <th class="px-4 py-3 text-left text-sm font-semibold" style="color: var(--text);">Plan</th>
+                        <th class="px-4 py-3 text-left text-sm font-semibold" style="color: var(--text);">Milk / Plan</th>
                         <th class="px-4 py-3 text-left text-sm font-semibold" style="color: var(--text);">Qty</th>
+                        <th class="px-4 py-3 text-left text-sm font-semibold" style="color: var(--text);">Wallet</th>
                         <th class="px-4 py-3 text-left text-sm font-semibold" style="color: var(--text);">Status</th>
                         <th class="px-4 py-3 text-left text-sm font-semibold" style="color: var(--text);">Time</th>
                         <th class="px-4 py-3 text-left text-sm font-semibold" style="color: var(--text);">Action</th>
@@ -111,8 +112,9 @@
                 <tbody>
                     @forelse($deliveries as $i => $delivery)
                     @php
-                        $customer = $delivery->subscription->user;
-                        $plan     = $delivery->subscription->membershipPlan;
+                        $sub      = $delivery->subscription;
+                        $customer = $sub->user;
+                        $plan     = $sub->membershipPlan;
                     @endphp
                     <tr class="border-b hover:bg-gray-50" style="border-color: var(--border);">
                         <td class="px-4 py-3 text-sm" style="color: var(--muted);">
@@ -124,12 +126,44 @@
                                 <i class="fa-solid fa-phone mr-1"></i>{{ $customer->phone ?? 'N/A' }}
                             </div>
                         </td>
-                        <td class="px-4 py-3 text-sm max-w-[200px]" style="color: var(--muted);">
-                            {{ $delivery->subscription->delivery_address ?? '—' }}
+                        <td class="px-4 py-3 text-sm max-w-[180px]" style="color: var(--muted);">
+                            {{ $sub->delivery_address ?? '—' }}
                         </td>
-                        <td class="px-4 py-3 text-sm" style="color: var(--text);">{{ $plan->name }}</td>
+                        <td class="px-4 py-3">
+                            <div class="text-sm font-medium" style="color: var(--text);">
+                                {{ $plan?->name ?? 'Milk Wallet' }}
+                            </div>
+                            @if($sub->milk_type)
+                            <div class="text-xs mt-0.5" style="color: var(--muted);">
+                                {{ ucfirst(str_replace('_',' ',$sub->milk_type)) }}
+                                @if($sub->price_per_litre) · ₹{{ number_format($sub->price_per_litre,2) }}/L @endif
+                            </div>
+                            @endif
+                            @if($sub->delivery_slot)
+                            <div class="text-xs" style="color: var(--muted);">
+                                <i class="fa-solid fa-clock mr-0.5"></i>{{ ucfirst($sub->delivery_slot) }}
+                            </div>
+                            @endif
+                            {{-- Delivery status badge --}}
+                            @if($sub->delivery_status !== 'active')
+                            <span class="inline-block mt-1 px-1.5 py-0.5 text-[10px] rounded-full font-semibold
+                                {{ $sub->delivery_status === 'paused'  ? 'bg-yellow-100 text-yellow-700' : '' }}
+                                {{ $sub->delivery_status === 'stopped' ? 'bg-red-100 text-red-700'       : '' }}">
+                                <i class="fa-solid {{ $sub->delivery_status === 'paused' ? 'fa-pause' : 'fa-stop' }} mr-0.5"></i>
+                                {{ ucfirst($sub->delivery_status) }}
+                            </span>
+                            @endif
+                        </td>
                         <td class="px-4 py-3 text-sm font-semibold" style="color: var(--green);">
                             {{ $delivery->quantity_delivered }} L
+                        </td>
+                        <td class="px-4 py-3">
+                            @if($sub->wallet_balance !== null)
+                            <div class="text-sm font-semibold" style="color: var(--green);">₹{{ number_format($sub->wallet_balance,2) }}</div>
+                            <div class="text-[10px]" style="color: var(--muted);">of ₹{{ number_format($sub->wallet_total,2) }}</div>
+                            @else
+                            <span style="color: var(--muted);">—</span>
+                            @endif
                         </td>
                         <td class="px-4 py-3">
                             <span class="px-2 py-1 text-xs rounded-full font-semibold
