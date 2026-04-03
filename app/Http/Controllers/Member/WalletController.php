@@ -14,6 +14,66 @@ class WalletController extends Controller
 {
     public function __construct(protected PhonePeService $phonePeService) {}
 
+    /** GET /wallet/calendar?year=&month=&subscription_id= */
+    public function calendar(\Illuminate\Http\Request $request)
+    {
+        $user  = auth()->user();
+        $subId = $request->integer('subscription_id');
+        $year  = $request->integer('year',  now()->year);
+        $month = $request->integer('month', now()->month);
+
+        $subscription = \App\Models\UserSubscription::where('id', $subId)
+            ->where('user_id', $user->id)
+            ->firstOrFail();
+
+        $start = \Carbon\Carbon::create($year, $month, 1)->startOfMonth();
+        $end   = $start->copy()->endOfMonth();
+
+        $txns = \App\Models\MilkWalletTransaction::where('user_subscription_id', $subscription->id)
+            ->whereYear('transaction_date', $year)
+            ->whereMonth('transaction_date', $month)
+            ->get()
+            ->keyBy(fn($t) => $t->transaction_date->format('Y-m-d'));
+
+        $deliveries = \App\Models\DeliveryLog::where('user_subscription_id', $subscription->id)
+            ->whereYear('delivery_date', $year)
+            ->whereMonth('delivery_date', $month)
+            ->get()
+            ->keyBy(fn($d) => $d->delivery_date->format('Y-m-d'));
+
+        // Build calendar grid
+        $days = [];
+        $cur  = $start->copy()->startOfWeek(\Carbon\Carbon::SUNDAY);
+        $gridEnd = $end->copy()->endOfWeek(\Carbon\Carbon::SUNDAY);
+
+        while ($cur->lte($gridEnd)) {
+            $key      = $cur->format('Y-m-d');
+            $inMonth  = $cur->month === $month;
+            $isToday  = $cur->isToday();
+            $txn      = $txns->get($key);
+            $delivery = $deliveries->get($key);
+
+            $days[] = [
+                'date'     => $key,
+                'day'      => $cur->day,
+                'inMonth'  => $inMonth,
+                'isToday'  => $isToday,
+                'txn'      => $txn ? [
+                    'type'   => $txn->type,
+                    'amount' => (float) $txn->amount,
+                    'litres' => (float) $txn->litres,
+                ] : null,
+                'delivery' => $delivery ? [
+                    'status' => $delivery->status,
+                    'qty'    => (float) $delivery->quantity_delivered,
+                ] : null,
+            ];
+            $cur->addDay();
+        }
+
+        return response()->json(['days' => $days]);
+    }
+
     /**
      * POST /wallet/initiate — first-time wallet creation (no plan required)
      * Collects: amount, milk_type, quantity_per_day, delivery_slot, location_id,

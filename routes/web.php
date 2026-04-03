@@ -119,6 +119,7 @@ Route::middleware('auth')->group(function () {
     // Wallet actions
     Route::prefix('wallet')->name('wallet.')->group(function () {
         Route::post('initiate',              [App\Http\Controllers\Member\WalletController::class, 'initiate'])->name('initiate');
+        Route::get('calendar',               [App\Http\Controllers\Member\WalletController::class, 'calendar'])->name('calendar');
         Route::patch('{subscription}/pause', [App\Http\Controllers\Member\WalletController::class, 'pause'])->name('pause');
         Route::patch('{subscription}/stop',  [App\Http\Controllers\Member\WalletController::class, 'stop'])->name('stop');
         Route::post('{subscription}/topup',  [App\Http\Controllers\Member\WalletController::class, 'topup'])->name('topup');

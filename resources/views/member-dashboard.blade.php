@@ -252,87 +252,31 @@
                     {{-- Wallet Calendar --}}
                     <div class="mb-5">
                         <div class="flex items-center justify-between mb-3">
-                            <h3 class="font-bold text-sm" style="color: var(--text);"><i class="fa-solid fa-calendar-days mr-2"
-                                    style="color: var(--green);"></i>Wallet Calendar</h3>
-                            <span class="text-sm font-semibold" style="color: var(--green);">{{ now()->format('F Y') }}</span>
+                            <h3 class="font-bold text-sm" style="color: var(--text);"><i class="fa-solid fa-calendar-days mr-2" style="color: var(--green);"></i>Wallet Calendar</h3>
+                            <div class="flex items-center gap-2">
+                                <button onclick="calPrev()" class="w-7 h-7 rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors" style="color:var(--muted);">
+                                    <i class="fa-solid fa-chevron-left text-xs"></i>
+                                </button>
+                                <span id="cal-month-label" class="text-sm font-semibold" style="color: var(--green);">{{ now()->format('F Y') }}</span>
+                                <button onclick="calNext()" id="cal-next-btn" class="w-7 h-7 rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors" style="color:var(--muted);">
+                                    <i class="fa-solid fa-chevron-right text-xs"></i>
+                                </button>
+                            </div>
                         </div>
                         <div class="grid grid-cols-7 gap-1 mb-2">
                             @foreach(['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as $d)
-                                <div class="text-center py-1.5 text-[10px] font-bold rounded"
-                                    style="background: rgba(47,74,30,0.05); color: var(--green);">{{ $d }}</div>
+                                <div class="text-center py-1.5 text-[10px] font-bold rounded" style="background: rgba(47,74,30,0.05); color: var(--green);">{{ $d }}</div>
                             @endforeach
                         </div>
-                        <div class="grid grid-cols-7 gap-1">
-                            @foreach($daysInCal as $calDate)
-                                @php
-                                    $isCurrentMonth = $calDate->month === $today->month;
-                                    $isToday = $calDate->isToday();
-                                    $dateKey = $calDate->format('Y-m-d');
-                                    $txn = $walletCalendarData->get($dateKey);
-                                    $delivery = $deliveryCalendarData->get($dateKey) ?? null;
-                                    $isFuture = $calDate->isFuture() && !$isToday;
-                                @endphp
-                                <div class="min-h-[72px] p-1.5 rounded-lg border-2 text-center transition-all {{ $isToday ? 'scale-105 shadow-md' : '' }}"
-                                    style="@if($isToday) background: linear-gradient(135deg,var(--green),#3d6b2e); border-color: var(--green);
-                                    @elseif($txn && $txn->type === 'debit') background:#fef3c7; border-color:#d97706;
-                                        @elseif($txn && $txn->type === 'credit') background:#dcfce7; border-color:#16a34a;
-                                        @elseif($delivery && $delivery->status === 'pending' && $isCurrentMonth) background:#eff6ff; border-color:#93c5fd;
-                                        @elseif($delivery && $delivery->status === 'skipped' && $isCurrentMonth) background:#f3f4f6; border-color:#d1d5db;
-                                        @else background:{{ $isCurrentMonth ? '#fff' : '#fafafa' }}; border-color:#e5e7eb; @endif">
-                                    <span class="text-xs font-bold block"
-                                        style="color: {{ $isToday ? '#fff' : ($isCurrentMonth ? '#1f2937' : '#9ca3af') }};">{{ $calDate->day }}</span>
-                                    @if($isCurrentMonth && $txn)
-                                        @if($txn->type === 'debit')
-                                            <i class="fa-solid fa-droplet text-[9px]" style="color:#d97706;"></i>
-                                            <p class="text-[9px] font-bold leading-tight" style="color:#92400e;">
-                                                {{ number_format($txn->litres, 1) }}L</p>
-                                            <p class="text-[8px] leading-tight" style="color:#b45309;">−₹{{ number_format($txn->amount, 0) }}
-                                            </p>
-                                        @else
-                                            <i class="fa-solid fa-plus text-[9px]" style="color:#16a34a;"></i>
-                                            <p class="text-[8px] font-bold leading-tight" style="color:#15803d;">
-                                                +₹{{ number_format($txn->amount, 0) }}</p>
-                                        @endif
-                                    @elseif($isCurrentMonth && $delivery)
-                                        @if($delivery->status === 'pending')
-                                            <i class="fa-solid fa-clock text-[9px]" style="color:#3b82f6;"></i>
-                                            <p class="text-[8px] leading-tight font-semibold" style="color:#1d4ed8;">
-                                                {{ number_format($delivery->quantity_delivered, 1) }}L</p>
-                                            <p class="text-[8px] leading-tight" style="color:#3b82f6;">Pending</p>
-                                        @elseif($delivery->status === 'skipped')
-                                            <i class="fa-solid fa-ban text-[9px]" style="color:#9ca3af;"></i>
-                                            <p class="text-[8px] leading-tight" style="color:#6b7280;">Skipped</p>
-                                        @elseif($delivery->status === 'failed')
-                                            <i class="fa-solid fa-circle-xmark text-[9px]" style="color:#ef4444;"></i>
-                                            <p class="text-[8px] leading-tight" style="color:#dc2626;">Failed</p>
-                                        @endif
-                                    @elseif($isCurrentMonth && $isToday)
-                                        <i class="fa-solid fa-star text-[9px] text-white"></i>
-                                    @endif
-                                </div>
-                            @endforeach
+                        <div id="cal-grid" class="grid grid-cols-7 gap-1">
+                            {{-- Rendered by JS --}}
                         </div>
                         <div class="mt-3 flex flex-wrap gap-3">
-                            <div class="flex items-center gap-1.5 text-xs">
-                                <div class="w-4 h-4 rounded border-2 border-yellow-500" style="background:#fef3c7;"></div><span
-                                    style="color:var(--muted);">Delivered (debit)</span>
-                            </div>
-                            <div class="flex items-center gap-1.5 text-xs">
-                                <div class="w-4 h-4 rounded border-2 border-green-600" style="background:#dcfce7;"></div><span
-                                    style="color:var(--muted);">Top-up (credit)</span>
-                            </div>
-                            <div class="flex items-center gap-1.5 text-xs">
-                                <div class="w-4 h-4 rounded border-2 border-blue-400" style="background:#eff6ff;"></div><span
-                                    style="color:var(--muted);">Pending delivery</span>
-                            </div>
-                            <div class="flex items-center gap-1.5 text-xs">
-                                <div class="w-4 h-4 rounded border-2 border-gray-300" style="background:#f3f4f6;"></div><span
-                                    style="color:var(--muted);">Skipped</span>
-                            </div>
-                            <div class="flex items-center gap-1.5 text-xs">
-                                <div class="w-4 h-4 rounded" style="background:var(--green);"></div><span
-                                    style="color:var(--muted);">Today</span>
-                            </div>
+                            <div class="flex items-center gap-1.5 text-xs"><div class="w-4 h-4 rounded border-2 border-yellow-500" style="background:#fef3c7;"></div><span style="color:var(--muted);">Delivered (debit)</span></div>
+                            <div class="flex items-center gap-1.5 text-xs"><div class="w-4 h-4 rounded border-2 border-green-600" style="background:#dcfce7;"></div><span style="color:var(--muted);">Top-up (credit)</span></div>
+                            <div class="flex items-center gap-1.5 text-xs"><div class="w-4 h-4 rounded border-2 border-blue-400" style="background:#eff6ff;"></div><span style="color:var(--muted);">Pending delivery</span></div>
+                            <div class="flex items-center gap-1.5 text-xs"><div class="w-4 h-4 rounded border-2 border-gray-300" style="background:#f3f4f6;"></div><span style="color:var(--muted);">Skipped</span></div>
+                            <div class="flex items-center gap-1.5 text-xs"><div class="w-4 h-4 rounded" style="background:var(--green);"></div><span style="color:var(--muted);">Today</span></div>
                         </div>
                     </div>
 
@@ -1254,6 +1198,102 @@
             el.classList.remove('hidden');
         }
 
+        // ── Wallet Calendar (multi-month) ────────────────────────────
+        @if($walletSubscription)
+        (function() {
+            const SUB_ID = {{ $walletSubscription->id }};
+            const CSRF   = '{{ csrf_token() }}';
+            let calYear  = {{ now()->year }};
+            let calMonth = {{ now()->month }};
+            const todayStr = '{{ now()->format('Y-m-d') }}';
+
+            function renderCal(days) {
+                const grid = document.getElementById('cal-grid');
+                if (!grid) return;
+                grid.innerHTML = days.map(d => {
+                    let bg = d.inMonth ? '#fff' : '#fafafa';
+                    let border = '#e5e7eb';
+                    let dayColor = d.inMonth ? '#1f2937' : '#9ca3af';
+                    let inner = '';
+
+                    if (d.isToday) {
+                        bg = 'linear-gradient(135deg,var(--green),#3d6b2e)';
+                        border = 'var(--green)';
+                        dayColor = '#fff';
+                        inner = '<i class="fa-solid fa-star text-[9px] text-white"></i>';
+                    } else if (d.txn && d.txn.type === 'debit') {
+                        bg = '#fef3c7'; border = '#d97706';
+                        inner = `<i class="fa-solid fa-droplet text-[9px]" style="color:#d97706;"></i>
+                                 <p class="text-[9px] font-bold leading-tight" style="color:#92400e;">${d.txn.litres.toFixed(1)}L</p>
+                                 <p class="text-[8px] leading-tight" style="color:#b45309;">−₹${Math.round(d.txn.amount)}</p>`;
+                    } else if (d.txn && d.txn.type === 'credit') {
+                        bg = '#dcfce7'; border = '#16a34a';
+                        inner = `<i class="fa-solid fa-plus text-[9px]" style="color:#16a34a;"></i>
+                                 <p class="text-[8px] font-bold leading-tight" style="color:#15803d;">+₹${Math.round(d.txn.amount)}</p>`;
+                    } else if (d.delivery && d.inMonth) {
+                        if (d.delivery.status === 'pending') {
+                            bg = '#eff6ff'; border = '#93c5fd';
+                            inner = `<i class="fa-solid fa-clock text-[9px]" style="color:#3b82f6;"></i>
+                                     <p class="text-[8px] leading-tight font-semibold" style="color:#1d4ed8;">${d.delivery.qty.toFixed(1)}L</p>
+                                     <p class="text-[8px] leading-tight" style="color:#3b82f6;">Pending</p>`;
+                        } else if (d.delivery.status === 'skipped') {
+                            bg = '#f3f4f6'; border = '#d1d5db';
+                            inner = `<i class="fa-solid fa-ban text-[9px]" style="color:#9ca3af;"></i>
+                                     <p class="text-[8px] leading-tight" style="color:#6b7280;">Skipped</p>`;
+                        } else if (d.delivery.status === 'failed') {
+                            inner = `<i class="fa-solid fa-circle-xmark text-[9px]" style="color:#ef4444;"></i>
+                                     <p class="text-[8px] leading-tight" style="color:#dc2626;">Failed</p>`;
+                        } else if (d.delivery.status === 'delivered') {
+                            bg = '#fef3c7'; border = '#d97706';
+                            inner = `<i class="fa-solid fa-droplet text-[9px]" style="color:#d97706;"></i>
+                                     <p class="text-[9px] font-bold leading-tight" style="color:#92400e;">${d.delivery.qty.toFixed(1)}L</p>`;
+                        }
+                    }
+
+                    const bgStyle = bg.startsWith('linear') ? `background:${bg}` : `background:${bg}`;
+                    const scale   = d.isToday ? 'transform:scale(1.05); box-shadow:0 4px 6px rgba(0,0,0,0.1);' : '';
+                    return `<div class="min-h-[72px] p-1.5 rounded-lg border-2 text-center transition-all"
+                                 style="${bgStyle}; border-color:${border}; ${scale}">
+                                <span class="text-xs font-bold block" style="color:${dayColor};">${d.day}</span>
+                                ${inner}
+                            </div>`;
+                }).join('');
+            }
+
+            function loadCal() {
+                const label = document.getElementById('cal-month-label');
+                const nextBtn = document.getElementById('cal-next-btn');
+                const now = new Date();
+                // Disable next if already at current month
+                if (nextBtn) nextBtn.style.opacity = (calYear > now.getFullYear() || (calYear === now.getFullYear() && calMonth >= now.getMonth() + 1)) ? '0.3' : '1';
+                const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+                if (label) label.textContent = monthNames[calMonth - 1] + ' ' + calYear;
+
+                fetch(`/wallet/calendar?subscription_id=${SUB_ID}&year=${calYear}&month=${calMonth}`, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': CSRF }
+                })
+                .then(r => r.json())
+                .then(data => renderCal(data.days))
+                .catch(() => {});
+            }
+
+            window.calPrev = function() {
+                calMonth--;
+                if (calMonth < 1) { calMonth = 12; calYear--; }
+                loadCal();
+            };
+            window.calNext = function() {
+                const now = new Date();
+                if (calYear > now.getFullYear() || (calYear === now.getFullYear() && calMonth >= now.getMonth() + 1)) return;
+                calMonth++;
+                if (calMonth > 12) { calMonth = 1; calYear++; }
+                loadCal();
+            };
+
+            loadCal();
+        })();
+        @endif
+
         // ── Wallet top-up modal ───────────────────────────────────────
         function openTopupModal(subscriptionId) {
             document.getElementById('topupSubId').value = subscriptionId;
@@ -1321,7 +1361,7 @@
     <div id="topupModal" class="fixed inset-0 bg-black bg-opacity-60 z-50 hidden items-center justify-center p-4"
         style="backdrop-filter: blur(6px);">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 relative" onclick="event.stopPropagation()">
-            <button onclick="closeTopupModal()" class="absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-100">
+            <button onclick="closeTopupModal()" class="absolute top-4 right-4 z-10 w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-100">
                 <i class="fa-solid fa-times text-sm" style="color: var(--muted);"></i>
             </button>
             <div class="flex items-center gap-3 mb-5">

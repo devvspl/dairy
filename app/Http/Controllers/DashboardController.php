@@ -127,7 +127,14 @@ class DashboardController extends Controller
         $search = $request->get('search', '');
 
         $query = DeliveryLog::with(['subscription.user', 'subscription.membershipPlan'])
-            ->whereHas('subscription', fn($q) => $q->where('location_id', $location->id))
+            ->whereHas('subscription', fn($q) => $q
+                ->where('location_id', $location->id)
+                ->where(function($q2) use ($date) {
+                    // Only show active deliveries — exclude paused/stopped on the requested date
+                    $q2->where('delivery_status', 'active')
+                       ->orWhere('start_date', '>', $date); // not yet started
+                })
+            )
             ->whereDate('delivery_date', $date)
             ->orderBy('status');
 
@@ -144,7 +151,10 @@ class DashboardController extends Controller
 
         $deliveries = $query->paginate(50)->withQueryString();
 
-        $statsBase = DeliveryLog::whereHas('subscription', fn($q) => $q->where('location_id', $location->id))
+        $statsBase = DeliveryLog::whereHas('subscription', fn($q) => $q
+                ->where('location_id', $location->id)
+                ->where('delivery_status', 'active')
+            )
             ->whereDate('delivery_date', $date);
 
         $stats = [

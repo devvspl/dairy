@@ -209,11 +209,12 @@ class DeliveryLogController extends Controller
         $search     = $request->get('search', '');
 
         $query = DeliveryLog::with([
-                'subscription' => fn($q) => $q->select('id','user_id','membership_plan_id','location_id','delivery_address')
+                'subscription' => fn($q) => $q->select('id','user_id','membership_plan_id','location_id','delivery_address','milk_type','quantity_per_day','delivery_slot','price_per_litre','wallet_balance','wallet_total','delivery_status')
                     ->with(['user:id,name,phone', 'membershipPlan:id,name', 'location:id,name']),
                 'markedBy:id,name',
             ])
             ->whereHas('subscription.user')
+            ->whereHas('subscription', fn($q) => $q->where('delivery_status', 'active'))
             ->whereDate('delivery_date', '>=', $dateFrom)
             ->whereDate('delivery_date', '<=', $dateTo)
             ->orderBy('delivery_date', 'desc')
@@ -236,6 +237,7 @@ class DeliveryLogController extends Controller
 
         // Stats for selected date range (optionally filtered by location)
         $statsBase = DeliveryLog::whereHas('subscription.user')
+            ->whereHas('subscription', fn($q) => $q->where('delivery_status', 'active'))
             ->whereDate('delivery_date', '>=', $dateFrom)
             ->whereDate('delivery_date', '<=', $dateTo);
         if ($locationId) {

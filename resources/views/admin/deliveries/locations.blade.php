@@ -68,6 +68,12 @@
                     <option value="failed"    {{ request('status') === 'failed'    ? 'selected' : '' }}>Failed</option>
                 </select>
             </div>
+            <div class="flex items-end">
+                <label class="flex items-center gap-2 cursor-pointer pb-2">
+                    <input type="checkbox" name="include_paused" value="1" {{ request('include_paused') ? 'checked' : '' }} class="rounded">
+                    <span class="text-xs font-medium" style="color:var(--muted);">Include Paused</span>
+                </label>
+            </div>
             <div>
                 <label class="block text-xs font-medium mb-1" style="color: var(--muted);">Search</label>
                 <input type="text" name="search" value="{{ request('search') }}" placeholder="Name / phone..."
