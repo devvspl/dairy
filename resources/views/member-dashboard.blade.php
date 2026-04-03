@@ -317,7 +317,7 @@
                     </div>
 
                     {{-- Wallet Calendar --}}
-                    <div class="mb-5">
+                    <div class="mb-5 mt-3">
                         <div class="flex items-center justify-between mb-3">
                             <h3 class="font-bold text-sm" style="color: var(--text);"><i class="fa-solid fa-calendar-days mr-2" style="color: var(--green);"></i>Wallet Calendar</h3>
                             <div class="flex items-center gap-2">
@@ -1486,7 +1486,8 @@
 
         function wiSetQty(val) {
             wiQty = val;
-            document.getElementById('wi-qty-input').value = wiQty;
+            const inp = document.getElementById('wi-qty-input');
+            if (inp) inp.value = wiQty;
             document.querySelectorAll('.wi-qty-btn').forEach(b => {
                 const active = parseInt(b.dataset.qty) === wiQty;
                 b.style.background  = active ? 'var(--green)' : '';
@@ -1640,7 +1641,7 @@
             document.getElementById('walletInitForm').submit();
         }
 
-        wiSetQty(1);
+        if (document.getElementById('wi-qty-input')) wiSetQty(1);
     </script>
 
 @endsection
