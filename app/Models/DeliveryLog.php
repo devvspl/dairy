@@ -84,11 +84,11 @@ class DeliveryLog extends Model
             ->value('delivery_date');
 
         if ($lastDate) {
+            // Extending existing schedule — start after last entry
             $start = \Carbon\Carbon::parse($lastDate)->addDay();
         } else {
-            $start = $subscription->start_date->isFuture()
-                ? $subscription->start_date->copy()
-                : now()->addDay()->startOfDay();
+            // First time — always use the user's chosen start_date exactly
+            $start = $subscription->start_date->copy()->startOfDay();
         }
 
         $end = $start->copy()->addDays($netNew - 1);
