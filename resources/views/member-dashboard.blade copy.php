@@ -198,7 +198,7 @@
                                         <i class="fa-solid fa-wallet text-sm" style="color: var(--green);"></i>
                                         <span class="text-sm font-medium" style="color: var(--text);">Milk Wallet</span>
                                         <span class="text-[11px] font-medium px-2 py-0.5 rounded-full"
-                                            style="background: rgba(47,74,30,0.1); color: var(--green);">{{ $wPlan->name }}</span>
+                                            style="background: rgba(47,74,30,0.1); color: var(--green);">{{ $wPlan->name ?? 'Milk Plan' }}</span>
                                         {{-- Dynamic status badge --}}
                                         <span class="text-[11px] font-medium px-2 py-0.5 rounded-full"
                                             style="
