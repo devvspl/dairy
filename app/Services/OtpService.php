@@ -33,14 +33,14 @@ class OtpService
     /**
      * Send OTP to mobile number
      */
-    public function sendOtp(string $mobile, string $otp): array
+    public function sendOtp(string $mobile, string $otp, int $validMinutes = 10): array
     {
         if (!$this->isConfigured()) {
             Log::info('OTP (Dev Mode)', ['mobile' => $mobile, 'otp' => $otp]);
             return ['success' => true, 'message' => 'OTP sent (Development Mode)', 'otp' => $otp];
         }
 
-        $message = "Your OTP is {$otp}. Valid for 10 minutes. Do not share with anyone.";
+        $message = "NULAC Login OTP is {$otp}. Valid for {$validMinutes} minutes.";
 
         try {
             $response = Http::get('http://nimbusit.biz/api/SmsApi/SendSingleApi', [
@@ -52,13 +52,9 @@ class OtpService
                 'EntityID'   => $this->entityId,
                 'TemplateID' => $this->templateId,
             ]);
-
             $body = $response->json();
-
             Log::info('NimbusIT SMS Response', ['mobile' => $mobile, 'response' => $body]);
-
             $success = isset($body['Status']) && $body['Status'] === 'OK';
-
             return [
                 'success' => $success,
                 'message' => $success
