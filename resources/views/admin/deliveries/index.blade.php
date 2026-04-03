@@ -20,8 +20,11 @@
         <div class="flex items-center justify-between flex-wrap gap-3">
             <div>
                 <h3 class="font-bold text-lg" style="color: var(--text);">{{ $subscription->user->name }}</h3>
-                <p class="text-sm" style="color: var(--muted);">{{ $subscription->membershipPlan->name }} — {{ $subscription->start_date->format('M d, Y') }} to {{ $subscription->end_date->format('M d, Y') }}</p>
-                @if($subscription->membershipPlan->isOnDemand())
+                <p class="text-sm" style="color: var(--muted);">
+                    {{ $subscription->membershipPlan?->name ?? 'Milk Wallet' }} —
+                    {{ $subscription->start_date->format('M d, Y') }} to {{ $subscription->end_date->format('M d, Y') }}
+                </p>
+                @if(!$subscription->membership_plan_id || $subscription->membershipPlan?->isOnDemand())
                 <div class="flex items-center gap-3 mt-2 flex-wrap">
                     <span class="px-2 py-0.5 text-xs rounded-full font-semibold bg-blue-100 text-blue-800">🛒 On-Demand / Wallet</span>
                     <span class="text-sm" style="color: var(--muted);">Qty/day: <strong style="color:var(--text);">{{ $subscription->quantity_per_day }} L</strong></span>
