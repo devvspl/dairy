@@ -12,9 +12,9 @@ class UserSubscription extends Model
         'start_date', 'end_date', 'status',
         'payment_method', 'payment_status', 'delivery_address',
         'amount_paid', 'transaction_id', 'notes',
-        // wallet fields (on-demand plans)
         'wallet_total', 'wallet_balance', 'price_per_litre',
         'milk_type', 'quantity_per_day', 'delivery_slot',
+        'delivery_status',
     ];
 
     protected $casts = [
@@ -25,6 +25,7 @@ class UserSubscription extends Model
         'wallet_balance'   => 'decimal:2',
         'price_per_litre'  => 'decimal:2',
         'quantity_per_day' => 'decimal:2',
+        'delivery_status'  => 'string',
     ];
 
     /**
@@ -143,6 +144,8 @@ class UserSubscription extends Model
 
     public function isOnDemand(): bool
     {
+        // Wallet-only subscriptions (no plan) are always on-demand
+        if (!$this->membership_plan_id) return true;
         return $this->membershipPlan && $this->membershipPlan->isOnDemand();
     }
 

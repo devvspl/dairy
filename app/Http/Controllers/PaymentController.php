@@ -201,7 +201,11 @@ class PaymentController extends Controller
                         'paid_at'        => now(),
                     ]);
 
-                    $this->activateMembership($order);
+                    if ($order->isWalletTopup()) {
+                        $this->processWalletTopup($order);
+                    } else {
+                        $this->activateMembership($order);
+                    }
                     DB::commit();
 
                     return redirect()->route('payment.success', ['order' => $order->id]);
@@ -225,6 +229,100 @@ class PaymentController extends Controller
         }
     }
 
+
+    /**
+     * Process wallet top-up after successful payment
+     */
+    private function processWalletTopup(Order $order): void
+    {
+        $user = $order->user;
+
+        // ── First-time wallet creation (no subscription yet) ──────────
+        if (!$order->user_subscription_id) {
+            $milkType        = session('wallet_init_milk_type_'        . $order->id);
+            $qtyPerDay       = session('wallet_init_qty_'              . $order->id);
+            $slot            = session('wallet_init_slot_'             . $order->id);
+            $locationId      = session('wallet_init_location_id_'      . $order->id);
+            $deliveryAddress = session('wallet_init_delivery_address_' . $order->id);
+            $startDate       = session('wallet_init_start_date_'       . $order->id);
+            $pricePerLitre   = session('wallet_init_price_per_litre_'  . $order->id);
+
+            // Fallback: look up from milk_prices if session expired
+            if (!$pricePerLitre && $milkType) {
+                $mp = \App\Models\MilkPrice::forType($milkType);
+                $pricePerLitre = $mp ? (float) $mp->price_per_litre : null;
+            }
+
+            $start = $startDate ? \Carbon\Carbon::parse($startDate) : now();
+            // Open-ended: 10 years — admin controls actual delivery via DeliveryLog
+            $end   = $start->copy()->addYears(10);
+
+            $subscription = UserSubscription::create([
+                'user_id'            => $user->id,
+                'membership_plan_id' => null,
+                'location_id'        => $locationId,
+                'start_date'         => $start,
+                'end_date'           => $end,
+                'status'             => 'active',
+                'delivery_status'    => 'active',
+                'payment_method'     => 'phonepe',
+                'payment_status'     => 'paid',
+                'delivery_address'   => $deliveryAddress,
+                'amount_paid'        => $order->amount,
+                'transaction_id'     => $order->transaction_id,
+                'wallet_total'       => (float) $order->amount,
+                'wallet_balance'     => (float) $order->amount,
+                'price_per_litre'    => $pricePerLitre,
+                'milk_type'          => $milkType,
+                'quantity_per_day'   => $qtyPerDay,
+                'delivery_slot'      => $slot,
+                'notes'              => 'Wallet created via PhonePe | Order: ' . $order->order_id,
+            ]);
+
+            // Link order to subscription
+            $order->update(['user_subscription_id' => $subscription->id]);
+
+            // Record initial credit transaction
+            MilkWalletTransaction::create([
+                'user_id'              => $user->id,
+                'user_subscription_id' => $subscription->id,
+                'type'                 => 'credit',
+                'amount'               => (float) $order->amount,
+                'balance_after'        => (float) $order->amount,
+                'description'          => 'Wallet opened | Order: ' . $order->order_id,
+                'transaction_date'     => now()->toDateString(),
+            ]);
+
+            // Clear session
+            session()->forget([
+                'wallet_init_milk_type_'        . $order->id,
+                'wallet_init_qty_'              . $order->id,
+                'wallet_init_slot_'             . $order->id,
+                'wallet_init_location_id_'      . $order->id,
+                'wallet_init_delivery_address_' . $order->id,
+                'wallet_init_start_date_'       . $order->id,
+                'wallet_init_price_per_litre_'  . $order->id,
+            ]);
+
+            Log::info('Wallet Created', ['user_id' => $user->id, 'subscription_id' => $subscription->id]);
+            return;
+        }
+
+        // ── Top-up existing wallet ────────────────────────────────────
+        $subscription = $order->subscription;
+        if (!$subscription) return;
+
+        $subscription->creditWallet(
+            (float) $order->amount,
+            'Wallet top-up | Order: ' . $order->order_id
+        );
+
+        Log::info('Wallet Top-up Processed', [
+            'user_id'         => $order->user_id,
+            'subscription_id' => $subscription->id,
+            'amount'          => $order->amount,
+        ]);
+    }
 
     /**
      * Activate membership after successful payment
@@ -252,17 +350,22 @@ class PaymentController extends Controller
         if ($quantityPerDay) $notes .= ' | Qty/day: ' . $quantityPerDay . 'L';
         if ($deliverySlot)   $notes .= ' | Slot: ' . $deliverySlot;
 
-        // For on-demand plans: calculate price per litre from plan price / duration_days / qty_per_day
+        // For on-demand plans: use price_per_litre from milk_prices table
         $walletTotal    = null;
         $walletBalance  = null;
         $pricePerLitre  = null;
         if ($plan->isOnDemand()) {
             $walletTotal   = (float) $order->amount;
             $walletBalance = (float) $order->amount;
-            // price per litre = total / (duration_days * qty_per_day)
-            $qtyPerDay     = (float) ($quantityPerDay ?: 1);
-            $totalLitres   = $plan->duration_days * $qtyPerDay;
-            $pricePerLitre = $totalLitres > 0 ? round($walletTotal / $totalLitres, 2) : null;
+            // Look up price per litre from milk_prices config table
+            $milkPriceRow  = $milkType ? \App\Models\MilkPrice::forType($milkType) : null;
+            $pricePerLitre = $milkPriceRow ? (float) $milkPriceRow->price_per_litre : null;
+            // Fallback: derive from plan price if no config found
+            if (!$pricePerLitre) {
+                $qtyPerDay     = (float) ($quantityPerDay ?: 1);
+                $totalLitres   = $plan->duration_days * $qtyPerDay;
+                $pricePerLitre = $totalLitres > 0 ? round($walletTotal / $totalLitres, 2) : null;
+            }
         }
 
         // Check if user already has an on-demand subscription for this plan (top-up scenario)
@@ -420,6 +523,18 @@ class PaymentController extends Controller
     // =========================================================
     // Product Cart Payment
     // =========================================================
+
+    /**
+     * Get price per litre for a milk type (AJAX)
+     */
+    public function milkPrice(Request $request)
+    {
+        $price = \App\Models\MilkPrice::forType($request->milk_type);
+        return response()->json([
+            'price_per_litre' => $price ? (float) $price->price_per_litre : null,
+            'label'           => $price ? $price->label : null,
+        ]);
+    }
 
     /**
      * Validate and apply a coupon to a membership/milk order (AJAX)

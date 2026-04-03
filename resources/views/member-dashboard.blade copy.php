@@ -67,6 +67,10 @@
         {{-- Tab Navigation --}}
         <div class="bg-white rounded-xl shadow-sm border overflow-hidden" style="border-color: var(--border);">
             <div class="flex border-b" style="border-color: var(--border);">
+                <button onclick="switchTab('packs')" id="tab-packs"
+                    class="tab-btn flex-1 py-3.5 text-sm font-semibold transition-all flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-cart-shopping"></i><span>Milk Packs</span>
+                </button>
                 <button onclick="switchTab('wallet')" id="tab-wallet"
                     class="tab-btn flex-1 py-3.5 text-sm font-semibold transition-all flex items-center justify-center gap-2">
                     <i class="fa-solid fa-wallet"></i><span>Wallet</span>
@@ -74,10 +78,94 @@
                         <span class="w-2 h-2 rounded-full" style="background: var(--green);"></span>
                     @endif
                 </button>
+                {{-- Active Plan tab hidden --}}
                 <button onclick="switchTab('history')" id="tab-history"
                     class="tab-btn flex-1 py-3.5 text-sm font-semibold transition-all flex items-center justify-center gap-2">
                     <i class="fa-solid fa-receipt"></i><span>History</span>
                 </button>
+            </div>
+
+            {{-- ===== TAB: MILK PACKS ===== --}}
+            <div id="panel-packs" class="tab-panel p-4 lg:p-6">
+                <div class="mb-4">
+                    <h2 class="text-base font-bold" style="color: var(--text);">On-Demand Milk Packs</h2>
+                    <p class="text-xs mt-0.5" style="color: var(--muted);">Buy milk for any number of days — no fixed
+                        schedule, no commitment</p>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    @forelse($onDemandPlans as $plan)
+                        @php
+                            $sub = $onDemandSubscriptions->get($plan->id);
+                            $isActive = $sub && $sub->status === 'active' && $sub->end_date >= now();
+                            $isPending = $sub && $sub->status === 'pending';
+                            $isExpired = $sub && !$isActive && !$isPending && in_array($sub->status, ['expired', 'cancelled']);
+                        @endphp
+                        <div class="border rounded-xl p-4 relative flex flex-col transition-all hover:shadow-lg" style="border-color: {{ $isActive ? 'var(--green)' : ($plan->is_featured ? '#f1cc24' : 'var(--border)') }};
+                                    background: {{ $isActive ? 'linear-gradient(135deg,#f0fdf4,#fff)' : '#fff' }};">
+                            @if($plan->badge)
+                                <div class="absolute -top-3 left-4">
+                                    <span class="px-2 py-0.5 text-xs rounded-full font-bold shadow"
+                                        style="background: {{ $isActive ? 'var(--green)' : '#f1cc24' }}; color: {{ $isActive ? '#fff' : '#1f2a1a' }};">
+                                        {{ $isActive ? 'Active' : $plan->badge }}
+                                    </span>
+                                </div>
+                            @endif
+                            <div class="text-center mt-2 mb-3">
+                                @if($plan->icon)<i class="fas {{ $plan->icon }} text-2xl mb-1"
+                                style="color: {{ $isActive ? 'var(--green)' : 'var(--muted)' }};"></i>@endif
+                                <h3 class="font-bold text-sm" style="color: var(--text);">{{ $plan->name }}</h3>
+                                <p class="text-xs mt-1" style="color: var(--muted);">{{ Str::limit($plan->description, 55) }}
+                                </p>
+                            </div>
+                            <div class="text-center mb-3">
+                                <span class="text-2xl font-bold"
+                                    style="color: var(--green);">₹{{ number_format($plan->price, 0) }}</span>
+                                <span class="text-xs" style="color: var(--muted);"> / {{ $plan->duration_label }}</span>
+                            </div>
+                            @if($plan->features && count($plan->features) > 0)
+                                <ul class="space-y-1 mb-3 flex-1">
+                                    @foreach(array_slice($plan->features, 0, 3) as $feature)
+                                        <li class="flex items-start text-xs gap-1.5">
+                                            <i class="fa-solid fa-check mt-0.5 flex-shrink-0" style="color: var(--green);"></i>
+                                            <span style="color: var(--text);">{{ $feature }}</span>
+                                        </li>
+                                    @endforeach
+                                </ul>
+                            @endif
+                            @if($isActive)
+                                <div class="rounded-lg p-2 mb-3 text-center text-xs font-semibold"
+                                    style="background: rgba(47,74,30,0.08); color: var(--green);">
+                                    <i class="fa-solid fa-circle-check mr-1"></i>Active · expires
+                                    {{ $sub->end_date->format('d M Y') }}
+                                    <div class="text-xs font-normal mt-0.5" style="color: var(--muted);">{{ $sub->daysRemaining() }}
+                                        days remaining</div>
+                                </div>
+                            @elseif($isPending)
+                                <div class="rounded-lg p-2 mb-3 text-center text-xs font-semibold bg-yellow-50 text-yellow-700">
+                                    <i class="fa-solid fa-clock mr-1"></i>Payment Pending
+                                </div>
+                            @elseif($isExpired)
+                                <div class="rounded-lg p-2 mb-3 text-center text-xs font-semibold bg-gray-100 text-gray-500">
+                                    <i class="fa-solid fa-rotate-right mr-1"></i>Expired · Renew?
+                                </div>
+                            @endif
+                            <button
+                                onclick="buyPlan({{ $plan->id }}, '{{ addslashes($plan->name) }}', {{ $plan->price }}, '{{ $plan->duration_label }}')"
+                                class="w-full py-2 rounded-lg font-bold text-xs transition-all hover:shadow-md mt-auto"
+                                style="background: {{ $isActive ? '#e5e7eb' : 'var(--green)' }}; color: {{ $isActive ? '#6b7280' : '#fff' }};">
+                                @if($isActive)<i class="fa-solid fa-plus mr-1"></i>Buy Again
+                                @elseif($isExpired)<i class="fa-solid fa-rotate-right mr-1"></i>Renew
+                                @else<i class="fa-solid fa-shopping-cart mr-1"></i>Buy Now
+                                @endif
+                            </button>
+                        </div>
+                    @empty
+                        <div class="col-span-4 text-center py-12">
+                            <i class="fa-solid fa-box-open text-4xl mb-3" style="color: var(--muted);"></i>
+                            <p style="color: var(--muted);">No on-demand plans available.</p>
+                        </div>
+                    @endforelse
+                </div>
             </div>
 
             {{-- ===== TAB: WALLET ===== --}}
@@ -180,7 +268,7 @@
                             style="border-top: 0.5px solid var(--border); border-color: var(--border);">
 
                             {{-- Top up --}}
-                            <button onclick="openTopupModal({{ $ws->id }})"
+                            <button onclick="/* your top-up handler */"
                                 class="flex items-center justify-center gap-1.5 py-3 text-xs font-medium transition-colors hover:bg-black/5 active:bg-black/10"
                                 style="color: var(--muted); background: transparent; border: none; cursor: pointer;">
                                 <i class="fa-solid fa-arrow-up text-xs"></i>
@@ -364,227 +452,184 @@
                     </div>
 
                 @else
-                    {{-- ===== FIRST TIME: Add Money to Wallet ===== --}}
-                    @php $milkPriceMap = $milkPrices->keyBy('milk_type'); @endphp
-                    <div class="max-w-lg mx-auto py-4">
-
-                        {{-- Header --}}
-                        <div class="text-center mb-5">
-                            <div class="w-14 h-14 rounded-full mx-auto mb-3 flex items-center justify-center" style="background:rgba(47,74,30,0.08);">
-                                <i class="fa-solid fa-wallet text-xl" style="color:var(--green);"></i>
-                            </div>
-                            <h3 class="text-base font-bold" style="color:var(--text);">Set Up Your Milk Wallet</h3>
-                            <p class="text-xs mt-1" style="color:var(--muted);">Add money once — we deliver daily and deduct automatically</p>
+                    <div class="text-center py-16">
+                        <div class="w-20 h-20 rounded-full mx-auto mb-4 flex items-center justify-center"
+                            style="background: rgba(47,74,30,0.08);">
+                            <i class="fa-solid fa-wallet text-3xl" style="color: var(--muted);"></i>
                         </div>
+                        <h3 class="text-lg font-bold mb-2" style="color: var(--text);">No Active Wallet</h3>
+                        <p class="text-sm mb-5" style="color: var(--muted);">Buy an on-demand milk pack to activate your milk
+                            wallet.</p>
+                        <button onclick="switchTab('packs')"
+                            class="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-sm transition-all hover:shadow-lg"
+                            style="background: var(--green); color: #fff;">
+                            <i class="fa-solid fa-cart-shopping"></i>Browse Milk Packs
+                        </button>
+                    </div>
+                @endif
+            </div>
 
-                        {{-- Step dots --}}
-                        <div class="flex items-center justify-center mb-5">
-                            @foreach(['Milk & Qty','Address','Add Money'] as $si => $sl)
-                            <div class="flex items-center">
-                                <div id="wi-dot-{{ $si+1 }}" class="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold transition-all"
-                                    style="{{ $si===0 ? 'background:var(--green);color:#fff;' : 'background:#e5e7eb;color:#9ca3af;' }}">{{ $si+1 }}</div>
-                                <span id="wi-lbl-{{ $si+1 }}" class="text-[10px] font-semibold ml-1 hidden sm:block"
-                                    style="{{ $si===0 ? 'color:var(--green);' : 'color:var(--muted);' }}">{{ $sl }}</span>
-                                @if($si < 2)<div class="w-6 h-px mx-2" style="background:#e5e7eb;"></div>@endif
+            {{-- ===== TAB: ACTIVE PLAN (hidden) ===== --}}
+            <div id="panel-plan" class="tab-panel p-4 lg:p-6 hidden">
+                @if($hasScheduled && $activeSubscription)
+                    <div class="rounded-2xl p-5 mb-5 border-2"
+                        style="border-color: var(--green); background: linear-gradient(135deg,#f0fdf4,#fff);">
+                        <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
+                            <div>
+                                <div class="flex flex-wrap items-center gap-2 mb-1">
+                                    <h2 class="text-lg font-bold" style="color: var(--text);">{{ $activePlan->name }}</h2>
+                                    @if($activePlan->badge)<span class="px-2 py-0.5 text-xs rounded-full font-bold"
+                                    style="background: #f1cc24; color: #1f2a1a;">{{ $activePlan->badge }}</span>@endif
+                                    <span class="px-2 py-0.5 text-xs rounded-full font-bold"
+                                        style="background: rgba(47,74,30,0.1); color: var(--green);">{{ ucfirst($activeSubscription->status) }}</span>
+                                </div>
+                                <p class="text-sm" style="color: var(--muted);">{{ $activePlan->description }}</p>
+                                <p class="text-xs mt-1" style="color: var(--muted);">Valid until
+                                    <strong>{{ $activeSubscription->end_date->format('M d, Y') }}</strong> ·
+                                    {{ $activeSubscription->daysRemaining() }} days remaining</p>
+                                @if($activeSubscription->location)
+                                    <p class="text-xs mt-1 flex items-center gap-1" style="color: var(--green);">
+                                        <i class="fa-solid fa-map-marker-alt"></i>
+                                        <strong>{{ $activeSubscription->location->name }}</strong>
+                                        @if($activeSubscription->location->area || $activeSubscription->location->city)
+                                            <span
+                                                style="color: var(--muted);">({{ collect([$activeSubscription->location->area, $activeSubscription->location->city])->filter()->implode(', ') }})</span>
+                                        @endif
+                                    </p>
+                                @endif
                             </div>
-                            @endforeach
+                            <div class="text-right flex-shrink-0">
+                                <p class="text-3xl font-bold" style="color: var(--green);">
+                                    ₹{{ number_format($activePlan->price, 0) }}</p>
+                                <p class="text-xs" style="color: var(--muted);">per {{ $activePlan->duration_label }}</p>
+                            </div>
                         </div>
-
-                        <form method="POST" action="{{ route('wallet.initiate') }}" id="walletInitForm">
-                            @csrf
-
-                            {{-- ── STEP 1: Milk + Qty + Slot + Date ── --}}
-                            <div id="wi-step-1" class="space-y-4">
-                            <div>
-                                <label class="block text-xs font-semibold mb-2" style="color:var(--text);"><i class="fa-solid fa-cow mr-1" style="color:var(--green);"></i>Milk Type</label>
-                                <div class="grid grid-cols-2 gap-2">
-                                    @foreach($milkPrices as $mp)
-                                    @php $icons=['cow'=>'fa-cow','buffalo'=>'fa-hippo','toned'=>'fa-droplet','full_fat'=>'fa-bottle-water']; @endphp
-                                    <label class="wi-milk-card flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all hover:border-green-400" style="border-color:var(--border);">
-                                        <input type="radio" name="milk_type" value="{{ $mp->milk_type }}"
-                                            class="hidden wi-milk-radio" data-ppl="{{ $mp->price_per_litre }}"
-                                            {{ $loop->first ? 'checked' : '' }}>
-                                        <div class="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style="background:rgba(47,74,30,0.08);">
-                                            <i class="fas {{ $icons[$mp->milk_type] ?? 'fa-droplet' }} text-sm" style="color:var(--green);"></i>
-                                        </div>
-                                        <div>
-                                            <p class="text-xs font-bold leading-tight" style="color:var(--text);">{{ $mp->label }}</p>
-                                            <p class="text-[10px] font-semibold" style="color:var(--green);">₹{{ number_format($mp->price_per_litre,2) }}/L</p>
-                                        </div>
-                                    </label>
-                                    @endforeach
-                                </div>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                            <div class="bg-white rounded-xl p-3 border text-center" style="border-color: var(--border);">
+                                <p class="text-2xl font-bold" style="color: var(--green);">
+                                    {{ $activeSubscription->deliveredCount() }}</p>
+                                <p class="text-xs mt-0.5" style="color: var(--muted);">Deliveries Done</p>
                             </div>
-
-                            {{-- Quantity per day — whole numbers only --}}
-                            <div>
-                                <label class="block text-xs font-semibold mb-2" style="color:var(--text);"><i class="fa-solid fa-scale-balanced mr-1" style="color:var(--green);"></i>Quantity per Day</label>
-                                <div class="grid grid-cols-5 gap-2">
-                                    @foreach([1,2,3,5,8] as $q)
-                                    <button type="button" onclick="wiSetQty({{ $q }})"
-                                        class="wi-qty-btn py-3 rounded-xl text-sm font-bold border-2 transition-all"
-                                        data-qty="{{ $q }}"
-                                        style="border-color:var(--border);color:var(--muted);">{{ $q }}L</button>
-                                    @endforeach
-                                </div>
-                                <input type="hidden" name="quantity_per_day" id="wi-qty-input" value="1">
+                            <div class="bg-white rounded-xl p-3 border text-center" style="border-color: var(--border);">
+                                <p class="text-2xl font-bold" style="color: var(--green);">
+                                    {{ $activeSubscription->totalQuantityDelivered() }}L</p>
+                                <p class="text-xs mt-0.5" style="color: var(--muted);">Total Milk</p>
                             </div>
-
-                            {{-- Delivery slot — Morning & Evening only --}}
-                            <div>
-                                <label class="block text-xs font-semibold mb-2" style="color:var(--text);"><i class="fa-solid fa-clock mr-1" style="color:var(--green);"></i>Delivery Slot</label>
-                                <div class="grid grid-cols-2 gap-3">
-                                    @foreach([['value'=>'morning','label'=>'Morning','time'=>'5–8 AM','icon'=>'fa-sun'],['value'=>'evening','label'=>'Evening','time'=>'5–8 PM','icon'=>'fa-moon']] as $slot)
-                                    <label class="wi-slot-card flex flex-col items-center gap-1.5 p-4 rounded-xl border-2 cursor-pointer transition-all hover:border-green-400 text-center" style="border-color:var(--border);">
-                                        <input type="radio" name="delivery_slot" value="{{ $slot['value'] }}" class="hidden wi-slot-radio" {{ $loop->first ? 'checked' : '' }}>
-                                        <i class="fas {{ $slot['icon'] }} text-xl" style="color:var(--muted);"></i>
-                                        <p class="text-sm font-bold" style="color:var(--text);">{{ $slot['label'] }}</p>
-                                        <p class="text-[10px]" style="color:var(--muted);">{{ $slot['time'] }}</p>
-                                    </label>
-                                    @endforeach
-                                </div>
+                            <div class="bg-white rounded-xl p-3 border text-center" style="border-color: var(--border);">
+                                <p class="text-2xl font-bold" style="color: var(--green);">
+                                    {{ $activePlan->getDayQuantity($currentDay) }}L</p>
+                                <p class="text-xs mt-0.5" style="color: var(--muted);">Today's Qty</p>
                             </div>
-
-                            {{-- Start date --}}
-                            <div>
-                                <label class="block text-xs font-semibold mb-1.5" style="color:var(--text);"><i class="fa-solid fa-calendar-day mr-1" style="color:var(--green);"></i>Start Date</label>
-                                <input type="date" name="start_date" required
-                                    min="{{ now()->format('Y-m-d') }}" max="{{ now()->addDays(30)->format('Y-m-d') }}"
-                                    value="{{ now()->addDay()->format('Y-m-d') }}"
-                                    class="w-full px-3 py-2.5 text-sm border-2 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                                    style="border-color:var(--border);">
+                            <div class="bg-white rounded-xl p-3 border text-center" style="border-color: var(--border);">
+                                <p class="text-2xl font-bold text-yellow-600">{{ $activeSubscription->pendingCount() }}</p>
+                                <p class="text-xs mt-0.5" style="color: var(--muted);">Pending</p>
                             </div>
-
-                            {{-- Cost preview --}}
-                            <div id="wi-preview" class="hidden rounded-xl px-4 py-3 text-xs space-y-1" style="background:rgba(47,74,30,0.05);">
-                                <div class="flex justify-between"><span style="color:var(--muted);">Price per litre</span><span id="wi-ppl" class="font-semibold" style="color:var(--text);">—</span></div>
-                                <div class="flex justify-between"><span style="color:var(--muted);">Daily cost</span><span id="wi-daily" class="font-semibold" style="color:var(--text);">—</span></div>
-                            </div>
-
-                            <button type="button" onclick="wiGoStep(2)"
-                                class="w-full py-3 rounded-xl font-bold text-sm text-white hover:shadow-lg"
-                                style="background:var(--green);">
-                                Next: Delivery Address <i class="fa-solid fa-arrow-right ml-1"></i>
-                            </button>
-                        </div>{{-- end wi-step-1 --}}
-
-                        {{-- ── STEP 2: Address ── --}}
-                        <div id="wi-step-2" class="space-y-4 hidden">
-
-                            @if($savedAddresses->count() > 0)
-                            <div>
-                                <label class="block text-xs font-semibold mb-2" style="color:var(--text);"><i class="fa-solid fa-bookmark mr-1" style="color:var(--green);"></i>Saved Addresses</label>
-                                <div class="space-y-2">
-                                    @foreach($savedAddresses as $addr)
-                                    <label class="wi-saved-card flex items-start gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all hover:border-green-400" style="border-color:var(--border);">
-                                        <input type="radio" name="_wi_saved" value="{{ $addr->id }}" class="hidden wi-saved-radio"
-                                            data-location="{{ $addr->location_id }}"
-                                            data-flat="{{ addslashes($addr->flat_no ?? '') }}"
-                                            data-address="{{ addslashes($addr->address) }}">
-                                        <i class="fa-solid fa-location-dot mt-0.5 flex-shrink-0 text-sm" style="color:var(--green);"></i>
-                                        <div class="flex-1 min-w-0">
-                                            @if($addr->label)<p class="text-xs font-bold" style="color:var(--text);">{{ $addr->label }}</p>@endif
-                                            <p class="text-xs truncate" style="color:var(--muted);">{{ $addr->full_address }}</p>
-                                            @if($addr->location)<p class="text-[10px]" style="color:var(--green);">{{ $addr->location->name }}</p>@endif
-                                        </div>
-                                        @if($addr->is_default)<span class="text-[10px] px-1.5 py-0.5 rounded-full flex-shrink-0" style="background:rgba(47,74,30,0.1);color:var(--green);">Default</span>@endif
-                                    </label>
-                                    @endforeach
-                                </div>
-                                <p class="text-[10px] mt-1.5" style="color:var(--muted);">Or enter a new address below.</p>
-                            </div>
-                            @endif
-
-                            <div>
-                                <label class="block text-xs font-semibold mb-1.5" style="color:var(--text);"><i class="fa-solid fa-map-marker-alt mr-1" style="color:var(--green);"></i>Society / Area</label>
-                                <div class="relative mb-2">
-                                    <input type="text" id="wi-loc-search" placeholder="Search society or area..."
-                                        class="w-full px-3 py-2.5 text-sm border-2 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                                        style="border-color:var(--border);">
-                                    <i class="fa-solid fa-search absolute right-3 top-3 text-xs" style="color:var(--muted);"></i>
-                                </div>
-                                <select name="location_id" id="wi-location-select" required
-                                    class="w-full px-3 py-2.5 text-sm border-2 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                                    style="border-color:var(--border);">
-                                    <option value="">— Select your society / area —</option>
-                                    @php $wiLocations = \App\Models\Location::active()->ordered()->get(); @endphp
-                                    @foreach($wiLocations as $loc)
-                                    <option value="{{ $loc->id }}"
-                                        data-name="{{ strtolower($loc->name) }}"
-                                        data-area="{{ strtolower($loc->area ?? '') }}"
-                                        data-city="{{ strtolower($loc->city ?? '') }}"
-                                        data-timing="{{ $loc->delivery_timing ?? '' }}">
-                                        {{ $loc->name }}@if($loc->area || $loc->city) — {{ collect([$loc->area,$loc->city])->filter()->implode(', ') }}@endif
-                                    </option>
-                                    @endforeach
-                                </select>
-                                <div id="wi-timing-hint" class="hidden mt-2 px-3 py-2 rounded-lg text-xs" style="background:rgba(47,74,30,0.06);color:var(--green);">
-                                    <i class="fa-solid fa-clock mr-1"></i><span id="wi-timing-text"></span>
-                                </div>
-                            </div>
-
-                            <div>
-                                <label class="block text-xs font-semibold mb-1.5" style="color:var(--text);"><i class="fa-solid fa-door-open mr-1" style="color:var(--green);"></i>Flat / House No.</label>
-                                <input type="text" id="wi-flat-no" placeholder="e.g. A-204, Tower B"
-                                    class="w-full px-3 py-2.5 text-sm border-2 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                                    style="border-color:var(--border);">
-                            </div>
-
-                            <div>
-                                <label class="block text-xs font-semibold mb-1.5" style="color:var(--text);"><i class="fa-solid fa-location-dot mr-1" style="color:var(--green);"></i>Full Address</label>
-                                <textarea name="delivery_address" id="wi-address" rows="2" required
-                                    placeholder="Building, Street, Landmark, City"
-                                    class="w-full px-3 py-2.5 text-sm border-2 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none"
-                                    style="border-color:var(--border);"></textarea>
-                            </div>
-
-                            <div class="flex gap-3">
-                                <button type="button" onclick="wiGoStep(1)" class="flex-1 py-3 rounded-xl font-semibold border-2 text-sm hover:bg-gray-50" style="border-color:var(--border);color:var(--text);"><i class="fa-solid fa-arrow-left mr-1"></i>Back</button>
-                                <button type="button" onclick="wiGoStep(3)" class="flex-1 py-3 rounded-xl font-bold text-sm hover:shadow-lg" style="background:var(--green);color:#fff;">Next: Add Money <i class="fa-solid fa-arrow-right ml-1"></i></button>
-                            </div>
-                        </div>{{-- end wi-step-2 --}}
-
-                        {{-- ── STEP 3: Amount ── --}}
-                        <div id="wi-step-3" class="space-y-4 hidden">
-
-                            <div class="rounded-xl px-4 py-3 text-xs space-y-1" style="background:rgba(47,74,30,0.05);">
-                                <div class="flex justify-between"><span style="color:var(--muted);">Milk</span><span id="wi-sum-milk" class="font-semibold" style="color:var(--text);">—</span></div>
-                                <div class="flex justify-between"><span style="color:var(--muted);">Qty / Day</span><span id="wi-sum-qty" class="font-semibold" style="color:var(--text);">—</span></div>
-                                <div class="flex justify-between"><span style="color:var(--muted);">Price / Litre</span><span id="wi-sum-ppl" class="font-semibold" style="color:var(--green);">—</span></div>
-                                <div class="flex justify-between"><span style="color:var(--muted);">Daily cost</span><span id="wi-sum-daily" class="font-semibold" style="color:var(--text);">—</span></div>
-                            </div>
-
-                            <div>
-                                <label class="block text-xs font-semibold mb-2" style="color:var(--text);"><i class="fa-solid fa-indian-rupee-sign mr-1" style="color:var(--green);"></i>Add Money to Wallet</label>
-                                <div class="grid grid-cols-3 gap-2 mb-3">
-                                    @foreach([500,1000,1500,2000,3000,5000] as $amt)
-                                    <button type="button" onclick="wiSetAmount({{ $amt }})"
-                                        class="wi-amt-preset py-2.5 rounded-xl text-sm font-semibold border-2 transition-all"
-                                        style="border-color:var(--border);color:var(--muted);">
-                                        ₹{{ number_format($amt) }}
-                                    </button>
-                                    @endforeach
-                                </div>
-                                <input type="number" name="amount" id="wi-amount" placeholder="Or enter custom amount"
-                                    min="50" max="500000" step="1" required
-                                    class="w-full px-3 py-2.5 text-sm border-2 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                                    style="border-color:var(--border);">
-                                <div id="wi-days-preview" class="hidden mt-2 text-xs font-semibold text-center" style="color:var(--green);"></div>
-                            </div>
-
-                            <div class="flex gap-3">
-                                <button type="button" onclick="wiGoStep(2)" class="flex-1 py-3 rounded-xl font-semibold border-2 text-sm hover:bg-gray-50" style="border-color:var(--border);color:var(--text);"><i class="fa-solid fa-arrow-left mr-1"></i>Back</button>
-                                <button type="button" onclick="wiSubmit()"
-                                    class="flex-1 py-3 rounded-xl font-bold text-sm text-white hover:shadow-lg flex items-center justify-center gap-2"
-                                    style="background:var(--green);">
-                                    <i class="fa-solid fa-lock"></i> Pay & Activate
-                                </button>
-                            </div>
-                        </div>{{-- end wi-step-3 --}}
-
-                        </form>
+                        </div>
                     </div>
 
+                    @if($activePlan->day_wise_schedule)
+                        @php
+                            $today = now();
+                            $startOfMonth = $today->copy()->startOfMonth();
+                            $endOfMonth = $today->copy()->endOfMonth();
+                            $daysInCalendar = [];
+                            $cur = $startOfMonth->copy()->startOfWeek();
+                            while ($cur <= $endOfMonth->copy()->endOfWeek()) {
+                                $daysInCalendar[] = $cur->copy();
+                                $cur->addDay();
+                            }
+                            $monthDeliveries = $activeSubscription->deliveryLogs()
+                                ->whereBetween('delivery_date', [$startOfMonth, $endOfMonth])
+                                ->get()->keyBy(fn($i) => $i->delivery_date->format('Y-m-d'));
+                        @endphp
+                        <div>
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="font-bold" style="color: var(--text);"><i class="fa-solid fa-calendar-days mr-2"
+                                        style="color: var(--green);"></i>Delivery Calendar</h3>
+                                <span class="text-sm font-semibold" style="color: var(--green);">{{ now()->format('F Y') }}</span>
+                            </div>
+                            <div class="grid grid-cols-7 gap-1 mb-2">
+                                @foreach(['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as $d)
+                                    <div class="text-center py-2 text-xs font-bold rounded"
+                                        style="background: rgba(47,74,30,0.05); color: var(--green);">{{ $d }}</div>
+                                @endforeach
+                            </div>
+                            <div class="grid grid-cols-7 gap-1 md:gap-2">
+                                @foreach($daysInCalendar as $date)
+                                    @php
+                                        $isCurrentMonth = $date->month === $today->month;
+                                        $isToday = $date->isToday();
+                                        $dayKey = $date->format('D');
+                                        $hasDelivery = $activePlan->hasDeliveryOnDay($dayKey);
+                                        $dateKey = $date->format('Y-m-d');
+                                        $log = $monthDeliveries->get($dateKey);
+                                        $isPast = $date->isPast() && !$isToday;
+                                    @endphp
+                                    <div class="relative min-h-[70px] md:min-h-[90px] p-1.5 md:p-2 rounded-lg border-2 transition-all text-center {{ $isToday ? 'scale-105 shadow-md' : '' }}"
+                                        style="@if($isToday) background: linear-gradient(135deg,var(--green),#3d6b2e); border-color: var(--green);
+                                        @elseif($log && $log->status === 'delivered') background:#dcfce7; border-color:#16a34a;
+                                                @elseif($log && $log->status === 'pending') background:#fef3c7; border-color:#d97706;
+                                                @elseif($log) background:#f3f4f6; border-color:#d1d5db;
+                                                @elseif($hasDelivery && $isCurrentMonth && !$isPast) background:#f0fdf4; border-color:rgba(47,74,30,0.4); border-style:dashed;
+                                                @else background:{{ $isCurrentMonth ? '#fff' : '#fafafa' }}; border-color:#e5e7eb; @endif">
+                                        <span class="text-xs md:text-sm font-bold block"
+                                            style="color: {{ $isToday ? '#fff' : ($isCurrentMonth ? '#1f2937' : '#9ca3af') }};">{{ $date->day }}</span>
+                                        @if($isCurrentMonth)
+                                            @if($log)
+                                                @if($log->status === 'delivered')<i class="fa-solid fa-check text-xs"
+                                                        style="color:#15803d;"></i>
+                                                    <p class="text-[9px] font-bold" style="color:#15803d;">{{ $log->quantity_delivered }}L</p>
+                                                @elseif($log->status === 'pending')<i class="fa-solid fa-clock text-xs"
+                                                        style="color:#78350f;"></i>
+                                                    <p class="text-[9px] font-bold" style="color:#78350f;">{{ $log->quantity_delivered }}L</p>
+                                                @elseif($log->status === 'skipped')<i class="fa-solid fa-forward text-xs text-gray-500"></i>
+                                                @else<i class="fa-solid fa-times text-xs text-red-600"></i>
+                                                @endif
+                                            @elseif($hasDelivery && !$isPast)
+                                                <i class="fa-solid fa-droplet text-xs" style="color:var(--green);"></i>
+                                                <p class="text-[9px] font-bold" style="color:var(--green);">
+                                                    {{ $activePlan->getDayQuantity($dayKey) }}L</p>
+                                            @endif
+                                        @endif
+                                    </div>
+                                @endforeach
+                            </div>
+                            <div class="mt-4 pt-4 border-t flex flex-wrap gap-3" style="border-color: var(--border);">
+                                <div class="flex items-center gap-1.5 text-xs">
+                                    <div class="w-4 h-4 rounded border-2 border-green-600" style="background:#dcfce7;"></div><span
+                                        style="color:var(--muted);">Delivered</span>
+                                </div>
+                                <div class="flex items-center gap-1.5 text-xs">
+                                    <div class="w-4 h-4 rounded border-2 border-yellow-500" style="background:#fef3c7;"></div><span
+                                        style="color:var(--muted);">Pending</span>
+                                </div>
+                                <div class="flex items-center gap-1.5 text-xs">
+                                    <div class="w-4 h-4 rounded border-2 border-dashed"
+                                        style="background:#f0fdf4; border-color:rgba(47,74,30,0.4);"></div><span
+                                        style="color:var(--muted);">Scheduled</span>
+                                </div>
+                                <div class="flex items-center gap-1.5 text-xs">
+                                    <div class="w-4 h-4 rounded" style="background:var(--green);"></div><span
+                                        style="color:var(--muted);">Today</span>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+
+                @else
+                    <div class="text-center py-16">
+                        <div class="w-20 h-20 rounded-full mx-auto mb-4 flex items-center justify-center"
+                            style="background: rgba(47,74,30,0.08);">
+                            <i class="fa-solid fa-calendar-xmark text-3xl" style="color: var(--muted);"></i>
+                        </div>
+                        <h3 class="text-lg font-bold mb-2" style="color: var(--text);">No Active Scheduled Plan</h3>
+                        <p class="text-sm mb-5" style="color: var(--muted);">You don't have a scheduled milk plan yet.</p>
+                        <a href="{{ route('membership') }}"
+                            class="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-sm transition-all hover:shadow-lg"
+                            style="background: var(--green); color: #fff;">
+                            <i class="fa-solid fa-arrow-right"></i>View Membership Plans
+                        </a>
+                    </div>
                 @endif
             </div>
 
@@ -774,14 +819,26 @@
                             <label class="block text-xs font-semibold mb-2" style="color: var(--text);"><i
                                     class="fa-solid fa-scale-balanced mr-1" style="color: var(--green);"></i>Quantity per
                                 Day</label>
-                            <div class="grid grid-cols-5 gap-2">
-                                @foreach([1,2,3,5,8] as $q)
+                            <div class="flex items-center gap-3">
+                                <button type="button" onclick="changeQty(-1)"
+                                    class="w-10 h-10 rounded-xl border-2 flex items-center justify-center font-bold text-lg transition-all hover:border-green-500"
+                                    style="border-color: var(--border); color: var(--text);">−</button>
+                                <div class="flex-1 text-center">
+                                    <span id="qtyDisplay" class="text-2xl font-bold" style="color: var(--green);">1</span>
+                                    <span class="text-sm font-semibold ml-1" style="color: var(--muted);">Litre</span>
+                                </div>
+                                <button type="button" onclick="changeQty(1)"
+                                    class="w-10 h-10 rounded-xl border-2 flex items-center justify-center font-bold text-lg transition-all hover:border-green-500"
+                                    style="border-color: var(--border); color: var(--text);">+</button>
+                                <input type="hidden" name="quantity_per_day" id="qtyInput" value="1">
+                            </div>
+                            <div class="flex justify-between mt-2 gap-1">
+                                @foreach([1, 1.5, 2, 3, 4] as $q)
                                     <button type="button" onclick="setQty({{ $q }})"
-                                        class="qty-preset py-3 rounded-xl text-sm font-bold border-2 transition-all"
+                                        class="qty-preset flex-1 py-1.5 rounded-lg text-xs font-semibold border transition-all"
                                         style="border-color: var(--border); color: var(--muted);">{{ $q }}L</button>
                                 @endforeach
                             </div>
-                            <input type="hidden" name="quantity_per_day" id="qtyInput" value="1">
                         </div>
 
                         <div>
@@ -801,15 +858,15 @@
                             <label class="block text-xs font-semibold mb-2" style="color: var(--text);"><i
                                     class="fa-solid fa-clock mr-1" style="color: var(--green);"></i>Preferred Delivery
                                 Slot</label>
-                            <div class="grid grid-cols-2 gap-3">
-                                @foreach([['value' => 'morning', 'label' => 'Morning', 'time' => '5–8 AM', 'icon' => 'fa-sun'], ['value' => 'evening', 'label' => 'Evening', 'time' => '5–8 PM', 'icon' => 'fa-moon']] as $slot)
+                            <div class="grid grid-cols-3 gap-2">
+                                @foreach([['value' => 'morning', 'label' => 'Morning', 'time' => '5–8 AM', 'icon' => 'fa-sun'], ['value' => 'afternoon', 'label' => 'Afternoon', 'time' => '12–3 PM', 'icon' => 'fa-cloud-sun'], ['value' => 'evening', 'label' => 'Evening', 'time' => '5–8 PM', 'icon' => 'fa-moon']] as $slot)
                                     <label
-                                        class="slot-card flex flex-col items-center gap-1.5 p-4 rounded-xl border-2 cursor-pointer transition-all hover:border-green-400 text-center"
+                                        class="slot-card flex flex-col items-center gap-1 p-3 rounded-xl border-2 cursor-pointer transition-all hover:border-green-400 text-center"
                                         style="border-color: var(--border);">
                                         <input type="radio" name="delivery_slot" value="{{ $slot['value'] }}"
                                             class="hidden slot-radio" {{ $loop->first ? 'checked' : '' }}>
-                                        <i class="fas {{ $slot['icon'] }} text-xl" style="color: var(--muted);"></i>
-                                        <p class="text-sm font-bold leading-tight" style="color: var(--text);">
+                                        <i class="fas {{ $slot['icon'] }} text-base" style="color: var(--muted);"></i>
+                                        <p class="text-xs font-bold leading-tight" style="color: var(--text);">
                                             {{ $slot['label'] }}</p>
                                         <p class="text-[10px]" style="color: var(--muted);">{{ $slot['time'] }}</p>
                                     </label>
@@ -826,33 +883,6 @@
 
                     {{-- STEP 2 --}}
                     <div id="modal-step-2" class="p-5 space-y-4 hidden">
-
-                        {{-- Saved addresses --}}
-                        @if($savedAddresses->count() > 0)
-                        <div>
-                            <label class="block text-xs font-semibold mb-2" style="color: var(--text);"><i class="fa-solid fa-bookmark mr-1" style="color: var(--green);"></i>Saved Addresses</label>
-                            <div class="space-y-2">
-                                @foreach($savedAddresses as $addr)
-                                <label class="saved-addr-card flex items-start gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all hover:border-green-400"
-                                    style="border-color: var(--border);">
-                                    <input type="radio" name="_saved_addr" value="{{ $addr->id }}" class="hidden saved-addr-radio mt-0.5"
-                                        data-location="{{ $addr->location_id }}"
-                                        data-flat="{{ addslashes($addr->flat_no ?? '') }}"
-                                        data-address="{{ addslashes($addr->address) }}">
-                                    <i class="fa-solid fa-location-dot mt-0.5 flex-shrink-0 text-sm" style="color: var(--green);"></i>
-                                    <div class="flex-1 min-w-0">
-                                        @if($addr->label)<p class="text-xs font-bold" style="color: var(--text);">{{ $addr->label }}</p>@endif
-                                        <p class="text-xs truncate" style="color: var(--muted);">{{ $addr->full_address }}</p>
-                                        @if($addr->location)<p class="text-[10px]" style="color: var(--green);">{{ $addr->location->name }}</p>@endif
-                                    </div>
-                                    @if($addr->is_default)<span class="text-[10px] px-1.5 py-0.5 rounded-full flex-shrink-0" style="background: rgba(47,74,30,0.1); color: var(--green);">Default</span>@endif
-                                </label>
-                                @endforeach
-                            </div>
-                            <p class="text-[10px] mt-1.5" style="color: var(--muted);">Or fill in a new address below.</p>
-                        </div>
-                        @endif
-
                         <div>
                             <label class="block text-xs font-semibold mb-1.5" style="color: var(--text);"><i
                                     class="fa-solid fa-map-marker-alt mr-1" style="color: var(--green);"></i>Delivery
@@ -1040,18 +1070,6 @@
             color: #fff;
             border-color: var(--green);
         }
-
-        .saved-addr-card:has(.saved-addr-radio:checked) {
-            border-color: var(--green) !important;
-            background: rgba(47, 74, 30, 0.04);
-        }
-
-        .ob-milk-card:has(.ob-milk-radio:checked),
-        .ob-slot-card:has(.ob-slot-radio:checked),
-        .ob-saved-card:has(.ob-saved-radio:checked) {
-            border-color: var(--green) !important;
-            background: rgba(47, 74, 30, 0.04);
-        }
     </style>
 
     <script>
@@ -1063,7 +1081,7 @@
             document.getElementById('panel-' + name).classList.remove('hidden');
             localStorage.setItem('dashTab', name);
         }
-        (function () { switchTab(localStorage.getItem('dashTab') || 'wallet'); })();
+        (function () { switchTab(localStorage.getItem('dashTab') || 'packs'); })();
 
         // ── Modal state ───────────────────────────────────────────────
         let currentPlanPrice = 0, currentPlanDuration = '', currentPlanId = null;
@@ -1137,7 +1155,6 @@
             if (!document.getElementById('startDate').value) { alert('Please select a delivery start date.'); return false; }
             return true;
         }
-
         function validateStep2() {
             const loc = document.getElementById('locationSelect').value;
             const addr = document.getElementById('deliveryAddress').value.trim();
@@ -1155,7 +1172,7 @@
             const slotRadio = document.querySelector('.slot-radio:checked');
             const locSelect = document.getElementById('locationSelect');
             const locText = locSelect.options[locSelect.selectedIndex]?.text?.trim() || '—';
-            const slotLabels = { morning: 'Morning (5–8 AM)', evening: 'Evening (5–8 PM)' };
+            const slotLabels = { morning: 'Morning (5–8 AM)', afternoon: 'Afternoon (12–3 PM)', evening: 'Evening (5–8 PM)' };
             const milkLabels = { cow: 'Cow Milk (A2)', buffalo: 'Buffalo Milk', toned: 'Toned Milk', full_fat: 'Full Fat Milk' };
             const finalAmount = currentPlanPrice - appliedDiscount;
 
@@ -1185,21 +1202,12 @@
 
         // ── Quantity ──────────────────────────────────────────────────
         let qty = 1;
-        const QTY_OPTIONS = [1, 2, 3, 5, 8];
-        function changeQty(delta) {
-            const idx = QTY_OPTIONS.indexOf(qty);
-            const next = QTY_OPTIONS[Math.max(0, Math.min(QTY_OPTIONS.length - 1, idx + delta))];
-            setQty(next);
-        }
+        function changeQty(delta) { setQty(Math.round((qty + delta) * 10) / 10); }
         function setQty(val) {
-            qty = val;
+            qty = Math.max(1, Math.min(10, val));
+            document.getElementById('qtyDisplay').textContent = qty % 1 === 0 ? qty.toFixed(0) : qty.toFixed(1);
             document.getElementById('qtyInput').value = qty;
-            document.querySelectorAll('.qty-preset').forEach(b => {
-                const active = parseInt(b.textContent) === qty;
-                b.style.background  = active ? 'var(--green)' : '';
-                b.style.color       = active ? '#fff' : 'var(--muted)';
-                b.style.borderColor = active ? 'var(--green)' : 'var(--border)';
-            });
+            document.querySelectorAll('.qty-preset').forEach(b => b.classList.toggle('active', parseFloat(b.textContent) === qty));
         }
         setQty(1);
 
@@ -1233,47 +1241,12 @@
                 })
                 .catch(() => showCouponMsg('Could not apply coupon. Try again.', false));
         }
-
         function showCouponMsg(text, success) {
             const el = document.getElementById('couponMsg');
             el.textContent = text;
             el.className = 'mt-2 px-3 py-2 rounded-lg text-xs font-semibold ' + (success ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-600');
             el.classList.remove('hidden');
         }
-
-        // ── Wallet top-up modal ───────────────────────────────────────
-        function openTopupModal(subscriptionId) {
-            document.getElementById('topupSubId').value = subscriptionId;
-            document.getElementById('topupForm').action = '/wallet/' + subscriptionId + '/topup';
-            const m = document.getElementById('topupModal');
-            m.classList.remove('hidden'); m.classList.add('flex');
-            document.body.style.overflow = 'hidden';
-        }
-
-        function closeTopupModal() {
-            const m = document.getElementById('topupModal');
-            m.classList.add('hidden'); m.classList.remove('flex');
-            document.body.style.overflow = 'auto';
-        }
-        
-        document.getElementById('topupModal')?.addEventListener('click', function(e) { if (e.target === this) closeTopupModal(); });
-
-        // ── Saved address selection ───────────────────────────────────
-        document.querySelectorAll('.saved-addr-radio').forEach(radio => {
-            radio.closest('label').addEventListener('click', function() {
-                document.querySelectorAll('.saved-addr-card').forEach(c => c.style.borderColor = 'var(--border)');
-                this.style.borderColor = 'var(--green)';
-                radio.checked = true;
-                const locId = radio.dataset.location;
-                const flat  = radio.dataset.flat;
-                const addr  = radio.dataset.address;
-                if (locId) document.getElementById('locationSelect').value = locId;
-                if (flat)  document.getElementById('flatNo').value = flat;
-                document.getElementById('deliveryAddress').value = addr;
-                // trigger timing hint
-                document.getElementById('locationSelect').dispatchEvent(new Event('change'));
-            });
-        });
 
         // ── Location search ───────────────────────────────────────────
         document.getElementById('locationSearch')?.addEventListener('input', function () {
@@ -1302,280 +1275,5 @@
                 hint.classList.add('hidden');
             }
         });
-    </script>
-
-    {{-- ===== WALLET TOP-UP MODAL ===== --}}
-    <div id="topupModal" class="fixed inset-0 bg-black bg-opacity-60 z-50 hidden items-center justify-center p-4"
-        style="backdrop-filter: blur(6px);">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 relative" onclick="event.stopPropagation()">
-            <button onclick="closeTopupModal()" class="absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-100">
-                <i class="fa-solid fa-times text-sm" style="color: var(--muted);"></i>
-            </button>
-            <div class="flex items-center gap-3 mb-5">
-                <div class="w-10 h-10 rounded-full flex items-center justify-center" style="background: rgba(47,74,30,0.1);">
-                    <i class="fa-solid fa-arrow-up" style="color: var(--green);"></i>
-                </div>
-                <div>
-                    <h3 class="font-bold text-base" style="color: var(--text);">Top Up Wallet</h3>
-                    <p class="text-xs" style="color: var(--muted);">Add balance to continue milk deliveries</p>
-                </div>
-            </div>
-            <form id="topupForm" method="POST" action="" class="space-y-4">
-                @csrf
-                <input type="hidden" id="topupSubId" name="subscription_id">
-                <div>
-                    <label class="block text-xs font-semibold mb-2" style="color: var(--text);">Select Amount</label>
-                    <div class="grid grid-cols-3 gap-2 mb-3">
-                        @foreach([200, 500, 1000, 1500, 2000, 3000] as $amt)
-                        <button type="button" onclick="setTopupAmount({{ $amt }})"
-                            class="topup-preset py-2 rounded-xl text-sm font-semibold border-2 transition-all"
-                            style="border-color: var(--border); color: var(--muted);">
-                            ₹{{ number_format($amt) }}
-                        </button>
-                        @endforeach
-                    </div>
-                    <input type="number" name="amount" id="topupAmount" placeholder="Or enter custom amount"
-                        min="50" max="50000" step="1" required
-                        class="w-full px-3 py-2.5 text-sm border-2 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                        style="border-color: var(--border);">
-                    <p class="text-[10px] mt-1" style="color: var(--muted);">Min ₹50 · Max ₹50,000</p>
-                </div>
-                <button type="submit" class="w-full py-3 rounded-xl font-bold text-sm text-white transition-all hover:shadow-lg"
-                    style="background: var(--green);">
-                    <i class="fa-solid fa-lock mr-1"></i> Pay & Top Up
-                </button>
-            </form>
-        </div>
-    </div>
-
-    <script>
-        function setTopupAmount(amt) {
-            document.getElementById('topupAmount').value = amt;
-            document.querySelectorAll('.topup-preset').forEach(b => {
-                const isActive = parseInt(b.textContent.replace(/[^0-9]/g, '')) === amt;
-                b.style.background = isActive ? 'var(--green)' : '';
-                b.style.color = isActive ? '#fff' : 'var(--muted)';
-                b.style.borderColor = isActive ? 'var(--green)' : 'var(--border)';
-            });
-        }
-
-
-
-        // ── Wallet Init form JS ───────────────────────────────────────
-        let wiQty = 1;
-
-        function wiSetQty(val) {
-            wiQty = val;
-            document.getElementById('wi-qty-input').value = wiQty;
-            document.querySelectorAll('.wi-qty-btn').forEach(b => {
-                const active = parseInt(b.dataset.qty) === wiQty;
-                b.style.background  = active ? 'var(--green)' : '';
-                b.style.color       = active ? '#fff' : 'var(--muted)';
-                b.style.borderColor = active ? 'var(--green)' : 'var(--border)';
-            });
-            wiUpdatePreview();
-        }
-
-        function wiGetPpl() {
-            const r = document.querySelector('.wi-milk-radio:checked');
-            return r ? parseFloat(r.dataset.ppl) || 0 : 0;
-        }
-
-        function wiUpdatePreview() {
-            const ppl   = wiGetPpl();
-            const daily = ppl * wiQty;
-            const pplEl = document.getElementById('wi-ppl');
-            const dayEl = document.getElementById('wi-daily');
-            const prev  = document.getElementById('wi-preview');
-            if (pplEl) pplEl.textContent = ppl ? '₹' + ppl.toFixed(2) + '/L' : '—';
-            if (dayEl) dayEl.textContent = daily ? '₹' + daily.toFixed(2) + '/day' : '—';
-            if (prev)  ppl ? prev.classList.remove('hidden') : prev.classList.add('hidden');
-            // step 3 days preview
-            const amount = parseFloat(document.getElementById('wi-amount')?.value) || 0;
-            const daysEl = document.getElementById('wi-days-preview');
-            if (daysEl && daily && amount) {
-                daysEl.textContent = '≈ ' + Math.floor(amount / daily) + ' days of delivery';
-                daysEl.classList.remove('hidden');
-            } else if (daysEl) {
-                daysEl.classList.add('hidden');
-            }
-        }
-
-        // Wizard step navigation
-        function wiGoStep(n) {
-            if (n === 2) {
-                // no validation needed for step 1 — milk/qty/slot all have defaults
-            }
-            if (n === 3) {
-                const loc  = document.getElementById('wi-location-select')?.value;
-                const addr = document.getElementById('wi-address')?.value.trim();
-                if (!loc)  { alert('Please select your delivery location.'); return; }
-                if (!addr) { alert('Please enter your delivery address.'); return; }
-                const flat = document.getElementById('wi-flat-no')?.value.trim();
-                const addrEl = document.getElementById('wi-address');
-                if (flat && addrEl && !addrEl.value.includes(flat)) {
-                    addrEl.value = flat + ', ' + addrEl.value;
-                }
-                // populate step 3 summary
-                const milkR = document.querySelector('.wi-milk-radio:checked');
-                const milkLabels = { cow:'Cow Milk (A2)', buffalo:'Buffalo Milk', toned:'Toned Milk', full_fat:'Full Fat Milk' };
-                const ppl = wiGetPpl();
-                document.getElementById('wi-sum-milk').textContent  = milkLabels[milkR?.value] || milkR?.value || '—';
-                document.getElementById('wi-sum-qty').textContent   = wiQty + 'L';
-                document.getElementById('wi-sum-ppl').textContent   = ppl ? '₹' + ppl.toFixed(2) + '/L' : '—';
-                document.getElementById('wi-sum-daily').textContent = ppl ? '₹' + (ppl * wiQty).toFixed(2) + '/day' : '—';
-            }
-            [1,2,3].forEach(i => {
-                const el = document.getElementById('wi-step-' + i);
-                if (el) el.classList.toggle('hidden', i !== n);
-                const dot = document.getElementById('wi-dot-' + i);
-                const lbl = document.getElementById('wi-lbl-' + i);
-                if (dot) {
-                    if (i < n)      { dot.style.background='var(--green)'; dot.style.color='#fff'; dot.innerHTML='<i class="fa-solid fa-check text-[9px]"></i>'; }
-                    else if (i===n) { dot.style.background='var(--green)'; dot.style.color='#fff'; dot.textContent=i; }
-                    else            { dot.style.background='#e5e7eb'; dot.style.color='#9ca3af'; dot.textContent=i; }
-                }
-                if (lbl) lbl.style.color = i <= n ? 'var(--green)' : 'var(--muted)';
-            });
-        }
-
-        // milk card highlight + preview update
-        document.querySelectorAll('.wi-milk-radio').forEach(r => {
-            r.addEventListener('change', () => {
-                document.querySelectorAll('.wi-milk-card').forEach(c => c.style.borderColor = 'var(--border)');
-                r.closest('label').style.borderColor = 'var(--green)';
-                wiUpdatePreview();
-            });
-        });
-        const firstWiMilk = document.querySelector('.wi-milk-radio:checked');
-        if (firstWiMilk) firstWiMilk.closest('label').style.borderColor = 'var(--green)';
-
-        // slot card highlight
-        document.querySelectorAll('.wi-slot-radio').forEach(r => {
-            r.addEventListener('change', () => {
-                document.querySelectorAll('.wi-slot-card').forEach(c => c.style.borderColor = 'var(--border)');
-                r.closest('label').style.borderColor = 'var(--green)';
-            });
-        });
-        const firstWiSlot = document.querySelector('.wi-slot-radio:checked');
-        if (firstWiSlot) firstWiSlot.closest('label').style.borderColor = 'var(--green)';
-
-        // saved address selection
-        document.querySelectorAll('.wi-saved-radio').forEach(radio => {
-            radio.closest('label').addEventListener('click', function() {
-                document.querySelectorAll('.wi-saved-card').forEach(c => c.style.borderColor = 'var(--border)');
-                this.style.borderColor = 'var(--green)';
-                radio.checked = true;
-                if (radio.dataset.location) document.getElementById('wi-location-select').value = radio.dataset.location;
-                if (radio.dataset.flat)     document.getElementById('wi-flat-no').value = radio.dataset.flat;
-                document.getElementById('wi-address').value = radio.dataset.address;
-                document.getElementById('wi-location-select').dispatchEvent(new Event('change'));
-            });
-        });
-
-        // amount preset buttons
-        function wiSetAmount(amt) {
-            const inp = document.getElementById('wi-amount');
-            if (inp) { inp.value = amt; wiUpdatePreview(); }
-            document.querySelectorAll('.wi-amt-preset').forEach(b => {
-                const v = parseInt(b.textContent.replace(/[^0-9]/g, ''));
-                b.style.background  = v === amt ? 'var(--green)' : '';
-                b.style.color       = v === amt ? '#fff' : 'var(--muted)';
-                b.style.borderColor = v === amt ? 'var(--green)' : 'var(--border)';
-            });
-        }
-        document.getElementById('wi-amount')?.addEventListener('input', wiUpdatePreview);
-
-        // location search
-        document.getElementById('wi-loc-search')?.addEventListener('input', function() {
-            const term = this.value.toLowerCase();
-            const sel  = document.getElementById('wi-location-select');
-            sel.querySelectorAll('option').forEach(o => {
-                if (!o.value) return;
-                const txt = [o.dataset.name, o.dataset.area, o.dataset.city].join(' ');
-                o.style.display = txt.includes(term) ? '' : 'none';
-            });
-            if (!term) sel.value = '';
-            setTimeout(() => {
-                const vis = Array.from(sel.querySelectorAll('option')).filter(o => o.value && o.style.display !== 'none');
-                if (vis.length === 1) { sel.value = vis[0].value; sel.dispatchEvent(new Event('change')); }
-            }, 100);
-        });
-
-        document.getElementById('wi-location-select')?.addEventListener('change', function() {
-            const opt    = this.options[this.selectedIndex];
-            const timing = opt?.dataset?.timing;
-            const hint   = document.getElementById('wi-timing-hint');
-            if (timing && this.value) {
-                document.getElementById('wi-timing-text').textContent = 'Delivery timing: ' + timing;
-                hint.classList.remove('hidden');
-            } else {
-                hint.classList.add('hidden');
-            }
-        });
-
-        function wiSubmit() {
-            const amount = document.getElementById('wi-amount')?.value;
-            if (!amount || parseFloat(amount) < 50) { alert('Please enter a valid amount (min ₹50).'); return; }
-            document.getElementById('walletInitForm').submit();
-        }
-
-        wiSetQty(1);
-    </script>
-
-    {{-- ===== WALLET TOP-UP MODAL ===== --}}
-    <div id="topupModal" class="fixed inset-0 bg-black bg-opacity-60 z-50 hidden items-center justify-center p-4"
-        style="backdrop-filter: blur(6px);">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 relative" onclick="event.stopPropagation()">
-            <button onclick="closeTopupModal()" class="absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-100">
-                <i class="fa-solid fa-times text-sm" style="color: var(--muted);"></i>
-            </button>
-            <div class="flex items-center gap-3 mb-5">
-                <div class="w-10 h-10 rounded-full flex items-center justify-center" style="background: rgba(47,74,30,0.1);">
-                    <i class="fa-solid fa-arrow-up" style="color: var(--green);"></i>
-                </div>
-                <div>
-                    <h3 class="font-bold text-base" style="color: var(--text);">Top Up Wallet</h3>
-                    <p class="text-xs" style="color: var(--muted);">Add balance to continue milk deliveries</p>
-                </div>
-            </div>
-            <form id="topupForm" method="POST" action="" class="space-y-4">
-                @csrf
-                <input type="hidden" id="topupSubId" name="subscription_id">
-                <div>
-                    <label class="block text-xs font-semibold mb-2" style="color: var(--text);">Select Amount</label>
-                    <div class="grid grid-cols-3 gap-2 mb-3">
-                        @foreach([200, 500, 1000, 1500, 2000, 3000] as $amt)
-                        <button type="button" onclick="setTopupAmount({{ $amt }})"
-                            class="topup-preset py-2 rounded-xl text-sm font-semibold border-2 transition-all"
-                            style="border-color: var(--border); color: var(--muted);">
-                            ₹{{ number_format($amt) }}
-                        </button>
-                        @endforeach
-                    </div>
-                    <input type="number" name="amount" id="topupAmount" placeholder="Or enter custom amount"
-                        min="50" max="50000" step="1" required
-                        class="w-full px-3 py-2.5 text-sm border-2 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                        style="border-color: var(--border);">
-                    <p class="text-[10px] mt-1" style="color: var(--muted);">Min ₹50 · Max ₹50,000</p>
-                </div>
-                <button type="submit" class="w-full py-3 rounded-xl font-bold text-sm text-white transition-all hover:shadow-lg"
-                    style="background: var(--green);">
-                    <i class="fa-solid fa-lock mr-1"></i> Pay & Top Up
-                </button>
-            </form>
-        </div>
-    </div>
-
-    <script>
-        function setTopupAmount(amt) {
-            document.getElementById('topupAmount').value = amt;
-            document.querySelectorAll('.topup-preset').forEach(b => {
-                const isActive = parseInt(b.textContent.replace(/[^0-9]/g, '')) === amt;
-                b.style.background = isActive ? 'var(--green)' : '';
-                b.style.color = isActive ? '#fff' : 'var(--muted)';
-                b.style.borderColor = isActive ? 'var(--green)' : 'var(--border)';
-            });
-        }
     </script>
 @endsection

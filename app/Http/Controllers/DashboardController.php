@@ -52,10 +52,14 @@ class DashboardController extends Controller
             ->keyBy('membership_plan_id');
 
         // Active on-demand wallet subscription (most recent active)
+        // Includes both plan-based on-demand AND wallet-only (no plan) subscriptions
         $walletSubscription = \App\Models\UserSubscription::with(['membershipPlan', 'walletTransactions'])
             ->where('user_id', $user->id)
             ->where('status', 'active')
-            ->whereHas('membershipPlan', fn($q) => $q->where('plan_type', 'on_demand'))
+            ->where(function ($q) {
+                $q->whereNull('membership_plan_id') // wallet-only
+                  ->orWhereHas('membershipPlan', fn($q2) => $q2->where('plan_type', 'on_demand'));
+            })
             ->whereNotNull('wallet_balance')
             ->latest()
             ->first();
@@ -79,9 +83,13 @@ class DashboardController extends Controller
                 ->keyBy(fn($d) => $d->delivery_date->format('Y-m-d'));
         }
 
+        $savedAddresses = $user->deliveryAddresses()->with('location')->get();
+        $milkPrices     = \App\Models\MilkPrice::active()->ordered()->get();
+
         return view('member-dashboard', compact(
             'subscriptionHistory', 'onDemandPlans', 'onDemandSubscriptions',
-            'walletSubscription', 'walletCalendarData', 'deliveryCalendarData'
+            'walletSubscription', 'walletCalendarData', 'deliveryCalendarData',
+            'savedAddresses', 'milkPrices'
         ));
     }
 

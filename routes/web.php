@@ -1,5 +1,4 @@
 <?php
-
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
@@ -22,17 +21,14 @@ Route::get('/privacy-policy', [PublicController::class, 'privacyPolicy'])->name(
 Route::get('/terms-and-conditions', [PublicController::class, 'termsConditions'])->name('terms-conditions');
 Route::get('/location/{slug}', [PublicController::class, 'locationDetail'])->name('location.detail');
 Route::get('/scanner', [PublicController::class, 'scanner'])->name('scanner');
-
 // Products
 Route::get('/products', [PublicController::class, 'products'])->name('products');
 Route::get('/products/{slug}', [PublicController::class, 'productDetail'])->name('product.detail');
 Route::get('/api/search-products', [PublicController::class, 'searchProducts'])->name('api.search.products');
 Route::get('/api/filter-products', [PublicController::class, 'filterProducts'])->name('api.filter.products');
-
 // Blogs
 Route::get('/blogs', [PublicController::class, 'blogs'])->name('blogs');
 Route::get('/blogs/{slug}', [PublicController::class, 'blogDetail'])->name('blog.detail');
-
 // Product Cart Payment (guest + auth)
 Route::prefix('payment')->name('payment.')->group(function () {
     Route::post('/product-order/initiate', [App\Http\Controllers\PaymentController::class, 'initiateProductOrder'])->name('product.initiate');
@@ -56,7 +52,6 @@ Route::middleware('guest')->group(function () {
     Route::post('/forgot-password', [ForgotPasswordController::class, 'sendResetLinkEmail'])->name('password.email');
     Route::get('/reset-password/{token}', [ResetPasswordController::class, 'showResetForm'])->name('password.reset');
     Route::post('/reset-password', [ResetPasswordController::class, 'reset'])->name('password.update');
-
     // Member Auth Views (GET only — POST routes are outside guest to avoid AJAX HTML redirects)
     Route::prefix('member')->name('member.')->group(function () {
         Route::get('/login', [App\Http\Controllers\Auth\MemberAuthController::class, 'showLoginForm'])->name('login');
@@ -91,24 +86,21 @@ Route::middleware('auth')->group(function () {
     Route::get('/delivery/location/{location}/exports', [DashboardController::class, 'deliveryLocationExportList'])->name('delivery.location.exports.list');
     Route::delete('/delivery/exports/{export}', [DashboardController::class, 'deliveryLocationExportDelete'])->name('delivery.location.exports.delete');
     Route::post('/delivery/location/{location}/update/{delivery}', [DashboardController::class, 'deliveryUpdateStatus'])->name('delivery.update-status');
-
     // Auth Actions
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
     Route::post('/member/logout', [App\Http\Controllers\Auth\MemberAuthController::class, 'logout'])->name('member.logout');
-
     // Profile & Account
     Route::get('/profile', [App\Http\Controllers\ProfileController::class, 'edit'])->name('profile.edit');
     Route::put('/profile', [App\Http\Controllers\ProfileController::class, 'update'])->name('profile.update');
     Route::put('/profile/password', [App\Http\Controllers\ProfileController::class, 'updatePassword'])->name('profile.password.update');
     Route::get('/account', [App\Http\Controllers\ProfileController::class, 'account'])->name('account');
     Route::delete('/account', [App\Http\Controllers\ProfileController::class, 'deleteAccount'])->name('account.delete');
-
     // Membership
     Route::post('/membership/subscribe', [App\Http\Controllers\MembershipController::class, 'subscribe'])->name('membership.subscribe');
-
     // Payments
     Route::prefix('payment')->name('payment.')->group(function () {
         Route::post('/apply-coupon', [App\Http\Controllers\PaymentController::class, 'applyCouponMembership'])->name('apply-coupon');
+        Route::get('/milk-price',   [App\Http\Controllers\PaymentController::class, 'milkPrice'])->name('milk-price');
         Route::post('/initiate', [App\Http\Controllers\PaymentController::class, 'initiate'])->name('initiate');
         Route::any('/callback', [App\Http\Controllers\PaymentController::class, 'callback'])->name('callback');
         Route::get('/success/{order}', [App\Http\Controllers\PaymentController::class, 'success'])->name('success');
@@ -116,7 +108,6 @@ Route::middleware('auth')->group(function () {
         Route::get('/history', [App\Http\Controllers\PaymentController::class, 'history'])->name('history');
         Route::get('/invoice/{order}', [App\Http\Controllers\PaymentController::class, 'invoice'])->name('invoice');
     });
-
     // Member Area
     Route::prefix('member')->name('member.')->group(function () {
         Route::resource('support-tickets', App\Http\Controllers\Member\SupportTicketController::class)->only(['index', 'create', 'store', 'show']);
@@ -124,6 +115,20 @@ Route::middleware('auth')->group(function () {
         Route::get('loyalty-points', [App\Http\Controllers\Member\LoyaltyPointController::class, 'index'])->name('loyalty-points.index');
         Route::get('orders', [App\Http\Controllers\Member\ProductOrderController::class, 'index'])->name('product-orders.index');
         Route::get('orders/{productOrder}', [App\Http\Controllers\Member\ProductOrderController::class, 'show'])->name('product-orders.show');
+    });
+    // Wallet actions
+    Route::prefix('wallet')->name('wallet.')->group(function () {
+        Route::post('initiate',              [App\Http\Controllers\Member\WalletController::class, 'initiate'])->name('initiate');
+        Route::patch('{subscription}/pause', [App\Http\Controllers\Member\WalletController::class, 'pause'])->name('pause');
+        Route::patch('{subscription}/stop',  [App\Http\Controllers\Member\WalletController::class, 'stop'])->name('stop');
+        Route::post('{subscription}/topup',  [App\Http\Controllers\Member\WalletController::class, 'topup'])->name('topup');
+    });
+    // Delivery addresses
+    Route::prefix('addresses')->name('addresses.')->group(function () {
+        Route::post('/', [App\Http\Controllers\Member\DeliveryAddressController::class, 'store'])->name('store');
+        Route::put('{deliveryAddress}', [App\Http\Controllers\Member\DeliveryAddressController::class, 'update'])->name('update');
+        Route::delete('{deliveryAddress}', [App\Http\Controllers\Member\DeliveryAddressController::class, 'destroy'])->name('destroy');
+        Route::patch('{deliveryAddress}/default', [App\Http\Controllers\Member\DeliveryAddressController::class, 'setDefault'])->name('set-default');
     });
 
     /*
@@ -133,10 +138,8 @@ Route::middleware('auth')->group(function () {
      */
     Route::prefix('admin')->name('admin.')->middleware('admin')->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'admin'])->name('dashboard');
-
         // Users
         Route::resource('users', App\Http\Controllers\UserController::class);
-
         // Product Orders
         Route::resource('product-orders', App\Http\Controllers\Admin\ProductOrderController::class)->only(['index', 'show']);
         Route::post('product-orders/{product_order}/status', [App\Http\Controllers\Admin\ProductOrderController::class, 'updateStatus'])->name('product-orders.update-status');
@@ -152,7 +155,6 @@ Route::middleware('auth')->group(function () {
         Route::get('settings/shiprocket', [App\Http\Controllers\Admin\ShiprocketSettingController::class, 'index'])->name('settings.shiprocket');
         Route::post('settings/shiprocket', [App\Http\Controllers\Admin\ShiprocketSettingController::class, 'update'])->name('settings.shiprocket.update');
         Route::post('settings/shiprocket/test', [App\Http\Controllers\Admin\ShiprocketSettingController::class, 'testConnection'])->name('settings.shiprocket.test');
-
         // Content Management
         Route::resource('sliders', App\Http\Controllers\Admin\SliderController::class);
         Route::resource('categories', App\Http\Controllers\Admin\CategoryController::class);
@@ -226,5 +228,7 @@ Route::middleware('auth')->group(function () {
         // Locations & SEO
         Route::resource('locations', App\Http\Controllers\Admin\LocationController::class);
         Route::resource('seo-metas', App\Http\Controllers\Admin\SeoMetaController::class);
+        // Milk Prices
+        Route::resource('milk-prices', App\Http\Controllers\Admin\MilkPriceController::class)->except(['show', 'create', 'edit']);
     });
 });

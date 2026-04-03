@@ -179,6 +179,22 @@ class User extends Authenticatable
     }
 
     /**
+     * Get saved delivery addresses
+     */
+    public function deliveryAddresses()
+    {
+        return $this->hasMany(DeliveryAddress::class)->orderByDesc('is_default')->latest();
+    }
+
+    /**
+     * Get default delivery address
+     */
+    public function defaultDeliveryAddress()
+    {
+        return $this->hasOne(DeliveryAddress::class)->where('is_default', true);
+    }
+
+    /**
      * Generate and store OTP for user
      */
     public function generateOtp()
