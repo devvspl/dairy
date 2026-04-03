@@ -309,10 +309,42 @@
                                         style="border-color:var(--border);">{{ $ws->delivery_address }}</textarea>
                                 </div>
 
+                                <div>
+                                    <p class="text-xs font-bold mb-1.5" style="color:var(--text);"><i class="fa-solid fa-comment-dots mr-1.5" style="color:var(--green);"></i>Delivery Instructions <span class="font-normal" style="color:var(--muted);">(optional)</span></p>
+                                    <textarea name="delivery_instructions" rows="2"
+                                        class="w-full px-3 py-2.5 text-sm border-2 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none"
+                                        style="border-color:var(--border);"
+                                        placeholder="e.g. Leave at door, Ring bell, Call before delivery…">{{ $ws->delivery_instructions }}</textarea>
+                                </div>
+
                                 <button type="submit" class="w-full py-3 rounded-xl font-bold text-sm text-white transition-all hover:shadow-md" style="background:var(--green);">
                                     <i class="fa-solid fa-check mr-1.5"></i>Save Changes
                                 </button>
                             </form>
+
+                            {{-- Extra milk for a specific day --}}
+                            <div class="border-t p-4" style="border-color:var(--border);">
+                                <p class="text-xs font-bold mb-3" style="color:var(--text);"><i class="fa-solid fa-plus-circle mr-1.5" style="color:var(--green);"></i>Extra Milk for a Day</p>
+                                <form method="POST" action="{{ route('wallet.extra', $ws->id) }}" class="flex gap-2 items-end">
+                                    @csrf
+                                    <div class="flex-1">
+                                        <label class="block text-[10px] font-semibold mb-1" style="color:var(--muted);">Date</label>
+                                        <input type="date" name="date" required
+                                            min="{{ now()->format('Y-m-d') }}" max="{{ now()->addDays(30)->format('Y-m-d') }}"
+                                            value="{{ now()->addDay()->format('Y-m-d') }}"
+                                            class="w-full px-3 py-2 text-sm border-2 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                            style="border-color:var(--border);">
+                                    </div>
+                                    <div style="width:90px;">
+                                        <label class="block text-[10px] font-semibold mb-1" style="color:var(--muted);">Extra (L)</label>
+                                        <input type="number" name="extra_qty" required min="1" max="20" step="1" value="1"
+                                            class="w-full px-3 py-2 text-sm border-2 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                            style="border-color:var(--border);">
+                                    </div>
+                                    <button type="submit" class="px-4 py-2 rounded-xl text-sm font-bold text-white flex-shrink-0" style="background:var(--green);">Add</button>
+                                </form>
+                                <p class="text-[10px] mt-1.5" style="color:var(--muted);">Extra litres added to that day's delivery and deducted from wallet.</p>
+                            </div>
                         </div>
                     </div>
 

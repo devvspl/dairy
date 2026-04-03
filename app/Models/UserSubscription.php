@@ -14,7 +14,7 @@ class UserSubscription extends Model
         'amount_paid', 'transaction_id', 'notes',
         'wallet_total', 'wallet_balance', 'price_per_litre',
         'milk_type', 'quantity_per_day', 'delivery_slot',
-        'delivery_status',
+        'delivery_status', 'delivery_instructions',
     ];
 
     protected $casts = [

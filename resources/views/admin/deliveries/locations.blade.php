@@ -134,7 +134,12 @@
                             <div class="text-xs" style="color: var(--muted);"><i class="fa-solid fa-phone mr-1"></i>{{ $sub?->user?->phone ?? '—' }}</div>
                         </td>
                         <td class="px-4 py-3 text-sm font-medium" style="color: var(--green);">{{ $sub?->location?->name ?? '—' }}</td>
-                        <td class="px-4 py-3 text-xs max-w-[160px]" style="color: var(--muted);">{{ $sub?->delivery_address ?? '—' }}</td>
+                        <td class="px-4 py-3 text-xs max-w-[160px]" style="color: var(--muted);">
+                            {{ $sub?->delivery_address ?? '—' }}
+                            @if($sub?->delivery_instructions)
+                            <p class="text-[10px] mt-0.5 font-medium" style="color:#b46000;"><i class="fa-solid fa-comment-dots mr-0.5"></i>{{ $sub->delivery_instructions }}</p>
+                            @endif
+                        </td>
                         <td class="px-4 py-3">
                             <div class="text-sm font-medium" style="color: var(--text);">
                                 {{ $sub?->membershipPlan?->name ?? 'Milk Wallet' }}

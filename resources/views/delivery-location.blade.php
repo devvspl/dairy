@@ -128,6 +128,9 @@
                         </td>
                         <td class="px-4 py-3 text-sm max-w-[180px]" style="color: var(--muted);">
                             {{ $sub->delivery_address ?? '—' }}
+                            @if($sub->delivery_instructions)
+                            <p class="text-[10px] mt-0.5 font-medium" style="color:#b46000;"><i class="fa-solid fa-comment-dots mr-0.5"></i>{{ $sub->delivery_instructions }}</p>
+                            @endif
                         </td>
                         <td class="px-4 py-3">
                             <div class="text-sm font-medium" style="color: var(--text);">

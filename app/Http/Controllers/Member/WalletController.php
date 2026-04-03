@@ -208,11 +208,12 @@ class WalletController extends Controller
         $this->authorizeSubscription($subscription);
 
         $data = $request->validate([
-            'delivery_address' => 'nullable|string|max:500',
-            'milk_type'        => 'nullable|string|max:50',
-            'quantity_per_day' => 'nullable|integer|min:1|max:20',
-            'delivery_slot'    => 'nullable|in:morning,evening',
-            'location_id'      => 'nullable|exists:locations,id',
+            'delivery_address'      => 'nullable|string|max:500',
+            'delivery_instructions' => 'nullable|string|max:500',
+            'milk_type'             => 'nullable|string|max:50',
+            'quantity_per_day'      => 'nullable|integer|min:1|max:20',
+            'delivery_slot'         => 'nullable|in:morning,evening',
+            'location_id'           => 'nullable|exists:locations,id',
         ]);
 
         $changes = array_filter($data, fn($v) => $v !== null);
