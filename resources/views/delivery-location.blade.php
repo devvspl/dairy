@@ -178,12 +178,21 @@
                             {{ $delivery->delivery_time ? \Carbon\Carbon::parse($delivery->delivery_time)->format('h:i A') : '—' }}
                         </td>
                         <td class="px-4 py-3">
-                            <button onclick="openModal({{ $delivery->id }}, '{{ $delivery->status }}', '{{ $delivery->quantity_delivered }}', '{{ $delivery->delivery_time }}', '{{ addslashes($delivery->notes ?? '') }}')"
-                                    class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors hover:opacity-80"
-                                    style="background: rgba(47,74,30,0.1); color: var(--green);">
-                                <i class="fa-solid {{ $delivery->status === 'pending' ? 'fa-check' : 'fa-pen-to-square' }}"></i>
-                                {{ $delivery->status === 'pending' ? 'Mark' : 'Edit' }}
-                            </button>
+                            @if(in_array($sub->delivery_status ?? 'active', ['paused', 'stopped']))
+                                <span class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold"
+                                    style="background: {{ ($sub->delivery_status === 'stopped') ? 'rgba(180,0,0,0.08)' : 'rgba(180,96,0,0.08)' }};
+                                           color: {{ ($sub->delivery_status === 'stopped') ? '#b40000' : '#b46000' }};">
+                                    <i class="fa-solid {{ ($sub->delivery_status === 'stopped') ? 'fa-stop' : 'fa-pause' }} text-[10px]"></i>
+                                    {{ ucfirst($sub->delivery_status) }} — no delivery
+                                </span>
+                            @else
+                                <button onclick="openModal({{ $delivery->id }}, '{{ $delivery->status }}', '{{ $delivery->quantity_delivered }}', '{{ $delivery->delivery_time }}', '{{ addslashes($delivery->notes ?? '') }}')"
+                                        class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors hover:opacity-80"
+                                        style="background: rgba(47,74,30,0.1); color: var(--green);">
+                                    <i class="fa-solid {{ $delivery->status === 'pending' ? 'fa-check' : 'fa-pen-to-square' }}"></i>
+                                    {{ $delivery->status === 'pending' ? 'Mark' : 'Edit' }}
+                                </button>
+                            @endif
                         </td>
                     </tr>
                     @empty

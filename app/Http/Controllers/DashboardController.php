@@ -254,6 +254,12 @@ class DashboardController extends Controller
         $oldQty    = (float) $delivery->quantity_delivered;
         $newQty    = (float) ($validated['quantity_delivered'] ?? $oldQty);
 
+        // Block update if subscription is paused or stopped
+        $subscription = $delivery->subscription;
+        if ($subscription && in_array($subscription->delivery_status ?? 'active', ['paused', 'stopped'])) {
+            return redirect()->back()->with('error', 'This delivery is ' . $subscription->delivery_status . '. Member must resume before deliveries can be updated.');
+        }
+
         $deliveryTime = null;
         if (!empty($validated['delivery_time'])) {
             try {
@@ -285,7 +291,6 @@ class DashboardController extends Controller
         ]);
 
         // ── Wallet debit/credit logic ─────────────────────────────────
-        $subscription = $delivery->subscription;
         if ($subscription && $subscription->isOnDemand() && $subscription->price_per_litre > 0) {
             $dateStr = $delivery->delivery_date->toDateString();
 
