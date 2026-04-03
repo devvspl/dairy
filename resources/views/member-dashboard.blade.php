@@ -87,246 +87,214 @@
                         $ws = $walletSubscription;
                         $wPlan = $ws->membershipPlan;
                         $walletPct = $ws->walletRemainingPercent();
-                        $today = now();
-                        $startOfMonth = $today->copy()->startOfMonth();
-                        $endOfMonth = $today->copy()->endOfMonth();
-                        $daysInCal = [];
-                        $cur = $startOfMonth->copy()->startOfWeek();
-                        while ($cur <= $endOfMonth->copy()->endOfWeek()) {
-                            $daysInCal[] = $cur->copy();
-                            $cur->addDay();
-                        }
+                        $dailyCost = ($ws->price_per_litre && $ws->quantity_per_day)
+                            ? round((float)$ws->price_per_litre * (float)$ws->quantity_per_day, 2) : 0;
+                        $estDays = ($dailyCost > 0) ? floor((float)$ws->wallet_balance / $dailyCost) : 0;
+                        $isStopped = $ws->delivery_status === 'stopped';
+                        $isPaused  = $ws->delivery_status === 'paused';
                     @endphp
 
-                    {{-- Wallet Balance Card --}}
-                    <div
-                        style="background: var(--surface); border: 0.5px solid var(--border); border-radius: 16px; overflow: hidden;">
+                    {{-- ── Wallet Balance Card ── --}}
+                    <div class="rounded-2xl overflow-hidden" style="border: 1px solid var(--border); background: var(--surface);">
 
-                        {{-- Header --}}
-                        <div class="p-5 pb-0">
-                            <div class="flex flex-wrap items-start justify-between gap-4">
-                                <div>
-                                    <div class="flex items-center gap-2 mb-1">
-                                        <i class="fa-solid fa-wallet text-sm" style="color: var(--green);"></i>
-                                        <span class="text-sm font-medium" style="color: var(--text);">Milk Wallet</span>
+                        {{-- Top: balance + info --}}
+                        <div class="p-5">
+                            <div class="flex items-start justify-between gap-3 mb-4">
+                                <div class="flex-1 min-w-0">
+                                    {{-- Title row --}}
+                                    <div class="flex flex-wrap items-center gap-1.5 mb-2">
+                                        <i class="fa-solid fa-wallet text-sm" style="color:var(--green);"></i>
+                                        <span class="text-sm font-bold" style="color:var(--text);">Milk Wallet</span>
                                         @if($wPlan)
-                                        <span class="text-[11px] font-medium px-2 py-0.5 rounded-full"
-                                            style="background: rgba(47,74,30,0.1); color: var(--green);">{{ $wPlan->name }}</span>
+                                            <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full" style="background:rgba(47,74,30,0.1);color:var(--green);">{{ $wPlan->name }}</span>
                                         @elseif($ws->milk_type)
-                                        <span class="text-[11px] font-medium px-2 py-0.5 rounded-full"
-                                            style="background: rgba(47,74,30,0.1); color: var(--green);">{{ ucfirst(str_replace('_',' ',$ws->milk_type)) }}</span>
+                                            <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full" style="background:rgba(47,74,30,0.1);color:var(--green);">{{ ucfirst(str_replace('_',' ',$ws->milk_type)) }}</span>
                                         @endif
-                                        {{-- Dynamic status badge --}}
-                                        <span class="text-[11px] font-medium px-2 py-0.5 rounded-full"
-                                            style="
-                      background: {{ $ws->delivery_status === 'paused' ? 'rgba(180,96,0,0.1)' : ($ws->delivery_status === 'stopped' ? 'rgba(180,0,0,0.1)' : 'rgba(47,74,30,0.1)') }};
-                      color: {{ $ws->delivery_status === 'paused' ? '#b46000' : ($ws->delivery_status === 'stopped' ? '#b40000' : 'var(--green)') }};">
-                                            {{ ucfirst($ws->delivery_status ?? 'Active') }}
-                                        </span>
-                                    </div>
-                                    <p class="text-xs" style="color: var(--muted);">
-                                        {{ $ws->milk_type ? ucfirst(str_replace('_', ' ', $ws->milk_type)) : 'Milk' }} ·
-                                        {{ $ws->quantity_per_day ? $ws->quantity_per_day . 'L/day' : '' }} ·
-                                        {{ $ws->delivery_slot ? ucfirst($ws->delivery_slot) : '' }}
-                                    </p>
-                                    <p class="text-xs mt-0.5" style="color: var(--muted);">
-                                        {{ $ws->start_date->format('d M') }} –
-                                        @if(!$ws->membership_plan_id && $ws->price_per_litre && $ws->quantity_per_day)
-                                            @php
-                                                $dailyCost = (float)$ws->price_per_litre * (float)$ws->quantity_per_day;
-                                                $estDays = $dailyCost > 0 ? floor((float)$ws->wallet_balance / $dailyCost) : 0;
-                                            @endphp
-                                            <span class="font-medium" style="color: var(--text);">≈ {{ $estDays }} days remaining</span>
+                                        @if($isStopped)
+                                            <span class="text-[11px] font-bold px-2 py-0.5 rounded-full" style="background:rgba(180,0,0,0.1);color:#b40000;"><i class="fa-solid fa-stop mr-0.5 text-[9px]"></i>Stopped</span>
+                                        @elseif($isPaused)
+                                            <span class="text-[11px] font-bold px-2 py-0.5 rounded-full" style="background:rgba(180,96,0,0.12);color:#b46000;"><i class="fa-solid fa-pause mr-0.5 text-[9px]"></i>Paused</span>
                                         @else
-                                            {{ $ws->end_date->format('d M Y') }} ·
-                                            <span class="font-medium" style="color: var(--text);">{{ $ws->daysRemaining() }} days left</span>
+                                            <span class="text-[11px] font-bold px-2 py-0.5 rounded-full" style="background:rgba(47,74,30,0.1);color:var(--green);"><i class="fa-solid fa-circle-check mr-0.5 text-[9px]"></i>Active</span>
                                         @endif
+                                    </div>
+                                    {{-- Details chips --}}
+                                    <div class="flex flex-wrap gap-x-3 gap-y-0.5 text-xs mb-1.5" style="color:var(--muted);">
+                                        @if($ws->milk_type)<span><i class="fa-solid fa-cow mr-1 text-[10px]"></i>{{ ucfirst(str_replace('_',' ',$ws->milk_type)) }}</span>@endif
+                                        @if($ws->quantity_per_day)<span><i class="fa-solid fa-droplet mr-1 text-[10px]"></i>{{ $ws->quantity_per_day }}L/day</span>@endif
+                                        @if($ws->delivery_slot)<span><i class="fa-solid fa-clock mr-1 text-[10px]"></i>{{ ucfirst($ws->delivery_slot) }}</span>@endif
+                                        @if($ws->price_per_litre)<span><i class="fa-solid fa-tag mr-1 text-[10px]"></i>₹{{ number_format($ws->price_per_litre,2) }}/L</span>@endif
+                                    </div>
+                                    @if($dailyCost > 0)
+                                    <p class="text-xs" style="color:var(--muted);">
+                                        <i class="fa-solid fa-calendar-days mr-1 text-[10px]"></i>
+                                        Since {{ $ws->start_date->format('d M Y') }} ·
+                                        <span class="font-semibold" style="color:var(--text);">≈ {{ $estDays }} days left</span>
                                     </p>
+                                    @endif
                                 </div>
-                                <div class="text-right">
-                                    <p class="text-[28px] font-medium leading-none" style="color: var(--green);">
-                                        ₹{{ number_format($ws->wallet_balance, 2) }}</p>
-                                    <p class="text-[11px] mt-0.5" style="color: var(--muted);">of
-                                        ₹{{ number_format($ws->wallet_total, 2) }} remaining</p>
-                                    @if($ws->price_per_litre)
-                                        <p class="text-[11px] font-medium mt-0.5" style="color: var(--green);">
-                                            ₹{{ number_format($ws->price_per_litre, 2) }}/litre</p>
+                                {{-- Balance --}}
+                                <div class="text-right flex-shrink-0">
+                                    <p class="text-3xl font-bold leading-none" style="color:var(--green);">₹{{ number_format($ws->wallet_balance,2) }}</p>
+                                    <p class="text-[11px] mt-1" style="color:var(--muted);">of ₹{{ number_format($ws->wallet_total,2) }}</p>
+                                    @if($dailyCost > 0)
+                                    <p class="text-[11px] font-semibold mt-0.5" style="color:var(--green);">₹{{ number_format($dailyCost,2) }}/day</p>
                                     @endif
                                 </div>
                             </div>
 
                             {{-- Progress bar --}}
-                            <div class="mt-4 mb-4">
-                                <div class="flex justify-between text-[11px] mb-1.5" style="color: var(--muted);">
-                                    <span>Used ₹{{ number_format($ws->walletUsedAmount(), 2) }}</span>
+                            <div>
+                                <div class="flex justify-between text-[11px] mb-1.5" style="color:var(--muted);">
+                                    <span>Used ₹{{ number_format($ws->walletUsedAmount(),2) }}</span>
                                     <span>{{ $walletPct }}% remaining</span>
                                 </div>
-                                <div class="w-full h-1.5 rounded-full" style="background: var(--border);">
-                                    <div class="h-1.5 rounded-full" style="width: {{ $walletPct }}%; background: var(--green);">
-                                    </div>
+                                <div class="w-full h-2 rounded-full overflow-hidden" style="background:var(--border);">
+                                    <div class="h-2 rounded-full transition-all"
+                                        style="width:{{ $walletPct }}%; background:{{ $walletPct < 20 ? '#ef4444' : ($walletPct < 40 ? '#f59e0b' : 'var(--green)') }};"></div>
                                 </div>
+                                @if($walletPct < 20 && $walletPct > 0)
+                                <p class="text-[11px] mt-1.5 font-semibold" style="color:#ef4444;"><i class="fa-solid fa-triangle-exclamation mr-1"></i>Low balance — top up soon</p>
+                                @endif
                             </div>
                         </div>
 
                         {{-- Stats row --}}
-                        <div class="grid grid-cols-3 divide-x"
-                            style="border-top: 0.5px solid var(--border); border-color: var(--border);">
+                        <div class="grid grid-cols-3 divide-x" style="border-top:1px solid var(--border);">
                             <div class="py-3 text-center">
-                                <p class="text-lg font-medium" style="color: var(--green);">
-                                    {{ number_format($ws->walletTransactions->where('type', 'debit')->sum('litres'), 1) }}L</p>
-                                <p class="text-[10px] mt-0.5" style="color: var(--muted);">milk used</p>
+                                <p class="text-base font-bold" style="color:var(--green);">{{ number_format($ws->walletTransactions->where('type','debit')->sum('litres'),1) }}L</p>
+                                <p class="text-[10px] mt-0.5" style="color:var(--muted);">milk used</p>
                             </div>
                             <div class="py-3 text-center">
-                                <p class="text-lg font-medium" style="color: var(--green);">
-                                    {{ $ws->walletTransactions->where('type', 'debit')->count() }}</p>
-                                <p class="text-[10px] mt-0.5" style="color: var(--muted);">deliveries</p>
+                                <p class="text-base font-bold" style="color:var(--green);">{{ $ws->walletTransactions->where('type','debit')->count() }}</p>
+                                <p class="text-[10px] mt-0.5" style="color:var(--muted);">deliveries</p>
                             </div>
                             <div class="py-3 text-center">
-                                <p class="text-lg font-medium" style="color: var(--green);">
-                                    {{ $ws->walletTransactions->where('type', 'credit')->count() }}</p>
-                                <p class="text-[10px] mt-0.5" style="color: var(--muted);">top-ups</p>
+                                <p class="text-base font-bold" style="color:var(--green);">{{ $ws->walletTransactions->where('type','credit')->count() }}</p>
+                                <p class="text-[10px] mt-0.5" style="color:var(--muted);">top-ups</p>
                             </div>
                         </div>
 
                         {{-- Action buttons --}}
-                        <div class="grid grid-cols-3 divide-x"
-                            style="border-top: 0.5px solid var(--border); border-color: var(--border);">
-
-                            {{-- Top up --}}
+                        <div class="grid grid-cols-3 divide-x" style="border-top:1px solid var(--border);">
                             <button onclick="openTopupModal({{ $ws->id }})"
-                                class="flex items-center justify-center gap-1.5 py-3 text-xs font-medium transition-colors hover:bg-black/5 active:bg-black/10"
-                                style="color: var(--muted); background: transparent; border: none; cursor: pointer;">
-                                <i class="fa-solid fa-arrow-up text-xs"></i>
-                                Top up
+                                class="flex flex-col items-center gap-1 py-3.5 text-xs font-semibold transition-colors hover:bg-green-50"
+                                style="color:var(--green); background:transparent; border:none; cursor:pointer;">
+                                <i class="fa-solid fa-arrow-up text-sm"></i>Top Up
                             </button>
 
-                            {{-- Pause / Resume / Restart toggle --}}
-                            @if($ws->delivery_status === 'stopped')
+                            @if($isStopped)
                                 <form method="POST" action="{{ route('wallet.restart', $ws->id) }}" class="contents">
                                     @csrf @method('PATCH')
-                                    <button type="submit"
-                                        class="flex items-center justify-center gap-1.5 py-3 text-xs font-medium transition-colors hover:bg-green-50 active:bg-green-100"
-                                        style="color: var(--green); background: transparent; border: none; cursor: pointer;">
-                                        <i class="fa-solid fa-play text-xs"></i>
-                                        Restart
+                                    <button type="submit" class="flex flex-col items-center gap-1 py-3.5 text-xs font-semibold transition-colors hover:bg-green-50"
+                                        style="color:var(--green); background:transparent; border:none; cursor:pointer;">
+                                        <i class="fa-solid fa-play text-sm"></i>Restart
                                     </button>
                                 </form>
                             @else
                                 <form method="POST" action="{{ route('wallet.pause', $ws->id) }}" class="contents">
                                     @csrf @method('PATCH')
-                                    <input type="hidden" name="action"
-                                        value="{{ $ws->delivery_status === 'paused' ? 'resume' : 'pause' }}">
-                                    <button type="submit"
-                                        class="flex items-center justify-center gap-1.5 py-3 text-xs font-medium transition-colors hover:bg-yellow-50 active:bg-yellow-100"
-                                        style="color: #b46000; background: transparent; border: none; cursor: pointer;">
-                                        <i class="fa-solid {{ $ws->delivery_status === 'paused' ? 'fa-play' : 'fa-pause' }} text-xs"></i>
-                                        {{ $ws->delivery_status === 'paused' ? 'Resume' : 'Pause' }}
+                                    <input type="hidden" name="action" value="{{ $isPaused ? 'resume' : 'pause' }}">
+                                    <button type="submit" class="flex flex-col items-center gap-1 py-3.5 text-xs font-semibold transition-colors hover:bg-yellow-50"
+                                        style="color:#b46000; background:transparent; border:none; cursor:pointer;">
+                                        <i class="fa-solid {{ $isPaused ? 'fa-play' : 'fa-pause' }} text-sm"></i>
+                                        {{ $isPaused ? 'Resume' : 'Pause' }}
                                     </button>
                                 </form>
                             @endif
 
-                            {{-- Stop (hidden when already stopped) --}}
-                            @if($ws->delivery_status !== 'stopped')
+                            @if(!$isStopped)
                                 <button onclick="document.getElementById('stop-confirm-{{ $ws->id }}').classList.remove('hidden')"
-                                    class="flex items-center justify-center gap-1.5 py-3 text-xs font-medium transition-colors hover:bg-red-50 active:bg-red-100"
-                                    style="color: #b40000; background: transparent; border: none; cursor: pointer;">
-                                    <i class="fa-solid fa-stop text-xs"></i>
-                                    Stop
+                                    class="flex flex-col items-center gap-1 py-3.5 text-xs font-semibold transition-colors hover:bg-red-50"
+                                    style="color:#b40000; background:transparent; border:none; cursor:pointer;">
+                                    <i class="fa-solid fa-stop text-sm"></i>Stop
                                 </button>
                             @else
-                                {{-- Add money prompt when stopped --}}
                                 <button onclick="openTopupModal({{ $ws->id }})"
-                                    class="flex items-center justify-center gap-1.5 py-3 text-xs font-medium transition-colors hover:bg-green-50"
-                                    style="color: var(--green); background: transparent; border: none; cursor: pointer;">
-                                    <i class="fa-solid fa-plus text-xs"></i>
-                                    Add Money
+                                    class="flex flex-col items-center gap-1 py-3.5 text-xs font-semibold transition-colors hover:bg-green-50"
+                                    style="color:var(--green); background:transparent; border:none; cursor:pointer;">
+                                    <i class="fa-solid fa-plus text-sm"></i>Add Money
                                 </button>
                             @endif
-
                         </div>
                     </div>
 
-                    {{-- Stop confirmation panel --}}
-                    <div id="stop-confirm-{{ $ws->id }}" class="hidden mt-2 rounded-2xl border p-4"
-                        style="border-color: #fca5a5; background: #fff5f5;">
-                        <p class="text-sm font-medium mb-0.5" style="color: var(--text);">Stop all deliveries?</p>
-                        <p class="text-xs mb-3" style="color: var(--muted);">Your wallet balance is safe. You can restart
-                            anytime.</p>
+                    {{-- Stop confirmation --}}
+                    <div id="stop-confirm-{{ $ws->id }}" class="hidden mt-3 rounded-2xl border p-4" style="border-color:#fca5a5; background:#fff5f5;">
+                        <p class="text-sm font-semibold mb-1" style="color:var(--text);">Stop all deliveries?</p>
+                        <p class="text-xs mb-3" style="color:var(--muted);">Your wallet balance is safe. You can restart anytime.</p>
                         <div class="flex gap-2">
                             <form method="POST" action="{{ route('wallet.stop', $ws->id) }}" class="flex-1">
                                 @csrf @method('PATCH')
-                                <button type="submit" class="w-full py-2 rounded-xl text-xs font-medium"
-                                    style="background: #fee2e2; color: #b91c1c; border: none; cursor: pointer;">
-                                    Yes, stop deliveries
+                                <button type="submit" class="w-full py-2.5 rounded-xl text-xs font-semibold" style="background:#fee2e2; color:#b91c1c; border:none; cursor:pointer;">
+                                    <i class="fa-solid fa-stop mr-1"></i>Yes, stop
                                 </button>
                             </form>
                             <button onclick="document.getElementById('stop-confirm-{{ $ws->id }}').classList.add('hidden')"
-                                class="flex-1 py-2 rounded-xl text-xs font-medium"
-                                style="background: transparent; border: 0.5px solid var(--border); color: var(--muted); cursor: pointer;">
-                                Cancel
-                            </button>
+                                class="flex-1 py-2.5 rounded-xl text-xs font-semibold"
+                                style="background:transparent; border:1px solid var(--border); color:var(--muted); cursor:pointer;">Cancel</button>
                         </div>
                     </div>
 
-                    {{-- ── Settings Panel ── --}}
-                    <div class="mt-3 rounded-2xl border overflow-hidden" style="border-color:var(--border);">
-                        {{-- Toggle header --}}
-                        <button onclick="document.getElementById('ws-settings-{{ $ws->id }}').classList.toggle('hidden')"
-                            class="w-full flex items-center justify-between px-4 py-3 text-xs font-semibold hover:bg-gray-50 transition-colors"
-                            style="color:var(--text);">
-                            <span><i class="fa-solid fa-sliders mr-2" style="color:var(--green);"></i>Delivery Settings</span>
-                            <i class="fa-solid fa-chevron-down text-[10px]" style="color:var(--muted);"></i>
+                    {{-- ── Delivery Settings ── --}}
+                    <div class="mt-3 rounded-2xl overflow-hidden" style="border:1px solid var(--border);">
+                        <button onclick="this.nextElementSibling.classList.toggle('hidden'); this.querySelector('.chevron').classList.toggle('rotate-180')"
+                            class="w-full flex items-center justify-between px-4 py-3.5 hover:bg-gray-50 transition-colors">
+                            <span class="text-xs font-bold flex items-center gap-2" style="color:var(--text);">
+                                <i class="fa-solid fa-sliders text-sm" style="color:var(--green);"></i>Delivery Settings
+                            </span>
+                            <i class="fa-solid fa-chevron-down text-[10px] chevron transition-transform duration-200" style="color:var(--muted);"></i>
                         </button>
-
-                        <div id="ws-settings-{{ $ws->id }}" class="hidden border-t" style="border-color:var(--border);">
-                            <form method="POST" action="{{ route('wallet.update', $ws->id) }}" class="p-4 space-y-4">
+                        <div class="hidden border-t" style="border-color:var(--border);">
+                            <form method="POST" action="{{ route('wallet.update', $ws->id) }}" class="p-4 space-y-5">
                                 @csrf @method('PATCH')
 
-                                {{-- Milk type --}}
                                 <div>
-                                    <label class="block text-xs font-semibold mb-2" style="color:var(--text);"><i class="fa-solid fa-cow mr-1" style="color:var(--green);"></i>Milk Type</label>
+                                    <p class="text-xs font-bold mb-2" style="color:var(--text);"><i class="fa-solid fa-cow mr-1.5" style="color:var(--green);"></i>Milk Type</p>
                                     <div class="grid grid-cols-2 gap-2">
                                         @foreach($milkPrices as $mp)
                                         @php $icons=['cow'=>'fa-cow','buffalo'=>'fa-hippo','toned'=>'fa-droplet','full_fat'=>'fa-bottle-water']; @endphp
-                                        <label class="flex items-center gap-2 p-2.5 rounded-xl border-2 cursor-pointer transition-all hover:border-green-400"
-                                            style="border-color:{{ $ws->milk_type === $mp->milk_type ? 'var(--green)' : 'var(--border)' }}; background:{{ $ws->milk_type === $mp->milk_type ? 'rgba(47,74,30,0.04)' : '#fff' }};">
-                                            <input type="radio" name="milk_type" value="{{ $mp->milk_type }}" class="hidden"
-                                                {{ $ws->milk_type === $mp->milk_type ? 'checked' : '' }}>
-                                            <i class="fas {{ $icons[$mp->milk_type] ?? 'fa-droplet' }} text-xs" style="color:var(--green);"></i>
-                                            <div class="flex-1 min-w-0">
+                                        <label class="flex items-center gap-2.5 p-3 rounded-xl border-2 cursor-pointer transition-all hover:border-green-400"
+                                            style="border-color:{{ $ws->milk_type===$mp->milk_type ? 'var(--green)' : 'var(--border)' }};
+                                                   background:{{ $ws->milk_type===$mp->milk_type ? 'rgba(47,74,30,0.05)' : '#fff' }};">
+                                            <input type="radio" name="milk_type" value="{{ $mp->milk_type }}" class="hidden" {{ $ws->milk_type===$mp->milk_type ? 'checked' : '' }}>
+                                            <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                                                style="background:{{ $ws->milk_type===$mp->milk_type ? 'rgba(47,74,30,0.12)' : 'rgba(0,0,0,0.04)' }};">
+                                                <i class="fas {{ $icons[$mp->milk_type] ?? 'fa-droplet' }} text-xs" style="color:var(--green);"></i>
+                                            </div>
+                                            <div>
                                                 <p class="text-xs font-bold leading-tight" style="color:var(--text);">{{ $mp->label }}</p>
-                                                <p class="text-[10px]" style="color:var(--green);">₹{{ number_format($mp->price_per_litre,2) }}/L</p>
+                                                <p class="text-[10px] font-semibold" style="color:var(--green);">₹{{ number_format($mp->price_per_litre,2) }}/L</p>
                                             </div>
                                         </label>
                                         @endforeach
                                     </div>
                                 </div>
 
-                                {{-- Quantity per day --}}
                                 <div>
-                                    <label class="block text-xs font-semibold mb-2" style="color:var(--text);"><i class="fa-solid fa-scale-balanced mr-1" style="color:var(--green);"></i>Quantity per Day</label>
+                                    <p class="text-xs font-bold mb-2" style="color:var(--text);"><i class="fa-solid fa-scale-balanced mr-1.5" style="color:var(--green);"></i>Quantity per Day</p>
                                     <div class="grid grid-cols-5 gap-2">
                                         @foreach([1,2,3,5,8] as $q)
-                                        <label class="text-center py-2.5 rounded-xl border-2 cursor-pointer text-sm font-bold transition-all"
-                                            style="border-color:{{ (int)$ws->quantity_per_day === $q ? 'var(--green)' : 'var(--border)' }}; background:{{ (int)$ws->quantity_per_day === $q ? 'var(--green)' : '#fff' }}; color:{{ (int)$ws->quantity_per_day === $q ? '#fff' : 'var(--muted)' }};">
-                                            <input type="radio" name="quantity_per_day" value="{{ $q }}" class="hidden"
-                                                {{ (int)$ws->quantity_per_day === $q ? 'checked' : '' }}>
+                                        <label class="text-center py-3 rounded-xl border-2 cursor-pointer text-sm font-bold transition-all"
+                                            style="border-color:{{ (int)$ws->quantity_per_day===$q ? 'var(--green)' : 'var(--border)' }};
+                                                   background:{{ (int)$ws->quantity_per_day===$q ? 'var(--green)' : '#fff' }};
+                                                   color:{{ (int)$ws->quantity_per_day===$q ? '#fff' : 'var(--muted)' }};">
+                                            <input type="radio" name="quantity_per_day" value="{{ $q }}" class="hidden" {{ (int)$ws->quantity_per_day===$q ? 'checked' : '' }}>
                                             {{ $q }}L
                                         </label>
                                         @endforeach
                                     </div>
                                 </div>
 
-                                {{-- Delivery slot --}}
                                 <div>
-                                    <label class="block text-xs font-semibold mb-2" style="color:var(--text);"><i class="fa-solid fa-clock mr-1" style="color:var(--green);"></i>Delivery Slot</label>
-                                    <div class="grid grid-cols-2 gap-2">
+                                    <p class="text-xs font-bold mb-2" style="color:var(--text);"><i class="fa-solid fa-clock mr-1.5" style="color:var(--green);"></i>Delivery Slot</p>
+                                    <div class="grid grid-cols-2 gap-3">
                                         @foreach([['value'=>'morning','label'=>'Morning','time'=>'5–8 AM','icon'=>'fa-sun'],['value'=>'evening','label'=>'Evening','time'=>'5–8 PM','icon'=>'fa-moon']] as $slot)
-                                        <label class="flex flex-col items-center gap-1 p-3 rounded-xl border-2 cursor-pointer text-center transition-all"
-                                            style="border-color:{{ $ws->delivery_slot === $slot['value'] ? 'var(--green)' : 'var(--border)' }}; background:{{ $ws->delivery_slot === $slot['value'] ? 'rgba(47,74,30,0.04)' : '#fff' }};">
-                                            <input type="radio" name="delivery_slot" value="{{ $slot['value'] }}" class="hidden"
-                                                {{ $ws->delivery_slot === $slot['value'] ? 'checked' : '' }}>
-                                            <i class="fas {{ $slot['icon'] }} text-base" style="color:{{ $ws->delivery_slot === $slot['value'] ? 'var(--green)' : 'var(--muted)' }};"></i>
+                                        <label class="flex flex-col items-center gap-1.5 p-3.5 rounded-xl border-2 cursor-pointer text-center transition-all"
+                                            style="border-color:{{ $ws->delivery_slot===$slot['value'] ? 'var(--green)' : 'var(--border)' }};
+                                                   background:{{ $ws->delivery_slot===$slot['value'] ? 'rgba(47,74,30,0.05)' : '#fff' }};">
+                                            <input type="radio" name="delivery_slot" value="{{ $slot['value'] }}" class="hidden" {{ $ws->delivery_slot===$slot['value'] ? 'checked' : '' }}>
+                                            <i class="fas {{ $slot['icon'] }} text-lg" style="color:{{ $ws->delivery_slot===$slot['value'] ? 'var(--green)' : 'var(--muted)' }};"></i>
                                             <p class="text-xs font-bold" style="color:var(--text);">{{ $slot['label'] }}</p>
                                             <p class="text-[10px]" style="color:var(--muted);">{{ $slot['time'] }}</p>
                                         </label>
@@ -334,44 +302,17 @@
                                     </div>
                                 </div>
 
-                                {{-- Delivery address --}}
                                 <div>
-                                    <label class="block text-xs font-semibold mb-1.5" style="color:var(--text);"><i class="fa-solid fa-location-dot mr-1" style="color:var(--green);"></i>Delivery Address</label>
+                                    <p class="text-xs font-bold mb-1.5" style="color:var(--text);"><i class="fa-solid fa-location-dot mr-1.5" style="color:var(--green);"></i>Delivery Address</p>
                                     <textarea name="delivery_address" rows="2"
                                         class="w-full px-3 py-2.5 text-sm border-2 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none"
                                         style="border-color:var(--border);">{{ $ws->delivery_address }}</textarea>
                                 </div>
 
-                                <button type="submit" class="w-full py-2.5 rounded-xl font-bold text-sm text-white hover:shadow-md" style="background:var(--green);">
-                                    <i class="fa-solid fa-check mr-1"></i> Save Changes
+                                <button type="submit" class="w-full py-3 rounded-xl font-bold text-sm text-white transition-all hover:shadow-md" style="background:var(--green);">
+                                    <i class="fa-solid fa-check mr-1.5"></i>Save Changes
                                 </button>
                             </form>
-
-                            {{-- Extra milk for a day --}}
-                            <div class="border-t px-4 py-4" style="border-color:var(--border);">
-                                <p class="text-xs font-semibold mb-3" style="color:var(--text);"><i class="fa-solid fa-plus-circle mr-1" style="color:var(--green);"></i>Request Extra Milk for a Day</p>
-                                <form method="POST" action="{{ route('wallet.extra', $ws->id) }}" class="flex gap-2 items-end">
-                                    @csrf
-                                    <div class="flex-1">
-                                        <label class="block text-[10px] font-semibold mb-1" style="color:var(--muted);">Date</label>
-                                        <input type="date" name="date" required
-                                            min="{{ now()->format('Y-m-d') }}" max="{{ now()->addDays(30)->format('Y-m-d') }}"
-                                            value="{{ now()->addDay()->format('Y-m-d') }}"
-                                            class="w-full px-3 py-2 text-sm border-2 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                                            style="border-color:var(--border);">
-                                    </div>
-                                    <div style="width:90px;">
-                                        <label class="block text-[10px] font-semibold mb-1" style="color:var(--muted);">Extra (L)</label>
-                                        <input type="number" name="extra_qty" required min="0.5" max="20" step="0.5" value="1"
-                                            class="w-full px-3 py-2 text-sm border-2 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                                            style="border-color:var(--border);">
-                                    </div>
-                                    <button type="submit" class="px-4 py-2 rounded-xl text-sm font-bold text-white flex-shrink-0" style="background:var(--green);">
-                                        Add
-                                    </button>
-                                </form>
-                                <p class="text-[10px] mt-1.5" style="color:var(--muted);">Extra milk will be added to that day's delivery and deducted from your wallet.</p>
-                            </div>
                         </div>
                     </div>
 
