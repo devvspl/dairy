@@ -38,7 +38,7 @@
                 @csrf
                 <button type="submit" class="px-4 py-2 rounded-lg font-semibold" style="background-color: var(--green); color: #fff;">
                     <i class="fa-solid fa-calendar-plus mr-2"></i>
-                    {{ $subscription->membershipPlan->isOnDemand() ? 'Generate Daily Entries' : 'Generate Schedule' }}
+                    {{ (!$subscription->membership_plan_id || $subscription->membershipPlan?->isOnDemand()) ? 'Generate Daily Entries' : 'Generate Schedule' }}
                 </button>
             </form>
             <form method="POST" action="{{ route('admin.subscriptions.deliveries.reset', $subscription) }}"
@@ -110,10 +110,11 @@
             <table class="w-full">
                 <thead class="border-b" style="border-color: var(--border); background-color: rgba(47, 74, 30, 0.05);">
                     <tr>
+                        @php $isWallet = !$subscription->membership_plan_id || $subscription->membershipPlan?->isOnDemand(); @endphp
                         <th class="px-4 py-3 text-left text-sm font-semibold" style="color: var(--text);">Date</th>
                         <th class="px-4 py-3 text-left text-sm font-semibold" style="color: var(--text);">Day</th>
                         <th class="px-4 py-3 text-left text-sm font-semibold" style="color: var(--text);">Quantity</th>
-                        @if($subscription->membershipPlan->isOnDemand())
+                        @if($isWallet)
                         <th class="px-4 py-3 text-left text-sm font-semibold" style="color: var(--text);">Wallet Debit</th>
                         @endif
                         <th class="px-4 py-3 text-left text-sm font-semibold" style="color: var(--text);">Status</th>
@@ -128,7 +129,7 @@
                         <td class="px-4 py-3 text-sm" style="color: var(--text);">{{ $delivery->delivery_date->format('M d, Y') }}</td>
                         <td class="px-4 py-3 text-sm" style="color: var(--muted);">{{ $delivery->delivery_date->format('l') }}</td>
                         <td class="px-4 py-3 text-sm font-semibold" style="color: var(--green);">{{ $delivery->quantity_delivered }} L</td>
-                        @if($subscription->membershipPlan->isOnDemand())
+                        @if($isWallet)
                         <td class="px-4 py-3 text-sm font-semibold text-red-600">
                             @if($delivery->status === 'delivered')
                                 ₹{{ number_format($delivery->quantity_delivered * $subscription->price_per_litre, 2) }}
@@ -176,8 +177,8 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="{{ $subscription->membershipPlan->isOnDemand() ? 8 : 7 }}" class="px-4 py-8 text-center" style="color: var(--muted);">
-                            No delivery logs found. Click "{{ $subscription->membershipPlan->isOnDemand() ? 'Generate Daily Entries' : 'Generate Schedule' }}" to create delivery entries.
+                        <td colspan="{{ $isWallet ? 8 : 7 }}" class="px-4 py-8 text-center" style="color: var(--muted);">
+                            No delivery logs found. Click "{{ $isWallet ? 'Generate Daily Entries' : 'Generate Schedule' }}" to create delivery entries.
                         </td>
                     </tr>
                     @endforelse
