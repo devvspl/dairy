@@ -150,12 +150,32 @@ class WalletController extends Controller
     {
         $this->authorizeSubscription($subscription);
 
-        $action = $request->input('action', 'pause');
+        $action    = $request->input('action', 'pause');
         $newStatus = $action === 'resume' ? 'active' : 'paused';
 
         $subscription->update(['delivery_status' => $newStatus]);
 
-        $msg = $newStatus === 'paused' ? 'Deliveries paused.' : 'Deliveries resumed.';
+        if ($newStatus === 'paused') {
+            // Mark today's pending delivery as skipped (if exists)
+            \App\Models\DeliveryLog::where('user_subscription_id', $subscription->id)
+                ->whereDate('delivery_date', now())
+                ->where('status', 'pending')
+                ->update([
+                    'status'    => 'skipped',
+                    'notes'     => 'Paused by member',
+                    'marked_at' => now(),
+                ]);
+            $msg = 'Deliveries paused. Today\'s delivery has been skipped.';
+        } else {
+            // On resume: ensure tomorrow's delivery log exists
+            $tomorrow = now()->addDay()->format('Y-m-d');
+            \App\Models\DeliveryLog::firstOrCreate(
+                ['user_subscription_id' => $subscription->id, 'delivery_date' => $tomorrow],
+                ['quantity_delivered' => (float) ($subscription->quantity_per_day ?? 1), 'status' => 'pending']
+            );
+            $msg = 'Deliveries resumed. Tomorrow\'s delivery is scheduled.';
+        }
+
         return redirect()->route('member.dashboard')->with('success', $msg);
     }
 

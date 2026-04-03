@@ -103,25 +103,10 @@ class DeliveryLogController extends Controller
     {
         $plan = $subscription->membershipPlan;
 
-        // ── Wallet-only (no plan): generate one entry per day indefinitely from start_date ──
+        // ── Wallet-only (no plan): generate based on wallet balance ──
         if (!$plan) {
-            $qty = (float) ($subscription->quantity_per_day ?? 1);
-            if ($qty <= 0) {
-                return redirect()->back()->with('error', 'Subscription has no quantity_per_day set.');
-            }
-            // Generate 90 days forward from today (or start_date if in future)
-            $startDate = $subscription->start_date->isPast() ? now()->startOfDay() : $subscription->start_date->copy();
-            $endDate   = $startDate->copy()->addDays(89);
-            $generated = 0;
-            while ($startDate->lte($endDate)) {
-                DeliveryLog::firstOrCreate(
-                    ['user_subscription_id' => $subscription->id, 'delivery_date' => $startDate->format('Y-m-d')],
-                    ['quantity_delivered' => $qty, 'status' => 'pending']
-                );
-                $generated++;
-                $startDate->addDay();
-            }
-            return redirect()->back()->with('success', "Generated {$generated} wallet delivery entries (90 days).");
+            $generated = \App\Models\DeliveryLog::autoGenerate($subscription);
+            return redirect()->back()->with('success', "Generated {$generated} wallet delivery entries (based on current balance).");
         }
 
         // ── On-Demand plan ──

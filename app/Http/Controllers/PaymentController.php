@@ -295,6 +295,9 @@ class PaymentController extends Controller
                 'transaction_date'     => now()->toDateString(),
             ]);
 
+            // Auto-generate 90 days of delivery logs
+            \App\Models\DeliveryLog::autoGenerate($subscription);
+
             Log::info('Wallet Created', ['user_id' => $user->id, 'subscription_id' => $subscription->id]);
             return;
         }
@@ -307,6 +310,9 @@ class PaymentController extends Controller
             (float) $order->amount,
             'Wallet top-up | Order: ' . $order->order_id
         );
+
+        // Extend delivery log window by 90 more days from the last existing entry
+        \App\Models\DeliveryLog::autoGenerate($subscription);
 
         Log::info('Wallet Top-up Processed', [
             'user_id'         => $order->user_id,
