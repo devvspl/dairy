@@ -120,12 +120,16 @@ class ShiprocketService
         }
 
         $data       = $response->json();
-        $srOrderId  = $data['order_id'] ?? null;
-        $shipmentId = $data['shipment_id'] ?? null;
+
+        Log::info('Shiprocket create order response', ['order' => $order->order_id, 'response' => $data]);
+
+        // Shiprocket may return IDs at root or nested under 'payload'
+        $srOrderId  = $data['order_id']    ?? $data['payload']['order_id']    ?? null;
+        $shipmentId = $data['shipment_id'] ?? $data['payload']['shipment_id'] ?? null;
 
         if (!$srOrderId || !$shipmentId) {
             Log::error('Shiprocket create order: missing order_id or shipment_id', ['response' => $data]);
-            return ['success' => false, 'message' => 'Shiprocket order created but missing order/shipment ID.'];
+            return ['success' => false, 'message' => 'Shiprocket order created but missing order/shipment ID. Check Laravel logs for full response.'];
         }
 
         // Step 2: Assign AWB
