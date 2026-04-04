@@ -305,7 +305,7 @@ class DashboardController extends Controller
                         ". Member must top up first."
                     );
                 }
-                $subscription->debitWallet($newQty, $dateStr, $user->id);
+                $subscription->debitWallet($newQty, $dateStr, $user->id, $delivery->id);
 
             } elseif ($newStatus === 'delivered' && $oldStatus === 'delivered' && $newQty !== $oldQty) {
                 $diff = $newQty - $oldQty;
@@ -318,16 +318,16 @@ class DashboardController extends Controller
                             " is less than extra cost ₹" . number_format($extraCost, 2) . "."
                         );
                     }
-                    $subscription->debitWallet($diff, $dateStr, $user->id);
+                    $subscription->debitWallet($diff, $dateStr, $user->id, $delivery->id);
                 } else {
                     $creditAmt = round(abs($diff) * (float) $subscription->price_per_litre, 2);
-                    $subscription->creditWallet($creditAmt, "Qty adjusted on {$dateStr}");
+                    $subscription->creditWallet($creditAmt, "Qty adjusted on {$dateStr}", true, $delivery->id);
                 }
 
             } elseif ($oldStatus === 'delivered' && $newStatus !== 'delivered') {
                 $creditAmt = round($oldQty * (float) $subscription->price_per_litre, 2);
                 if ($creditAmt > 0) {
-                    $subscription->creditWallet($creditAmt, "Delivery reversed on {$dateStr}");
+                    $subscription->creditWallet($creditAmt, "Delivery reversed on {$dateStr}", true, $delivery->id);
                 }
             }
 

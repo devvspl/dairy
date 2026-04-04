@@ -171,10 +171,23 @@ class UserSubscription extends Model
     }
 
     /**
-     * Debit wallet for a delivery. Returns false if insufficient balance.
+     * Debit wallet for a delivery.
+     * Pass $deliveryLogId to link the transaction to the specific delivery.
+     * Idempotent: if a debit already exists for this delivery_log_id, skips.
+     * Returns false if insufficient balance.
      */
-    public function debitWallet(float $litres, string $date, ?int $markedBy = null): bool
+    public function debitWallet(float $litres, string $date, ?int $markedBy = null, ?int $deliveryLogId = null): bool
     {
+        // Idempotency: skip if a debit already exists for this delivery log
+        if ($deliveryLogId) {
+            $exists = MilkWalletTransaction::where('user_subscription_id', $this->id)
+                ->where('delivery_log_id', $deliveryLogId)
+                ->where('type', 'debit')
+                ->where('is_reversal', false)
+                ->exists();
+            if ($exists) return true; // already debited, nothing to do
+        }
+
         $pricePerLitre = (float) $this->price_per_litre;
         $amount        = round($litres * $pricePerLitre, 2);
         $newBalance    = round((float) $this->wallet_balance - $amount, 2);
@@ -186,36 +199,45 @@ class UserSubscription extends Model
         MilkWalletTransaction::create([
             'user_id'              => $this->user_id,
             'user_subscription_id' => $this->id,
+            'delivery_log_id'      => $deliveryLogId,
             'type'                 => 'debit',
             'amount'               => $amount,
             'litres'               => $litres,
             'balance_after'        => $newBalance,
             'description'          => number_format($litres, 2) . 'L milk delivered',
             'transaction_date'     => $date,
+            'is_reversal'          => false,
         ]);
 
         return true;
     }
 
     /**
-     * Credit wallet (top-up on new payment)
+     * Credit wallet.
+     * For reversals (delivery un-marked): pass is_reversal=true so wallet_total is NOT inflated.
+     * For top-ups: is_reversal=false (default), wallet_total IS incremented.
      */
-    public function creditWallet(float $amount, string $description = 'Pack purchased'): void
+    public function creditWallet(float $amount, string $description = 'Pack purchased', bool $isReversal = false, ?int $deliveryLogId = null): void
     {
         $newBalance = round((float) $this->wallet_balance + $amount, 2);
-        $this->update([
-            'wallet_balance' => $newBalance,
-            'wallet_total'   => round((float) $this->wallet_total + $amount, 2),
-        ]);
+
+        $update = ['wallet_balance' => $newBalance];
+        // Only inflate wallet_total for real top-ups, not reversals
+        if (!$isReversal) {
+            $update['wallet_total'] = round((float) $this->wallet_total + $amount, 2);
+        }
+        $this->update($update);
 
         MilkWalletTransaction::create([
             'user_id'              => $this->user_id,
             'user_subscription_id' => $this->id,
+            'delivery_log_id'      => $deliveryLogId,
             'type'                 => 'credit',
             'amount'               => $amount,
             'balance_after'        => $newBalance,
             'description'          => $description,
             'transaction_date'     => now()->toDateString(),
+            'is_reversal'          => $isReversal,
         ]);
     }
 }

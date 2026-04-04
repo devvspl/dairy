@@ -7,8 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 class MilkWalletTransaction extends Model
 {
     protected $fillable = [
-        'user_id', 'user_subscription_id', 'type', 'amount',
-        'litres', 'balance_after', 'description', 'transaction_date',
+        'user_id', 'user_subscription_id', 'delivery_log_id', 'type', 'amount',
+        'litres', 'balance_after', 'description', 'transaction_date', 'is_reversal',
     ];
 
     protected $casts = [
@@ -16,6 +16,7 @@ class MilkWalletTransaction extends Model
         'litres'           => 'decimal:3',
         'balance_after'    => 'decimal:2',
         'transaction_date' => 'date',
+        'is_reversal'      => 'boolean',
     ];
 
     public function user()         { return $this->belongsTo(User::class); }
