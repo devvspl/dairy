@@ -30,7 +30,7 @@
             <div class="flex-1">
                 <div class="flex items-center gap-3 mb-2">
                     <h3 class="font-bold text-lg" style="color: var(--text);">
-                        {{ $order->membershipPlan->name }}
+                        {{ $order->membershipPlan?->name ?? 'Milk Wallet Top-up' }}
                     </h3>
                     @if($order->isSuccess())
                     <span class="px-3 py-1 text-xs rounded-full font-bold bg-green-100 text-green-700">
