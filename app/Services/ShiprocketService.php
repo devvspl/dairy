@@ -16,6 +16,12 @@ class ShiprocketService
         return ShiprocketSetting::instance();
     }
 
+    /**
+     * Get a valid auth token.
+     * Token is valid for 240 hours (10 days) per Shiprocket docs.
+     * We cache for 239 hours to refresh slightly before expiry.
+     * Null is never cached — failed auth retries on next call.
+     */
     protected function token(): ?string
     {
         $cached = Cache::get('shiprocket_token');
@@ -37,11 +43,15 @@ class ShiprocketService
         ]);
 
         if ($response->successful() && $token = $response->json('token')) {
-            Cache::put('shiprocket_token', $token, 3600 * 8);
+            // Cache for 239 hours (just under the 240h expiry)
+            Cache::put('shiprocket_token', $token, 3600 * 239);
             return $token;
         }
 
-        Log::error('Shiprocket auth failed', ['response' => $response->body()]);
+        Log::error('Shiprocket auth failed', [
+            'status'   => $response->status(),
+            'response' => $response->body(),
+        ]);
         return null;
     }
 
@@ -50,6 +60,12 @@ class ShiprocketService
         return (bool) $this->settings()->enabled;
     }
 
+    /**
+     * Full Shiprocket flow per API docs:
+     * 1. Create order  → get order_id + shipment_id
+     * 2. Assign AWB    → get awb_code + courier_name
+     * 3. Generate pickup
+     */
     public function createOrder(\App\Models\ProductOrder $order): array
     {
         $token = $this->token();
@@ -91,22 +107,69 @@ class ShiprocketService
             'weight'                => $s->pkg_weight,
         ];
 
+        // Step 1: Create order
         $response = Http::withToken($token)->post("{$this->baseUrl}/orders/create/adhoc", $payload);
 
-        if ($response->successful()) {
-            $data = $response->json();
-            return [
-                'success'     => true,
-                'order_id'    => $data['order_id'] ?? null,
-                'shipment_id' => $data['shipment_id'] ?? null,
-                'status'      => $data['status'] ?? null,
-                'awb_code'    => $data['awb_code'] ?? null,
-                'courier'     => $data['courier_name'] ?? null,
-            ];
+        if (!$response->successful()) {
+            Log::error('Shiprocket create order failed', [
+                'order'    => $order->order_id,
+                'status'   => $response->status(),
+                'response' => $response->body(),
+            ]);
+            return ['success' => false, 'message' => $response->json('message') ?? 'Failed to create Shiprocket order.'];
         }
 
-        Log::error('Shiprocket create order failed', ['order' => $order->order_id, 'response' => $response->body()]);
-        return ['success' => false, 'message' => $response->json('message') ?? 'Failed to create Shiprocket order.'];
+        $data       = $response->json();
+        $srOrderId  = $data['order_id'] ?? null;
+        $shipmentId = $data['shipment_id'] ?? null;
+
+        if (!$srOrderId || !$shipmentId) {
+            Log::error('Shiprocket create order: missing order_id or shipment_id', ['response' => $data]);
+            return ['success' => false, 'message' => 'Shiprocket order created but missing order/shipment ID.'];
+        }
+
+        // Step 2: Assign AWB
+        $awbResponse = Http::withToken($token)->post("{$this->baseUrl}/courier/assign/awb", [
+            'shipment_id' => $shipmentId,
+        ]);
+
+        $awbCode     = null;
+        $courierName = null;
+
+        if ($awbResponse->successful()) {
+            $awbData     = $awbResponse->json();
+            $awbCode     = $awbData['response']['data']['awb_code']      ?? $awbData['awb_code']      ?? null;
+            $courierName = $awbData['response']['data']['courier_name']  ?? $awbData['courier_name']  ?? null;
+        } else {
+            Log::warning('Shiprocket AWB assignment failed', [
+                'order'    => $order->order_id,
+                'status'   => $awbResponse->status(),
+                'response' => $awbResponse->body(),
+            ]);
+        }
+
+        // Step 3: Generate pickup (best-effort, don't fail the whole flow)
+        if ($awbCode) {
+            $pickupResponse = Http::withToken($token)->post("{$this->baseUrl}/courier/generate/pickup", [
+                'shipment_id' => [$shipmentId],
+            ]);
+
+            if (!$pickupResponse->successful()) {
+                Log::warning('Shiprocket pickup generation failed', [
+                    'order'    => $order->order_id,
+                    'response' => $pickupResponse->body(),
+                ]);
+            }
+        }
+
+        return [
+            'success'     => true,
+            'order_id'    => $srOrderId,
+            'shipment_id' => $shipmentId,
+            'status'      => $data['status'] ?? 'NEW',
+            'awb_code'    => $awbCode,
+            'courier'     => $courierName,
+        ];
     }
 
     public function trackOrder(string $awb): array
@@ -133,6 +196,42 @@ class ShiprocketService
 
         if ($response->successful()) return ['success' => true];
         return ['success' => false, 'message' => $response->json('message') ?? 'Cancel failed.'];
+    }
+
+    /**
+     * Generate and return the shipping label PDF URL.
+     */
+    public function generateLabel(string $shipmentId): array
+    {
+        $token = $this->token();
+        if (!$token) return ['success' => false, 'message' => 'Auth failed'];
+
+        $response = Http::withToken($token)->post("{$this->baseUrl}/courier/generate/label", [
+            'shipment_id' => [$shipmentId],
+        ]);
+
+        if ($response->successful()) {
+            return ['success' => true, 'label_url' => $response->json('label_url') ?? null];
+        }
+        return ['success' => false, 'message' => $response->json('message') ?? 'Label generation failed.'];
+    }
+
+    /**
+     * Generate and return the invoice PDF URL.
+     */
+    public function generateInvoice(string $orderId): array
+    {
+        $token = $this->token();
+        if (!$token) return ['success' => false, 'message' => 'Auth failed'];
+
+        $response = Http::withToken($token)->post("{$this->baseUrl}/orders/print/invoice", [
+            'ids' => [$orderId],
+        ]);
+
+        if ($response->successful()) {
+            return ['success' => true, 'invoice_url' => $response->json('invoice_url') ?? null];
+        }
+        return ['success' => false, 'message' => $response->json('message') ?? 'Invoice generation failed.'];
     }
 
     public function refreshToken(): void

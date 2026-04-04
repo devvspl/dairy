@@ -54,24 +54,31 @@ class ShiprocketSettingController extends Controller
         if (!$email || !$password) {
             return response()->json([
                 'success' => false,
-                'message' => 'SHIPROCKET_EMAIL and SHIPROCKET_PASSWORD are not set in .env',
+                'message' => 'SHIPROCKET_EMAIL and SHIPROCKET_PASSWORD are not set in .env. Note: these must be API User credentials created in Shiprocket → Settings → API, not your main login.',
             ]);
         }
 
-        app(ShiprocketService::class)->refreshToken();
+        // Clear cached token so we do a fresh auth test
+        $service = app(ShiprocketService::class);
+        $service->refreshToken();
 
         $response = Http::post('https://apiv2.shiprocket.in/v1/external/auth/login', [
             'email'    => $email,
             'password' => $password,
         ]);
 
-        if ($response->successful() && $response->json('token')) {
-            return response()->json(['success' => true, 'message' => 'Connection successful. Credentials are valid.']);
+        if ($response->successful() && $token = $response->json('token')) {
+            // Cache the fresh token (239h per Shiprocket docs: token valid 240h)
+            \Illuminate\Support\Facades\Cache::put('shiprocket_token', $token, 3600 * 239);
+            return response()->json(['success' => true, 'message' => 'Connection successful. API credentials are valid.']);
         }
 
+        $apiMessage = $response->json('message') ?? $response->json('error') ?? null;
         return response()->json([
             'success' => false,
-            'message' => $response->json('message') ?? 'Authentication failed. Check your .env credentials.',
+            'message' => $apiMessage
+                ? "Authentication failed: {$apiMessage}. Ensure you are using API User credentials (Shiprocket → Settings → API → Create API User), not your main account login."
+                : 'Authentication failed. Ensure SHIPROCKET_EMAIL and SHIPROCKET_PASSWORD in .env are API User credentials from Shiprocket → Settings → API.',
         ]);
     }
 }
