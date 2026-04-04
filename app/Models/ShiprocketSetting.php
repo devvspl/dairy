@@ -35,7 +35,10 @@ class ShiprocketSetting extends Model
     {
         return static::firstOrCreate([], [
             'enabled'          => false,
-            'pickup_location'  => 'Primary',
+            'pickup_location'  => 'Sanjay',
+            'default_city'     => 'Gautam Buddha Nagar',
+            'default_state'    => 'Uttar Pradesh',
+            'default_pincode'  => '201318',
             'pkg_length'       => 10,
             'pkg_breadth'      => 10,
             'pkg_height'       => 10,

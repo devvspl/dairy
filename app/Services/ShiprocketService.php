@@ -110,26 +110,29 @@ class ShiprocketService
         // Step 1: Create order
         $response = Http::withToken($token)->post("{$this->baseUrl}/orders/create/adhoc", $payload);
 
-        if (!$response->successful()) {
-            Log::error('Shiprocket create order failed', [
-                'order'    => $order->order_id,
-                'status'   => $response->status(),
-                'response' => $response->body(),
-            ]);
-            return ['success' => false, 'message' => $response->json('message') ?? 'Failed to create Shiprocket order.'];
-        }
-
-        $data       = $response->json();
+        $data = $response->json();
 
         Log::info('Shiprocket create order response', ['order' => $order->order_id, 'response' => $data]);
 
-        // Shiprocket may return IDs at root or nested under 'payload'
+        // Shiprocket sometimes returns 200 with an error message and no IDs
+        $apiMessage = $data['message'] ?? null;
+
+        if (!$response->successful() || isset($data['errors'])) {
+            Log::error('Shiprocket create order failed', [
+                'order'    => $order->order_id,
+                'status'   => $response->status(),
+                'response' => $data,
+            ]);
+            return ['success' => false, 'message' => $apiMessage ?? 'Failed to create Shiprocket order.'];
+        }
+
         $srOrderId  = $data['order_id']    ?? $data['payload']['order_id']    ?? null;
         $shipmentId = $data['shipment_id'] ?? $data['payload']['shipment_id'] ?? null;
 
         if (!$srOrderId || !$shipmentId) {
             Log::error('Shiprocket create order: missing order_id or shipment_id', ['response' => $data]);
-            return ['success' => false, 'message' => 'Shiprocket order created but missing order/shipment ID. Check Laravel logs for full response.'];
+            // Surface Shiprocket's own message if present (e.g. wrong pickup location)
+            return ['success' => false, 'message' => $apiMessage ?? 'Shiprocket order created but missing order/shipment ID.'];
         }
 
         // Step 2: Assign AWB
