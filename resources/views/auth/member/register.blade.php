@@ -256,7 +256,7 @@ function sendRegisterOtp() {
                 }
                 document.getElementById('detailsStep').classList.add('hidden');
                 document.getElementById('otpStep').classList.remove('hidden');
-                showMessage(data.message + (data.otp ? ' — OTP: <strong>' + data.otp + '</strong>' : ''));
+                showMessage(data.message);
                 document.getElementById('otp').focus();
                 startResendTimer();
             }

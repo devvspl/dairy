@@ -204,7 +204,7 @@ function sendOtp() {
                 document.getElementById('displayPhone').textContent = '+91 ' + phone;
                 document.getElementById('phoneStep').classList.add('hidden');
                 document.getElementById('otpStep').classList.remove('hidden');
-                showMessage(data.message + (data.otp ? ' — OTP: <strong>' + data.otp + '</strong>' : ''));
+                showMessage(data.message);
                 document.getElementById('otp').focus();
                 startResendTimer();
             }
