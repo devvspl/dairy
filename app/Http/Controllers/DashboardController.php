@@ -292,16 +292,32 @@ class DashboardController extends Controller
 
         // ── Wallet debit/credit logic ─────────────────────────────────
         if ($subscription && $subscription->isOnDemand() && $subscription->price_per_litre > 0) {
-            $dateStr = $delivery->delivery_date->toDateString();
+            $dateStr   = $delivery->delivery_date->toDateString();
+            $dailyCost = round($newQty * (float) $subscription->price_per_litre, 2);
 
+            // Block marking delivered if wallet has insufficient balance
             if ($newStatus === 'delivered' && $oldStatus !== 'delivered') {
-                // Newly marked delivered → debit full qty
+                if ((float) $subscription->wallet_balance < $dailyCost) {
+                    return redirect()->back()->with(
+                        'error',
+                        "Cannot mark as delivered — wallet balance ₹" . number_format($subscription->wallet_balance, 2) .
+                        " is less than delivery cost ₹" . number_format($dailyCost, 2) .
+                        ". Member must top up first."
+                    );
+                }
                 $subscription->debitWallet($newQty, $dateStr, $user->id);
 
             } elseif ($newStatus === 'delivered' && $oldStatus === 'delivered' && $newQty !== $oldQty) {
-                // Already delivered, qty changed → adjust difference
                 $diff = $newQty - $oldQty;
                 if ($diff > 0) {
+                    $extraCost = round($diff * (float) $subscription->price_per_litre, 2);
+                    if ((float) $subscription->wallet_balance < $extraCost) {
+                        return redirect()->back()->with(
+                            'error',
+                            "Cannot increase quantity — wallet balance ₹" . number_format($subscription->wallet_balance, 2) .
+                            " is less than extra cost ₹" . number_format($extraCost, 2) . "."
+                        );
+                    }
                     $subscription->debitWallet($diff, $dateStr, $user->id);
                 } else {
                     $creditAmt = round(abs($diff) * (float) $subscription->price_per_litre, 2);
@@ -309,14 +325,12 @@ class DashboardController extends Controller
                 }
 
             } elseif ($oldStatus === 'delivered' && $newStatus !== 'delivered') {
-                // Reverting from delivered → credit back old qty
                 $creditAmt = round($oldQty * (float) $subscription->price_per_litre, 2);
                 if ($creditAmt > 0) {
                     $subscription->creditWallet($creditAmt, "Delivery reversed on {$dateStr}");
                 }
             }
 
-            // After balance change, extend delivery schedule if needed
             $subscription->refresh();
             \App\Models\DeliveryLog::autoGenerate($subscription);
         }

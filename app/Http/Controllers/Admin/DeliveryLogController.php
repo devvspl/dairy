@@ -70,14 +70,30 @@ class DeliveryLogController extends Controller
 
         // ── Wallet debit/credit logic ─────────────────────────────────
         if ($subscription && $subscription->isOnDemand() && $subscription->price_per_litre > 0) {
-            $dateStr = $delivery->delivery_date->toDateString();
+            $dateStr   = $delivery->delivery_date->toDateString();
+            $dailyCost = round($newQty * (float) $subscription->price_per_litre, 2);
 
             if ($newStatus === 'delivered' && $oldStatus !== 'delivered') {
+                if ((float) $subscription->wallet_balance < $dailyCost) {
+                    return redirect()->back()->with(
+                        'error',
+                        "Cannot mark as delivered — wallet balance ₹" . number_format($subscription->wallet_balance, 2) .
+                        " is less than delivery cost ₹" . number_format($dailyCost, 2) . ". Member must top up first."
+                    );
+                }
                 $subscription->debitWallet($newQty, $dateStr, auth()->id());
 
             } elseif ($newStatus === 'delivered' && $oldStatus === 'delivered' && $newQty !== $oldQty) {
                 $diff = $newQty - $oldQty;
                 if ($diff > 0) {
+                    $extraCost = round($diff * (float) $subscription->price_per_litre, 2);
+                    if ((float) $subscription->wallet_balance < $extraCost) {
+                        return redirect()->back()->with(
+                            'error',
+                            "Cannot increase quantity — wallet balance ₹" . number_format($subscription->wallet_balance, 2) .
+                            " is less than extra cost ₹" . number_format($extraCost, 2) . "."
+                        );
+                    }
                     $subscription->debitWallet($diff, $dateStr, auth()->id());
                 } else {
                     $creditAmt = round(abs($diff) * (float) $subscription->price_per_litre, 2);

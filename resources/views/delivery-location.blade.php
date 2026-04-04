@@ -162,8 +162,14 @@
                         </td>
                         <td class="px-4 py-3">
                             @if($sub->wallet_balance !== null)
-                            <div class="text-sm font-semibold" style="color: var(--green);">₹{{ number_format($sub->wallet_balance,2) }}</div>
+                            <div class="text-sm font-semibold" style="color: {{ (float)$sub->wallet_balance <= 0 ? '#dc2626' : 'var(--green)' }};">
+                                ₹{{ number_format($sub->wallet_balance,2) }}
+                            </div>
                             <div class="text-[10px]" style="color: var(--muted);">of ₹{{ number_format($sub->wallet_total,2) }}</div>
+                            @php $dailyCost = $sub->price_per_litre && $sub->quantity_per_day ? round((float)$sub->price_per_litre * (float)$sub->quantity_per_day, 2) : 0; @endphp
+                            @if($dailyCost > 0 && (float)$sub->wallet_balance < $dailyCost)
+                                <div class="text-[10px] font-semibold mt-0.5" style="color:#dc2626;"><i class="fa-solid fa-triangle-exclamation mr-0.5"></i>Insufficient</div>
+                            @endif
                             @else
                             <span style="color: var(--muted);">—</span>
                             @endif
@@ -187,6 +193,12 @@
                                            color: {{ ($sub->delivery_status === 'stopped') ? '#b40000' : '#b46000' }};">
                                     <i class="fa-solid {{ ($sub->delivery_status === 'stopped') ? 'fa-stop' : 'fa-pause' }} text-[10px]"></i>
                                     {{ ucfirst($sub->delivery_status) }} — no delivery
+                                </span>
+                            @elseif($delivery->status === 'pending' && isset($dailyCost) && $dailyCost > 0 && (float)$sub->wallet_balance < $dailyCost)
+                                <span class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold"
+                                    style="background:rgba(220,38,38,0.08); color:#dc2626;">
+                                    <i class="fa-solid fa-wallet text-[10px]"></i>
+                                    No balance
                                 </span>
                             @else
                                 <button onclick="openModal({{ $delivery->id }}, '{{ $delivery->status }}', '{{ $delivery->quantity_delivered }}', '{{ $delivery->delivery_time }}', '{{ addslashes($delivery->notes ?? '') }}')"
