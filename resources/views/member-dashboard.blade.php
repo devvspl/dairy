@@ -627,7 +627,7 @@
                                     @endforeach
                                 </div>
                                 <input type="number" name="amount" id="wi-amount" placeholder="Or enter custom amount"
-                                    min="50" max="500000" step="1" required
+                                    min="1" max="500000" step="1" required
                                     class="w-full px-3 py-2.5 text-sm border-2 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent"
                                     style="border-color:var(--border);">
                                 <div id="wi-days-preview" class="hidden mt-2 text-xs font-semibold text-center" style="color:var(--green);"></div>
@@ -1492,7 +1492,7 @@
                         @endforeach
                     </div>
                     <input type="number" name="amount" id="topupAmount" placeholder="Or enter custom amount"
-                        min="50" max="50000" step="1" required
+                        min="1" max="50000" step="1" required
                         class="w-full px-3 py-2.5 text-sm border-2 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent"
                         style="border-color: var(--border);">
                     <p class="text-[10px] mt-1" style="color: var(--muted);">Min ₹50 · Max ₹50,000</p>
