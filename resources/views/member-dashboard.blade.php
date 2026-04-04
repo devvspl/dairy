@@ -237,15 +237,20 @@
                     </div>
 
                     {{-- ── Delivery Settings ── --}}
-                    <div class="mt-3 rounded-2xl overflow-hidden" style="border:1px solid var(--border);">
+                    <div class="mt-3 rounded-2xl overflow-hidden" style="border:2px solid var(--green);">
                         <button onclick="this.nextElementSibling.classList.toggle('hidden'); this.querySelector('.chevron').classList.toggle('rotate-180')"
-                            class="w-full flex items-center justify-between px-4 py-3.5 hover:bg-gray-50 transition-colors">
-                            <span class="text-xs font-bold flex items-center gap-2" style="color:var(--text);">
-                                <i class="fa-solid fa-sliders text-sm" style="color:var(--green);"></i>Delivery Settings
+                            class="w-full flex items-center justify-between px-4 py-4 transition-colors"
+                            style="background: linear-gradient(135deg, rgba(47,74,30,0.07) 0%, rgba(47,74,30,0.03) 100%);">
+                            <span class="text-sm font-bold flex items-center gap-2.5" style="color:var(--green);">
+                                <span class="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0" style="background:var(--green);">
+                                    <i class="fa-solid fa-sliders text-xs text-white"></i>
+                                </span>
+                                Delivery Settings
+                                <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full" style="background:rgba(47,74,30,0.12);color:var(--green);">Manage</span>
                             </span>
-                            <i class="fa-solid fa-chevron-down text-[10px] chevron rotate-180 transition-transform duration-200" style="color:var(--muted);"></i>
+                            <i class="fa-solid fa-chevron-down text-xs chevron rotate-180 transition-transform duration-200" style="color:var(--green);"></i>
                         </button>
-                        <div class="border-t" style="border-color:var(--border);">
+                        <div class="border-t" style="border-color:rgba(47,74,30,0.2);">
                             <form method="POST" action="{{ route('wallet.update', $ws->id) }}" class="p-4 space-y-5">
                                 @csrf @method('PATCH')
 
