@@ -34,7 +34,7 @@
                 </div>
                 <div class="flex justify-between">
                     <span style="color: var(--muted);">Plan:</span>
-                    <span class="font-semibold" style="color: var(--text);">{{ $order->membershipPlan->name ?? 'Milk Plan' }}</span>
+                    <span class="font-semibold" style="color: var(--text);">{{ $order->membershipPlan?->name ?? 'Milk Wallet' }}</span>
                 </div>
                 <div class="flex justify-between">
                     <span style="color: var(--muted);">Amount Paid:</span>
