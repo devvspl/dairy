@@ -357,4 +357,51 @@
         </div>
     </div>
 </div>
+
+{{-- Change Log --}}
+@php $changeLogs = \App\Models\SubscriptionChangeLog::where('user_subscription_id', $subscription->id)->with('changedBy')->latest()->get(); @endphp
+@if($changeLogs->count() > 0)
+<div class="mt-6 bg-white rounded-lg shadow-sm border p-5" style="border-color: var(--border);">
+    <h3 class="font-bold text-base mb-4" style="color: var(--text);"><i class="fa-solid fa-clock-rotate-left mr-2" style="color:var(--green);"></i>Change History</h3>
+    <div class="space-y-2">
+        @foreach($changeLogs as $log)
+        @php
+            $typeColors = [
+                'settings_update' => ['bg-blue-50','text-blue-700','fa-sliders'],
+                'extra_milk'      => ['bg-green-50','text-green-700','fa-plus'],
+                'pause'           => ['bg-yellow-50','text-yellow-700','fa-pause'],
+                'resume'          => ['bg-green-50','text-green-700','fa-play'],
+                'stop'            => ['bg-red-50','text-red-700','fa-stop'],
+                'restart'         => ['bg-green-50','text-green-700','fa-rotate-right'],
+                'topup'           => ['bg-purple-50','text-purple-700','fa-arrow-up'],
+            ];
+            [$bg, $tc, $icon] = $typeColors[$log->change_type] ?? ['bg-gray-50','text-gray-600','fa-circle'];
+        @endphp
+        <div class="flex items-start gap-3 px-3 py-2.5 rounded-xl {{ $bg }}">
+            <i class="fa-solid {{ $icon }} mt-0.5 text-xs {{ $tc }}"></i>
+            <div class="flex-1 min-w-0">
+                <div class="flex items-center justify-between gap-2">
+                    <span class="text-xs font-semibold {{ $tc }}">{{ ucfirst(str_replace('_',' ',$log->change_type)) }}</span>
+                    <span class="text-[10px]" style="color:var(--muted);">{{ $log->created_at->format('d M Y, h:i A') }}</span>
+                </div>
+                @if($log->notes)<p class="text-xs mt-0.5" style="color:var(--muted);">{{ $log->notes }}</p>@endif
+                @if($log->old_values || $log->new_values)
+                <div class="flex flex-wrap gap-x-4 gap-y-0.5 mt-1 text-[10px]" style="color:var(--muted);">
+                    @foreach($log->new_values ?? [] as $k => $v)
+                    <span><span class="font-semibold">{{ ucfirst(str_replace('_',' ',$k)) }}:</span>
+                        @if(isset($log->old_values[$k]) && $log->old_values[$k] != $v)
+                            <span style="text-decoration:line-through;opacity:0.6;">{{ $log->old_values[$k] }}</span> →
+                        @endif
+                        {{ $v }}</span>
+                    @endforeach
+                </div>
+                @endif
+                <p class="text-[10px] mt-0.5" style="color:var(--muted);">by {{ $log->changedBy?->name ?? '—' }}</p>
+            </div>
+        </div>
+        @endforeach
+    </div>
+</div>
+@endif
+
 @endsection
