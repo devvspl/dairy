@@ -243,9 +243,9 @@
                             <span class="text-xs font-bold flex items-center gap-2" style="color:var(--text);">
                                 <i class="fa-solid fa-sliders text-sm" style="color:var(--green);"></i>Delivery Settings
                             </span>
-                            <i class="fa-solid fa-chevron-down text-[10px] chevron transition-transform duration-200" style="color:var(--muted);"></i>
+                            <i class="fa-solid fa-chevron-down text-[10px] chevron rotate-180 transition-transform duration-200" style="color:var(--muted);"></i>
                         </button>
-                        <div class="hidden border-t" style="border-color:var(--border);">
+                        <div class="border-t" style="border-color:var(--border);">
                             <form method="POST" action="{{ route('wallet.update', $ws->id) }}" class="p-4 space-y-5">
                                 @csrf @method('PATCH')
 
@@ -1674,6 +1674,54 @@
         }
 
         if (document.getElementById('wi-qty-input')) wiSetQty(1);
+
+        // ── Settings panel interactive radio cards ────────────────────
+        // Milk type cards in settings
+        document.querySelectorAll('[name="milk_type"]').forEach(radio => {
+            radio.closest('label')?.addEventListener('click', function() {
+                // Reset all milk cards in same form
+                this.closest('form')?.querySelectorAll('[name="milk_type"]').forEach(r => {
+                    const lbl = r.closest('label');
+                    if (lbl) { lbl.style.borderColor = 'var(--border)'; lbl.style.background = '#fff'; }
+                    const icon = lbl?.querySelector('.w-8');
+                    if (icon) icon.style.background = 'rgba(0,0,0,0.04)';
+                });
+                // Highlight selected
+                this.style.borderColor = 'var(--green)';
+                this.style.background  = 'rgba(47,74,30,0.05)';
+                const icon = this.querySelector('.w-8');
+                if (icon) icon.style.background = 'rgba(47,74,30,0.12)';
+            });
+        });
+
+        // Qty cards in settings
+        document.querySelectorAll('[name="quantity_per_day"]').forEach(radio => {
+            radio.closest('label')?.addEventListener('click', function() {
+                this.closest('form')?.querySelectorAll('[name="quantity_per_day"]').forEach(r => {
+                    const lbl = r.closest('label');
+                    if (lbl) { lbl.style.borderColor = 'var(--border)'; lbl.style.background = '#fff'; lbl.style.color = 'var(--muted)'; }
+                });
+                this.style.borderColor = 'var(--green)';
+                this.style.background  = 'var(--green)';
+                this.style.color       = '#fff';
+            });
+        });
+
+        // Slot cards in settings
+        document.querySelectorAll('[name="delivery_slot"]').forEach(radio => {
+            radio.closest('label')?.addEventListener('click', function() {
+                this.closest('form')?.querySelectorAll('[name="delivery_slot"]').forEach(r => {
+                    const lbl = r.closest('label');
+                    if (lbl) { lbl.style.borderColor = 'var(--border)'; lbl.style.background = '#fff'; }
+                    const icon = lbl?.querySelector('i.fas');
+                    if (icon) icon.style.color = 'var(--muted)';
+                });
+                this.style.borderColor = 'var(--green)';
+                this.style.background  = 'rgba(47,74,30,0.05)';
+                const icon = this.querySelector('i.fas');
+                if (icon) icon.style.color = 'var(--green)';
+            });
+        });
     </script>
 
 @endsection
