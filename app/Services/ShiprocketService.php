@@ -18,24 +18,31 @@ class ShiprocketService
 
     protected function token(): ?string
     {
-        return Cache::remember('shiprocket_token', 3600 * 8, function () {
-            $email    = config('services.shiprocket.email');
-            $password = config('services.shiprocket.password');
+        $cached = Cache::get('shiprocket_token');
+        if ($cached) {
+            return $cached;
+        }
 
-            if (!$email || !$password) {
-                return null;
-            }
+        $email    = config('services.shiprocket.email');
+        $password = config('services.shiprocket.password');
 
-            $response = Http::post("{$this->baseUrl}/auth/login", [
-                'email'    => $email,
-                'password' => $password,
-            ]);
-
-            if ($response->successful()) return $response->json('token');
-
-            Log::error('Shiprocket auth failed', ['response' => $response->body()]);
+        if (!$email || !$password) {
+            Log::error('Shiprocket auth failed: SHIPROCKET_EMAIL or SHIPROCKET_PASSWORD not set in .env');
             return null;
-        });
+        }
+
+        $response = Http::post("{$this->baseUrl}/auth/login", [
+            'email'    => $email,
+            'password' => $password,
+        ]);
+
+        if ($response->successful() && $token = $response->json('token')) {
+            Cache::put('shiprocket_token', $token, 3600 * 8);
+            return $token;
+        }
+
+        Log::error('Shiprocket auth failed', ['response' => $response->body()]);
+        return null;
     }
 
     public function isEnabled(): bool
