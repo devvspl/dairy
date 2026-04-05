@@ -1137,13 +1137,16 @@
 
     <script>
         // ── Milk prices with cutoff times ─────────────────────────────
-        const MILK_PRICES_CUTOFF = @json($milkPrices->map(function($mp) {
-            return [
-                'milk_type' => $mp->milk_type,
-                'cutoff_time' => $mp->cutoff_time ? substr($mp->cutoff_time, 0, 5) : '20:00',
-                'label' => $mp->label
-            ];
-        }));
+        @php
+            $milkPricesCutoff = $milkPrices->map(function($mp) {
+                return [
+                    'milk_type' => $mp->milk_type,
+                    'cutoff_time' => $mp->cutoff_time ? substr($mp->cutoff_time, 0, 5) : '20:00',
+                    'label' => $mp->label
+                ];
+            })->values();
+        @endphp
+        const MILK_PRICES_CUTOFF = @json($milkPricesCutoff);
 
         // ── Tabs ──────────────────────────────────────────────────────
         function switchTab(name) {
