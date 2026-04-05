@@ -37,23 +37,27 @@
                     <input type="number" name="price_per_litre" step="0.01" min="0" required
                         class="w-full px-3 py-2 text-sm border rounded-lg" style="border-color: var(--border);">
                 </div>
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-xs font-semibold mb-1" style="color: var(--text);">
-                            <i class="fa-solid fa-clock mr-1" style="color:var(--green);"></i>Order Cutoff Time
+                <div>
+                    <label class="block text-xs font-semibold mb-1" style="color: var(--text);">
+                        <i class="fa-solid fa-clock mr-1" style="color:var(--green);"></i>Order Cutoff Time
+                    </label>
+                    <input type="time" name="cutoff_time" value="20:00" required
+                        class="w-full px-3 py-2 text-sm border rounded-lg" style="border-color: var(--border);">
+                    <p class="text-[10px] mt-0.5" style="color: var(--muted);">Orders placed after this time → next day delivery</p>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold mb-2" style="color: var(--text);">
+                        <i class="fa-solid fa-truck mr-1" style="color:var(--green);"></i>Available Delivery Slots
+                    </label>
+                    <div class="flex gap-5">
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" name="available_slots[]" value="morning" checked class="rounded w-4 h-4" style="accent-color:var(--green);">
+                            <span class="text-sm font-medium"><i class="fa-solid fa-sun mr-1 text-yellow-500"></i>Morning <span class="text-xs" style="color:var(--muted);">(5–8 AM)</span></span>
                         </label>
-                        <input type="time" name="cutoff_time" value="20:00" required
-                            class="w-full px-3 py-2 text-sm border rounded-lg" style="border-color: var(--border);">
-                        <p class="text-[10px] mt-0.5" style="color: var(--muted);">Orders after this time → next day delivery</p>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold mb-1" style="color: var(--text);">
-                            <i class="fa-solid fa-sun mr-1" style="color:var(--green);"></i>Default Slot
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" name="available_slots[]" value="evening" checked class="rounded w-4 h-4" style="accent-color:var(--green);">
+                            <span class="text-sm font-medium"><i class="fa-solid fa-moon mr-1 text-indigo-500"></i>Evening <span class="text-xs" style="color:var(--muted);">(5–8 PM)</span></span>
                         </label>
-                        <select name="default_slot" class="w-full px-3 py-2 text-sm border rounded-lg" style="border-color: var(--border);">
-                            <option value="morning">Morning (5–8 AM)</option>
-                            <option value="evening" selected>Evening (5–8 PM)</option>
-                        </select>
                     </div>
                 </div>
                 <div class="flex items-center gap-2">
@@ -83,11 +87,16 @@
                         <div class="flex flex-wrap gap-x-3 gap-y-0.5 mt-1 text-xs" style="color: var(--muted);">
                             <span><i class="fa-solid fa-tag mr-1" style="color:var(--green);"></i>₹{{ number_format($price->price_per_litre,2) }}/L</span>
                             <span><i class="fa-solid fa-clock mr-1" style="color:var(--green);"></i>Cutoff: {{ \Carbon\Carbon::parse($price->cutoff_time)->format('h:i A') }}</span>
-                            <span><i class="fa-solid fa-{{ $price->default_slot === 'morning' ? 'sun' : 'moon' }} mr-1" style="color:var(--green);"></i>{{ ucfirst($price->default_slot) }}</span>
+                            @foreach($price->available_slots ?? [] as $slot)
+                                <span>
+                                    <i class="fa-solid fa-{{ $slot === 'morning' ? 'sun text-yellow-500' : 'moon text-indigo-500' }} mr-0.5"></i>
+                                    {{ ucfirst($slot) }}
+                                </span>
+                            @endforeach
                         </div>
                     </div>
                     <div class="flex gap-2 flex-shrink-0">
-                        <button onclick="openEdit({{ $price->id }}, '{{ addslashes($price->label) }}', {{ $price->price_per_litre }}, '{{ substr($price->cutoff_time,0,5) }}', '{{ $price->default_slot }}', {{ $price->is_active ? 'true' : 'false' }})"
+                        <button onclick="openEdit({{ $price->id }}, '{{ addslashes($price->label) }}', {{ $price->price_per_litre }}, '{{ substr($price->cutoff_time,0,5) }}', {{ json_encode($price->available_slots ?? ['morning','evening']) }}, {{ $price->is_active ? 'true' : 'false' }})"
                             class="text-xs px-2 py-1 rounded border" style="border-color: var(--border); color: var(--muted);">Edit</button>
                         <form method="POST" action="{{ route('admin.milk-prices.destroy', $price) }}" onsubmit="return confirm('Delete this price?')">
                             @csrf @method('DELETE')
@@ -117,19 +126,25 @@
                 <label class="block text-xs font-semibold mb-1" style="color: var(--text);">Price per Litre (₹)</label>
                 <input type="number" name="price_per_litre" id="editPrice" step="0.01" min="0" required class="w-full px-3 py-2 text-sm border rounded-lg" style="border-color: var(--border);">
             </div>
-            <div class="grid grid-cols-2 gap-3">
-                <div>
-                    <label class="block text-xs font-semibold mb-1" style="color: var(--text);">
-                        <i class="fa-solid fa-clock mr-1" style="color:var(--green);"></i>Cutoff Time
+            <div>
+                <label class="block text-xs font-semibold mb-1" style="color: var(--text);">
+                    <i class="fa-solid fa-clock mr-1" style="color:var(--green);"></i>Cutoff Time
+                </label>
+                <input type="time" name="cutoff_time" id="editCutoff" required class="w-full px-3 py-2 text-sm border rounded-lg" style="border-color: var(--border);">
+            </div>
+            <div>
+                <label class="block text-xs font-semibold mb-2" style="color: var(--text);">
+                    <i class="fa-solid fa-truck mr-1" style="color:var(--green);"></i>Available Delivery Slots
+                </label>
+                <div class="flex gap-5">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" name="available_slots[]" value="morning" id="editMorning" class="rounded w-4 h-4" style="accent-color:var(--green);">
+                        <span class="text-sm font-medium"><i class="fa-solid fa-sun mr-1 text-yellow-500"></i>Morning <span class="text-xs" style="color:var(--muted);">(5–8 AM)</span></span>
                     </label>
-                    <input type="time" name="cutoff_time" id="editCutoff" required class="w-full px-3 py-2 text-sm border rounded-lg" style="border-color: var(--border);">
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold mb-1" style="color: var(--text);">Default Slot</label>
-                    <select name="default_slot" id="editSlot" class="w-full px-3 py-2 text-sm border rounded-lg" style="border-color: var(--border);">
-                        <option value="morning">Morning</option>
-                        <option value="evening">Evening</option>
-                    </select>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" name="available_slots[]" value="evening" id="editEvening" class="rounded w-4 h-4" style="accent-color:var(--green);">
+                        <span class="text-sm font-medium"><i class="fa-solid fa-moon mr-1 text-indigo-500"></i>Evening <span class="text-xs" style="color:var(--muted);">(5–8 PM)</span></span>
+                    </label>
                 </div>
             </div>
             <div class="flex items-center gap-2">
@@ -145,13 +160,14 @@
 </div>
 
 <script>
-function openEdit(id, label, price, cutoff, slot, active) {
-    document.getElementById('editLabel').value  = label;
-    document.getElementById('editPrice').value  = price;
-    document.getElementById('editCutoff').value = cutoff;
-    document.getElementById('editSlot').value   = slot;
-    document.getElementById('editActive').checked = active;
-    document.getElementById('editForm').action  = '/admin/milk-prices/' + id;
+function openEdit(id, label, price, cutoff, slots, active) {
+    document.getElementById('editLabel').value   = label;
+    document.getElementById('editPrice').value   = price;
+    document.getElementById('editCutoff').value  = cutoff;
+    document.getElementById('editMorning').checked = slots.includes('morning');
+    document.getElementById('editEvening').checked = slots.includes('evening');
+    document.getElementById('editActive').checked  = active;
+    document.getElementById('editForm').action     = '/admin/milk-prices/' + id;
     const m = document.getElementById('editModal');
     m.classList.remove('hidden'); m.classList.add('flex');
 }

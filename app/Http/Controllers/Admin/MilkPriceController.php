@@ -17,13 +17,14 @@ class MilkPriceController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'milk_type'       => 'required|string|max:50|unique:milk_prices,milk_type',
-            'label'           => 'required|string|max:100',
-            'price_per_litre' => 'required|numeric|min:0',
-            'cutoff_time'     => 'required|date_format:H:i',
-            'default_slot'    => 'required|in:morning,evening',
-            'is_active'       => 'nullable|boolean',
-            'order'           => 'nullable|integer',
+            'milk_type'        => 'required|string|max:50|unique:milk_prices,milk_type',
+            'label'            => 'required|string|max:100',
+            'price_per_litre'  => 'required|numeric|min:0',
+            'cutoff_time'      => 'required|date_format:H:i',
+            'available_slots'  => 'required|array|min:1',
+            'available_slots.*'=> 'in:morning,evening',
+            'is_active'        => 'nullable|boolean',
+            'order'            => 'nullable|integer',
         ]);
 
         MilkPrice::create(array_merge($data, ['is_active' => !empty($data['is_active'])]));
@@ -34,12 +35,13 @@ class MilkPriceController extends Controller
     public function update(Request $request, MilkPrice $milkPrice)
     {
         $data = $request->validate([
-            'label'           => 'required|string|max:100',
-            'price_per_litre' => 'required|numeric|min:0',
-            'cutoff_time'     => 'required|date_format:H:i',
-            'default_slot'    => 'required|in:morning,evening',
-            'is_active'       => 'nullable|boolean',
-            'order'           => 'nullable|integer',
+            'label'            => 'required|string|max:100',
+            'price_per_litre'  => 'required|numeric|min:0',
+            'cutoff_time'      => 'required|date_format:H:i',
+            'available_slots'  => 'required|array|min:1',
+            'available_slots.*'=> 'in:morning,evening',
+            'is_active'        => 'nullable|boolean',
+            'order'            => 'nullable|integer',
         ]);
 
         $milkPrice->update(array_merge($data, ['is_active' => !empty($data['is_active'])]));
