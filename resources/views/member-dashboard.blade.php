@@ -63,7 +63,7 @@
                 </a> --}}
             </div>
         </div>
-        
+
 
         {{-- Tab Navigation --}}
         <div class="bg-white rounded-xl shadow-sm border overflow-hidden" style="border-color: var(--border);">
@@ -317,10 +317,21 @@
 
                                 <div>
                                     <p class="text-xs font-bold mb-1.5" style="color:var(--text);"><i class="fa-solid fa-comment-dots mr-1.5" style="color:var(--green);"></i>Delivery Instructions <span class="font-normal" style="color:var(--muted);">(optional)</span></p>
-                                    <textarea name="delivery_instructions" rows="2"
-                                        class="w-full px-3 py-2.5 text-sm border-2 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none"
+                                    <select id="ws-delivery-instructions" onchange="wsToggleOtherInstructions(this)"
+                                        class="w-full px-3 py-2.5 text-sm border-2 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                        style="border-color:var(--border);">
+                                        <option value="">— Select instruction —</option>
+                                        <option value="Leave at door" {{ $ws->delivery_instructions === 'Leave at door' ? 'selected' : '' }}>Leave at door</option>
+                                        <option value="Ring bell" {{ $ws->delivery_instructions === 'Ring bell' ? 'selected' : '' }}>Ring bell</option>
+                                        <option value="Call before delivery" {{ $ws->delivery_instructions === 'Call before delivery' ? 'selected' : '' }}>Call before delivery</option>
+                                        <option value="Hand to me" {{ $ws->delivery_instructions === 'Hand to me' ? 'selected' : '' }}>Hand to me</option>
+                                        <option value="Leave with security" {{ $ws->delivery_instructions === 'Leave with security' ? 'selected' : '' }}>Leave with security</option>
+                                        <option value="other" {{ !in_array($ws->delivery_instructions, ['', 'Leave at door', 'Ring bell', 'Call before delivery', 'Hand to me', 'Leave with security']) && $ws->delivery_instructions ? 'selected' : '' }}>Other (specify)</option>
+                                    </select>
+                                    <textarea name="delivery_instructions" id="ws-other-instructions" rows="2"
+                                        class="w-full px-3 py-2.5 text-sm border-2 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none mt-2 {{ in_array($ws->delivery_instructions, ['', 'Leave at door', 'Ring bell', 'Call before delivery', 'Hand to me', 'Leave with security']) || !$ws->delivery_instructions ? 'hidden' : '' }}"
                                         style="border-color:var(--border);"
-                                        placeholder="e.g. Leave at door, Ring bell, Call before delivery…">{{ $ws->delivery_instructions }}</textarea>
+                                        placeholder="Enter your custom instructions…">{{ !in_array($ws->delivery_instructions, ['', 'Leave at door', 'Ring bell', 'Call before delivery', 'Hand to me', 'Leave with security']) ? $ws->delivery_instructions : '' }}</textarea>
                                 </div>
 
                                 <button type="submit" class="w-full py-3 rounded-xl font-bold text-sm text-white transition-all hover:shadow-md" style="background:var(--green);">
@@ -1682,6 +1693,37 @@
         if (document.getElementById('wi-qty-input')) wiSetQty(1);
 
         // ── Settings panel interactive radio cards ────────────────────
+        // Delivery instructions dropdown handler
+        function wsToggleOtherInstructions(select) {
+            const otherTextarea = document.getElementById('ws-other-instructions');
+            if (select.value === 'other') {
+                otherTextarea.classList.remove('hidden');
+                otherTextarea.focus();
+            } else {
+                otherTextarea.classList.add('hidden');
+                if (select.value) {
+                    otherTextarea.value = select.value;
+                } else {
+                    otherTextarea.value = '';
+                }
+            }
+        }
+
+        // Sync dropdown selection to textarea on form submit
+        document.querySelector('form[action*="wallet.update"]')?.addEventListener('submit', function(e) {
+            const select = document.getElementById('ws-delivery-instructions');
+            const textarea = document.getElementById('ws-other-instructions');
+            if (select && textarea) {
+                if (select.value === 'other') {
+                    // Keep textarea value as is
+                } else if (select.value) {
+                    textarea.value = select.value;
+                } else {
+                    textarea.value = '';
+                }
+            }
+        });
+
         // Milk type cards in settings
         document.querySelectorAll('[name="milk_type"]').forEach(radio => {
             radio.closest('label')?.addEventListener('click', function() {

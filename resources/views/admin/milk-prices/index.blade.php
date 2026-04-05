@@ -45,21 +45,6 @@
                         class="w-full px-3 py-2 text-sm border rounded-lg" style="border-color: var(--border);">
                     <p class="text-[10px] mt-0.5" style="color: var(--muted);">Orders placed after this time → next day delivery</p>
                 </div>
-                <div>
-                    <label class="block text-xs font-semibold mb-2" style="color: var(--text);">
-                        <i class="fa-solid fa-truck mr-1" style="color:var(--green);"></i>Available Delivery Slots
-                    </label>
-                    <div class="flex gap-5">
-                        <label class="flex items-center gap-2 cursor-pointer">
-                            <input type="checkbox" name="available_slots[]" value="morning" checked class="rounded w-4 h-4" style="accent-color:var(--green);">
-                            <span class="text-sm font-medium"><i class="fa-solid fa-sun mr-1 text-yellow-500"></i>Morning <span class="text-xs" style="color:var(--muted);">(5–8 AM)</span></span>
-                        </label>
-                        <label class="flex items-center gap-2 cursor-pointer">
-                            <input type="checkbox" name="available_slots[]" value="evening" checked class="rounded w-4 h-4" style="accent-color:var(--green);">
-                            <span class="text-sm font-medium"><i class="fa-solid fa-moon mr-1 text-indigo-500"></i>Evening <span class="text-xs" style="color:var(--muted);">(5–8 PM)</span></span>
-                        </label>
-                    </div>
-                </div>
                 <div class="flex items-center gap-2">
                     <input type="checkbox" name="is_active" value="1" id="is_active_new" checked class="rounded">
                     <label for="is_active_new" class="text-xs font-semibold" style="color: var(--text);">Active</label>
@@ -87,16 +72,10 @@
                         <div class="flex flex-wrap gap-x-3 gap-y-0.5 mt-1 text-xs" style="color: var(--muted);">
                             <span><i class="fa-solid fa-tag mr-1" style="color:var(--green);"></i>₹{{ number_format($price->price_per_litre,2) }}/L</span>
                             <span><i class="fa-solid fa-clock mr-1" style="color:var(--green);"></i>Cutoff: {{ \Carbon\Carbon::parse($price->cutoff_time)->format('h:i A') }}</span>
-                            @foreach($price->available_slots ?? [] as $slot)
-                                <span>
-                                    <i class="fa-solid fa-{{ $slot === 'morning' ? 'sun text-yellow-500' : 'moon text-indigo-500' }} mr-0.5"></i>
-                                    {{ ucfirst($slot) }}
-                                </span>
-                            @endforeach
                         </div>
                     </div>
                     <div class="flex gap-2 flex-shrink-0">
-                        <button onclick="openEdit({{ $price->id }}, '{{ addslashes($price->label) }}', {{ $price->price_per_litre }}, '{{ substr($price->cutoff_time,0,5) }}', {{ json_encode($price->available_slots ?? ['morning','evening']) }}, {{ $price->is_active ? 'true' : 'false' }})"
+                        <button onclick="openEdit({{ $price->id }}, '{{ addslashes($price->label) }}', {{ $price->price_per_litre }}, '{{ substr($price->cutoff_time,0,5) }}', {{ $price->is_active ? 'true' : 'false' }})"
                             class="text-xs px-2 py-1 rounded border" style="border-color: var(--border); color: var(--muted);">Edit</button>
                         <form method="POST" action="{{ route('admin.milk-prices.destroy', $price) }}" onsubmit="return confirm('Delete this price?')">
                             @csrf @method('DELETE')
@@ -132,21 +111,6 @@
                 </label>
                 <input type="time" name="cutoff_time" id="editCutoff" required class="w-full px-3 py-2 text-sm border rounded-lg" style="border-color: var(--border);">
             </div>
-            <div>
-                <label class="block text-xs font-semibold mb-2" style="color: var(--text);">
-                    <i class="fa-solid fa-truck mr-1" style="color:var(--green);"></i>Available Delivery Slots
-                </label>
-                <div class="flex gap-5">
-                    <label class="flex items-center gap-2 cursor-pointer">
-                        <input type="checkbox" name="available_slots[]" value="morning" id="editMorning" class="rounded w-4 h-4" style="accent-color:var(--green);">
-                        <span class="text-sm font-medium"><i class="fa-solid fa-sun mr-1 text-yellow-500"></i>Morning <span class="text-xs" style="color:var(--muted);">(5–8 AM)</span></span>
-                    </label>
-                    <label class="flex items-center gap-2 cursor-pointer">
-                        <input type="checkbox" name="available_slots[]" value="evening" id="editEvening" class="rounded w-4 h-4" style="accent-color:var(--green);">
-                        <span class="text-sm font-medium"><i class="fa-solid fa-moon mr-1 text-indigo-500"></i>Evening <span class="text-xs" style="color:var(--muted);">(5–8 PM)</span></span>
-                    </label>
-                </div>
-            </div>
             <div class="flex items-center gap-2">
                 <input type="checkbox" name="is_active" value="1" id="editActive" class="rounded">
                 <label for="editActive" class="text-xs font-semibold" style="color: var(--text);">Active</label>
@@ -160,12 +124,10 @@
 </div>
 
 <script>
-function openEdit(id, label, price, cutoff, slots, active) {
+function openEdit(id, label, price, cutoff, active) {
     document.getElementById('editLabel').value   = label;
     document.getElementById('editPrice').value   = price;
     document.getElementById('editCutoff').value  = cutoff;
-    document.getElementById('editMorning').checked = slots.includes('morning');
-    document.getElementById('editEvening').checked = slots.includes('evening');
     document.getElementById('editActive').checked  = active;
     document.getElementById('editForm').action     = '/admin/milk-prices/' + id;
     const m = document.getElementById('editModal');

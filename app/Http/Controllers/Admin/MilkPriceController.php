@@ -21,8 +21,6 @@ class MilkPriceController extends Controller
             'label'            => 'required|string|max:100',
             'price_per_litre'  => 'required|numeric|min:0',
             'cutoff_time'      => 'required|date_format:H:i',
-            'available_slots'  => 'required|array|min:1',
-            'available_slots.*'=> 'in:morning,evening',
             'is_active'        => 'nullable|boolean',
             'order'            => 'nullable|integer',
         ]);
@@ -38,8 +36,6 @@ class MilkPriceController extends Controller
             'label'            => 'required|string|max:100',
             'price_per_litre'  => 'required|numeric|min:0',
             'cutoff_time'      => 'required|date_format:H:i',
-            'available_slots'  => 'required|array|min:1',
-            'available_slots.*'=> 'in:morning,evening',
             'is_active'        => 'nullable|boolean',
             'order'            => 'nullable|integer',
         ]);
