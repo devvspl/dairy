@@ -20,6 +20,8 @@ class MilkPriceController extends Controller
             'milk_type'       => 'required|string|max:50|unique:milk_prices,milk_type',
             'label'           => 'required|string|max:100',
             'price_per_litre' => 'required|numeric|min:0',
+            'cutoff_time'     => 'required|date_format:H:i',
+            'default_slot'    => 'required|in:morning,evening',
             'is_active'       => 'nullable|boolean',
             'order'           => 'nullable|integer',
         ]);
@@ -34,6 +36,8 @@ class MilkPriceController extends Controller
         $data = $request->validate([
             'label'           => 'required|string|max:100',
             'price_per_litre' => 'required|numeric|min:0',
+            'cutoff_time'     => 'required|date_format:H:i',
+            'default_slot'    => 'required|in:morning,evening',
             'is_active'       => 'nullable|boolean',
             'order'           => 'nullable|integer',
         ]);

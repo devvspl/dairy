@@ -25,7 +25,7 @@
                     <label class="block text-xs font-semibold mb-1" style="color: var(--text);">Milk Type Key</label>
                     <input type="text" name="milk_type" placeholder="e.g. cow, buffalo, toned, full_fat" required
                         class="w-full px-3 py-2 text-sm border rounded-lg" style="border-color: var(--border);">
-                    <p class="text-[10px] mt-0.5" style="color: var(--muted);">Lowercase, no spaces. Used internally.</p>
+                    <p class="text-[10px] mt-0.5" style="color: var(--muted);">Lowercase, no spaces.</p>
                 </div>
                 <div>
                     <label class="block text-xs font-semibold mb-1" style="color: var(--text);">Display Label</label>
@@ -36,6 +36,25 @@
                     <label class="block text-xs font-semibold mb-1" style="color: var(--text);">Price per Litre (₹)</label>
                     <input type="number" name="price_per_litre" step="0.01" min="0" required
                         class="w-full px-3 py-2 text-sm border rounded-lg" style="border-color: var(--border);">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold mb-1" style="color: var(--text);">
+                            <i class="fa-solid fa-clock mr-1" style="color:var(--green);"></i>Order Cutoff Time
+                        </label>
+                        <input type="time" name="cutoff_time" value="20:00" required
+                            class="w-full px-3 py-2 text-sm border rounded-lg" style="border-color: var(--border);">
+                        <p class="text-[10px] mt-0.5" style="color: var(--muted);">Orders after this time → next day delivery</p>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold mb-1" style="color: var(--text);">
+                            <i class="fa-solid fa-sun mr-1" style="color:var(--green);"></i>Default Slot
+                        </label>
+                        <select name="default_slot" class="w-full px-3 py-2 text-sm border rounded-lg" style="border-color: var(--border);">
+                            <option value="morning">Morning (5–8 AM)</option>
+                            <option value="evening" selected>Evening (5–8 PM)</option>
+                        </select>
+                    </div>
                 </div>
                 <div class="flex items-center gap-2">
                     <input type="checkbox" name="is_active" value="1" id="is_active_new" checked class="rounded">
@@ -51,22 +70,30 @@
         <div class="bg-white rounded-xl shadow-sm border p-5" style="border-color: var(--border);">
             <h2 class="font-bold text-base mb-4" style="color: var(--text);">Current Prices</h2>
             @forelse($prices as $price)
-            <div class="flex items-center justify-between py-3 border-b last:border-0" style="border-color: var(--border);">
-                <div>
-                    <p class="text-sm font-semibold" style="color: var(--text);">{{ $price->label }}</p>
-                    <p class="text-xs" style="color: var(--muted);">{{ $price->milk_type }}</p>
-                </div>
-                <div class="flex items-center gap-3">
-                    <span class="text-base font-bold" style="color: var(--green);">₹{{ number_format($price->price_per_litre, 2) }}/L</span>
-                    <span class="px-2 py-0.5 text-xs rounded-full {{ $price->is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500' }}">
-                        {{ $price->is_active ? 'Active' : 'Inactive' }}
-                    </span>
-                    <button onclick="openEdit({{ $price->id }}, '{{ addslashes($price->label) }}', {{ $price->price_per_litre }}, {{ $price->is_active ? 'true' : 'false' }})"
-                        class="text-xs px-2 py-1 rounded border" style="border-color: var(--border); color: var(--muted);">Edit</button>
-                    <form method="POST" action="{{ route('admin.milk-prices.destroy', $price) }}" onsubmit="return confirm('Delete this price?')">
-                        @csrf @method('DELETE')
-                        <button type="submit" class="text-xs px-2 py-1 rounded border border-red-200 text-red-500">Del</button>
-                    </form>
+            <div class="py-3 border-b last:border-0" style="border-color: var(--border);">
+                <div class="flex items-start justify-between gap-3">
+                    <div class="flex-1">
+                        <div class="flex items-center gap-2 mb-0.5">
+                            <p class="text-sm font-semibold" style="color: var(--text);">{{ $price->label }}</p>
+                            <span class="text-[10px] px-1.5 py-0.5 rounded-full {{ $price->is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500' }}">
+                                {{ $price->is_active ? 'Active' : 'Inactive' }}
+                            </span>
+                        </div>
+                        <p class="text-xs" style="color: var(--muted);">{{ $price->milk_type }}</p>
+                        <div class="flex flex-wrap gap-x-3 gap-y-0.5 mt-1 text-xs" style="color: var(--muted);">
+                            <span><i class="fa-solid fa-tag mr-1" style="color:var(--green);"></i>₹{{ number_format($price->price_per_litre,2) }}/L</span>
+                            <span><i class="fa-solid fa-clock mr-1" style="color:var(--green);"></i>Cutoff: {{ \Carbon\Carbon::parse($price->cutoff_time)->format('h:i A') }}</span>
+                            <span><i class="fa-solid fa-{{ $price->default_slot === 'morning' ? 'sun' : 'moon' }} mr-1" style="color:var(--green);"></i>{{ ucfirst($price->default_slot) }}</span>
+                        </div>
+                    </div>
+                    <div class="flex gap-2 flex-shrink-0">
+                        <button onclick="openEdit({{ $price->id }}, '{{ addslashes($price->label) }}', {{ $price->price_per_litre }}, '{{ substr($price->cutoff_time,0,5) }}', '{{ $price->default_slot }}', {{ $price->is_active ? 'true' : 'false' }})"
+                            class="text-xs px-2 py-1 rounded border" style="border-color: var(--border); color: var(--muted);">Edit</button>
+                        <form method="POST" action="{{ route('admin.milk-prices.destroy', $price) }}" onsubmit="return confirm('Delete this price?')">
+                            @csrf @method('DELETE')
+                            <button type="submit" class="text-xs px-2 py-1 rounded border border-red-200 text-red-500">Del</button>
+                        </form>
+                    </div>
                 </div>
             </div>
             @empty
@@ -90,6 +117,21 @@
                 <label class="block text-xs font-semibold mb-1" style="color: var(--text);">Price per Litre (₹)</label>
                 <input type="number" name="price_per_litre" id="editPrice" step="0.01" min="0" required class="w-full px-3 py-2 text-sm border rounded-lg" style="border-color: var(--border);">
             </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-semibold mb-1" style="color: var(--text);">
+                        <i class="fa-solid fa-clock mr-1" style="color:var(--green);"></i>Cutoff Time
+                    </label>
+                    <input type="time" name="cutoff_time" id="editCutoff" required class="w-full px-3 py-2 text-sm border rounded-lg" style="border-color: var(--border);">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold mb-1" style="color: var(--text);">Default Slot</label>
+                    <select name="default_slot" id="editSlot" class="w-full px-3 py-2 text-sm border rounded-lg" style="border-color: var(--border);">
+                        <option value="morning">Morning</option>
+                        <option value="evening">Evening</option>
+                    </select>
+                </div>
+            </div>
             <div class="flex items-center gap-2">
                 <input type="checkbox" name="is_active" value="1" id="editActive" class="rounded">
                 <label for="editActive" class="text-xs font-semibold" style="color: var(--text);">Active</label>
@@ -103,11 +145,13 @@
 </div>
 
 <script>
-function openEdit(id, label, price, active) {
-    document.getElementById('editLabel').value = label;
-    document.getElementById('editPrice').value = price;
+function openEdit(id, label, price, cutoff, slot, active) {
+    document.getElementById('editLabel').value  = label;
+    document.getElementById('editPrice').value  = price;
+    document.getElementById('editCutoff').value = cutoff;
+    document.getElementById('editSlot').value   = slot;
     document.getElementById('editActive').checked = active;
-    document.getElementById('editForm').action = '/admin/milk-prices/' + id;
+    document.getElementById('editForm').action  = '/admin/milk-prices/' + id;
     const m = document.getElementById('editModal');
     m.classList.remove('hidden'); m.classList.add('flex');
 }

@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class MilkPrice extends Model
 {
-    protected $fillable = ['milk_type', 'label', 'price_per_litre', 'is_active', 'order'];
+    protected $fillable = ['milk_type', 'label', 'price_per_litre', 'cutoff_time', 'default_slot', 'is_active', 'order'];
 
     protected $casts = [
         'price_per_litre' => 'decimal:2',
