@@ -375,13 +375,13 @@
                         <div id="cal-grid" class="grid grid-cols-7 gap-1">
                             {{-- Rendered by JS --}}
                         </div>
-                        <div class="mt-3 flex flex-wrap gap-3">
+                        {{-- <div class="mt-3 flex flex-wrap gap-3">
                             <div class="flex items-center gap-1.5 text-xs"><div class="w-4 h-4 rounded border-2 border-yellow-500" style="background:#fef3c7;"></div><span style="color:var(--muted);">Delivered (debit)</span></div>
                             <div class="flex items-center gap-1.5 text-xs"><div class="w-4 h-4 rounded border-2 border-green-600" style="background:#dcfce7;"></div><span style="color:var(--muted);">Top-up (credit)</span></div>
                             <div class="flex items-center gap-1.5 text-xs"><div class="w-4 h-4 rounded border-2 border-blue-400" style="background:#eff6ff;"></div><span style="color:var(--muted);">Pending delivery</span></div>
                             <div class="flex items-center gap-1.5 text-xs"><div class="w-4 h-4 rounded border-2 border-gray-300" style="background:#f3f4f6;"></div><span style="color:var(--muted);">Skipped</span></div>
                             <div class="flex items-center gap-1.5 text-xs"><div class="w-4 h-4 rounded" style="background:var(--green);"></div><span style="color:var(--muted);">Today</span></div>
-                        </div>
+                        </div> --}}
                     </div>
 
                     {{-- Transaction History --}}
