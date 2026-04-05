@@ -346,7 +346,7 @@
                                     @csrf
                                     <div class="flex-1">
                                         <label class="block text-[10px] font-semibold mb-1" style="color:var(--muted);">Date</label>
-                                        <input type="date" name="date" required
+                                        <input type="date" name="date" id="extra-date-{{ $ws->id }}" required
                                             min="{{ now()->format('Y-m-d') }}" max="{{ now()->addDays(30)->format('Y-m-d') }}"
                                             value="{{ now()->addDay()->format('Y-m-d') }}"
                                             class="w-full px-3 py-2 text-sm border-2 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent"
@@ -360,6 +360,10 @@
                                     </div>
                                     <button type="submit" class="px-4 py-2 rounded-xl text-sm font-bold text-white flex-shrink-0" style="background:var(--green);">Add</button>
                                 </form>
+                                <div id="extra-cutoff-warning-{{ $ws->id }}" class="hidden mt-2 px-3 py-2 rounded-lg text-xs" style="background:#fffbeb;border:1px solid #fde68a;color:#92400e;">
+                                    <i class="fa-solid fa-clock mr-1" style="color:#d97706;"></i>
+                                    <span id="extra-cutoff-text-{{ $ws->id }}"></span>
+                                </div>
                                 <p class="text-[10px] mt-1.5" style="color:var(--muted);">Extra litres added to that day's delivery and deducted from wallet.</p>
                             </div>
                         </div>
@@ -521,11 +525,15 @@
                             {{-- Start date --}}
                             <div>
                                 <label class="block text-xs font-semibold mb-1.5" style="color:var(--text);"><i class="fa-solid fa-calendar-day mr-1" style="color:var(--green);"></i>Start Date</label>
-                                <input type="date" name="start_date" required
+                                <input type="date" name="start_date" id="wi-start-date" required
                                     min="{{ now()->format('Y-m-d') }}" max="{{ now()->addDays(30)->format('Y-m-d') }}"
                                     value="{{ now()->addDay()->format('Y-m-d') }}"
                                     class="w-full px-3 py-2.5 text-sm border-2 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent"
                                     style="border-color:var(--border);">
+                                <div id="wi-cutoff-warning" class="hidden mt-2 px-3 py-2 rounded-lg text-xs" style="background:#fffbeb;border:1px solid #fde68a;color:#92400e;">
+                                    <i class="fa-solid fa-clock mr-1" style="color:#d97706;"></i>
+                                    <span id="wi-cutoff-text"></span>
+                                </div>
                             </div>
 
                             {{-- Cost preview --}}
@@ -1128,6 +1136,15 @@
     </style>
 
     <script>
+        // ── Milk prices with cutoff times ─────────────────────────────
+        const MILK_PRICES_CUTOFF = @json($milkPrices->map(function($mp) {
+            return [
+                'milk_type' => $mp->milk_type,
+                'cutoff_time' => $mp->cutoff_time ? substr($mp->cutoff_time, 0, 5) : '20:00',
+                'label' => $mp->label
+            ];
+        }));
+
         // ── Tabs ──────────────────────────────────────────────────────
         function switchTab(name) {
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -1322,6 +1339,54 @@
             let calYear  = {{ now()->year }};
             let calMonth = {{ now()->month }};
             const todayStr = '{{ now()->format('Y-m-d') }}';
+
+            // Extra milk cutoff validation
+            const extraDateInput = document.getElementById('extra-date-{{ $walletSubscription->id }}');
+            const extraWarningDiv = document.getElementById('extra-cutoff-warning-{{ $walletSubscription->id }}');
+            const extraWarningText = document.getElementById('extra-cutoff-text-{{ $walletSubscription->id }}');
+            
+            function checkExtraCutoff() {
+                if (!extraDateInput || !extraWarningDiv || !extraWarningText) return;
+                
+                const selectedDate = extraDateInput.value;
+                const today = new Date().toISOString().split('T')[0];
+                
+                if (selectedDate !== today) {
+                    extraWarningDiv.classList.add('hidden');
+                    return;
+                }
+                
+                const milkType = '{{ $walletSubscription->milk_type }}';
+                const milkPrice = MILK_PRICES_CUTOFF.find(mp => mp.milk_type === milkType);
+                
+                if (!milkPrice) {
+                    extraWarningDiv.classList.add('hidden');
+                    return;
+                }
+                
+                const now = new Date();
+                const currentTime = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+                const cutoffTime = milkPrice.cutoff_time;
+                
+                if (currentTime > cutoffTime) {
+                    const tomorrow = new Date(now);
+                    tomorrow.setDate(tomorrow.getDate() + 1);
+                    const tomorrowStr = tomorrow.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+                    
+                    extraWarningText.textContent = `Cutoff time (${cutoffTime}) passed. Extra milk will be added to ${tomorrowStr}.`;
+                    extraWarningDiv.classList.remove('hidden');
+                    
+                    // Auto-adjust to tomorrow
+                    extraDateInput.value = tomorrow.toISOString().split('T')[0];
+                } else {
+                    extraWarningDiv.classList.add('hidden');
+                }
+            }
+            
+            if (extraDateInput) {
+                extraDateInput.addEventListener('change', checkExtraCutoff);
+                checkExtraCutoff(); // Initial check
+            }
 
             function renderCal(days) {
                 const grid = document.getElementById('cal-grid');
@@ -1609,16 +1674,107 @@
             });
         }
 
+        // Check cutoff time and show warning
+        function wiCheckCutoff() {
+            const milkRadio = document.querySelector('.wi-milk-radio:checked');
+            const startDateInput = document.getElementById('wi-start-date');
+            const warningDiv = document.getElementById('wi-cutoff-warning');
+            const warningText = document.getElementById('wi-cutoff-text');
+            
+            if (!milkRadio || !startDateInput || !warningDiv || !warningText) return;
+            
+            const selectedMilkType = milkRadio.value;
+            const selectedDate = startDateInput.value;
+            const today = new Date().toISOString().split('T')[0];
+            
+            // Only show warning if selecting today's date
+            if (selectedDate !== today) {
+                warningDiv.classList.add('hidden');
+                return;
+            }
+            
+            const milkPrice = MILK_PRICES_CUTOFF.find(mp => mp.milk_type === selectedMilkType);
+            if (!milkPrice) {
+                warningDiv.classList.add('hidden');
+                return;
+            }
+            
+            const now = new Date();
+            const currentTime = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+            const cutoffTime = milkPrice.cutoff_time;
+            
+            if (currentTime > cutoffTime) {
+                const tomorrow = new Date(now);
+                tomorrow.setDate(tomorrow.getDate() + 1);
+                const tomorrowStr = tomorrow.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+                
+                warningText.textContent = `Order cutoff time (${cutoffTime}) has passed. Your delivery will start from ${tomorrowStr}.`;
+                warningDiv.classList.remove('hidden');
+                
+                // Auto-adjust the date to tomorrow
+                startDateInput.value = tomorrow.toISOString().split('T')[0];
+            } else {
+                warningDiv.classList.add('hidden');
+            }
+        }
+
+        // Wizard step navigation
+        function wiGoStep(n) {
+            if (n === 2) {
+                // no validation needed for step 1 — milk/qty/slot all have defaults
+            }
+            if (n === 3) {
+                const loc  = document.getElementById('wi-location-select')?.value;
+                const addr = document.getElementById('wi-address')?.value.trim();
+                if (!loc)  { alert('Please select your delivery location.'); return; }
+                if (!addr) { alert('Please enter your delivery address.'); return; }
+                const flat = document.getElementById('wi-flat-no')?.value.trim();
+                const addrEl = document.getElementById('wi-address');
+                if (flat && addrEl && !addrEl.value.includes(flat)) {
+                    addrEl.value = flat + ', ' + addrEl.value;
+                }
+                // populate step 3 summary
+                const milkR = document.querySelector('.wi-milk-radio:checked');
+                const milkLabels = { cow:'Cow Milk (A2)', buffalo:'Buffalo Milk', toned:'Toned Milk', full_fat:'Full Fat Milk' };
+                const ppl = wiGetPpl();
+                document.getElementById('wi-sum-milk').textContent  = milkLabels[milkR?.value] || milkR?.value || '—';
+                document.getElementById('wi-sum-qty').textContent   = wiQty + 'L';
+                document.getElementById('wi-sum-ppl').textContent   = ppl ? '₹' + ppl.toFixed(2) + '/L' : '—';
+                document.getElementById('wi-sum-daily').textContent = ppl ? '₹' + (ppl * wiQty).toFixed(2) + '/day' : '—';
+            }
+            [1,2,3].forEach(i => {
+                const el = document.getElementById('wi-step-' + i);
+                if (el) el.classList.toggle('hidden', i !== n);
+                const dot = document.getElementById('wi-dot-' + i);
+                const lbl = document.getElementById('wi-lbl-' + i);
+                if (dot) {
+                    if (i < n)      { dot.style.background='var(--green)'; dot.style.color='#fff'; dot.innerHTML='<i class="fa-solid fa-check text-[9px]"></i>'; }
+                    else if (i===n) { dot.style.background='var(--green)'; dot.style.color='#fff'; dot.textContent=i; }
+                    else            { dot.style.background='#e5e7eb'; dot.style.color='#9ca3af'; dot.textContent=i; }
+                }
+                if (lbl) lbl.style.color = i <= n ? 'var(--green)' : 'var(--muted)';
+            });
+        }
+
         // milk card highlight + preview update
         document.querySelectorAll('.wi-milk-radio').forEach(r => {
             r.addEventListener('change', () => {
                 document.querySelectorAll('.wi-milk-card').forEach(c => c.style.borderColor = 'var(--border)');
                 r.closest('label').style.borderColor = 'var(--green)';
                 wiUpdatePreview();
+                wiCheckCutoff();
             });
         });
         const firstWiMilk = document.querySelector('.wi-milk-radio:checked');
         if (firstWiMilk) firstWiMilk.closest('label').style.borderColor = 'var(--green)';
+
+        // Check cutoff on start date change
+        document.getElementById('wi-start-date')?.addEventListener('change', wiCheckCutoff);
+        
+        // Initial cutoff check
+        if (document.getElementById('wi-start-date')) {
+            wiCheckCutoff();
+        }
 
         // slot card highlight
         document.querySelectorAll('.wi-slot-radio').forEach(r => {

@@ -77,6 +77,12 @@ class WalletController extends Controller
         $milkPriceRow  = \App\Models\MilkPrice::forType($request->milk_type);
         $pricePerLitre = $milkPriceRow ? (float) $milkPriceRow->price_per_litre : null;
 
+        // Cutoff time validation
+        $startDate = \Carbon\Carbon::parse($request->start_date);
+        if ($milkPriceRow && $milkPriceRow->cutoff_time) {
+            $startDate = $this->adjustStartDateForCutoff($startDate, $milkPriceRow->cutoff_time);
+        }
+
         DB::beginTransaction();
         try {
             $order = Order::create([
@@ -92,7 +98,7 @@ class WalletController extends Controller
                     'delivery_slot'    => $request->delivery_slot,
                     'location_id'      => $request->location_id,
                     'delivery_address' => $request->delivery_address,
-                    'start_date'       => $request->start_date,
+                    'start_date'       => $startDate->format('Y-m-d'),
                     'price_per_litre'  => $pricePerLitre,
                 ],
             ]);
@@ -267,6 +273,14 @@ class WalletController extends Controller
         $extra   = (float) $data['extra_qty'];
         $baseQty = (float) ($subscription->quantity_per_day ?? 1);
 
+        // Cutoff time validation - if ordering for today and past cutoff, push to tomorrow
+        $milkPriceRow = \App\Models\MilkPrice::forType($subscription->milk_type);
+        $requestedDate = \Carbon\Carbon::parse($date);
+        if ($milkPriceRow && $milkPriceRow->cutoff_time) {
+            $requestedDate = $this->adjustStartDateForCutoff($requestedDate, $milkPriceRow->cutoff_time);
+            $date = $requestedDate->format('Y-m-d');
+        }
+
         $log = DeliveryLog::firstOrCreate(
             ['user_subscription_id' => $subscription->id, 'delivery_date' => $date],
             ['quantity_delivered' => $baseQty, 'status' => 'pending']
@@ -337,5 +351,23 @@ class WalletController extends Controller
     private function authorizeSubscription(UserSubscription $subscription): void
     {
         if ($subscription->user_id !== auth()->id()) abort(403);
+    }
+
+    /**
+     * Adjust start date based on cutoff time
+     * If current time is past cutoff and requested date is today, push to tomorrow
+     */
+    private function adjustStartDateForCutoff(\Carbon\Carbon $requestedDate, string $cutoffTime): \Carbon\Carbon
+    {
+        $now = now();
+        $cutoff = \Carbon\Carbon::parse($cutoffTime);
+        
+        // Only apply cutoff logic if the requested date is today
+        if ($requestedDate->isToday() && $now->greaterThan($cutoff)) {
+            // Past cutoff time, push to tomorrow
+            return $requestedDate->addDay();
+        }
+        
+        return $requestedDate;
     }
 }
