@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\DeliveryLog;
 use App\Models\Order;
 use App\Models\SubscriptionChangeLog;
+use App\Models\SubscriptionDeliverySettings;
 use App\Models\UserSubscription;
 use App\Services\PhonePeService;
 use Illuminate\Http\Request;
@@ -214,45 +215,95 @@ class WalletController extends Controller
         $this->authorizeSubscription($subscription);
 
         $data = $request->validate([
-            'delivery_address'      => 'nullable|string|max:500',
-            'delivery_instructions' => 'nullable|string|max:500',
-            'milk_type'             => 'nullable|string|max:50',
-            'quantity_per_day'      => 'nullable|integer|min:1|max:20',
-            'delivery_slot'         => 'nullable|in:morning,evening',
-            'location_id'           => 'nullable|exists:locations,id',
+            'delivery_address'          => 'nullable|string|max:500',
+            'delivery_instructions'     => 'nullable|string|max:500',
+            'delivery_slot'             => 'nullable|in:morning,evening',
+            'location_id'               => 'nullable|exists:locations,id',
+            'milk_items'                => 'nullable|array|min:1',
+            'milk_items.*.milk_type'    => 'required_with:milk_items|string|max:50',
+            'milk_items.*.qty'          => 'required_with:milk_items|numeric|min:0.5|max:20',
+            'milk_items.*.ppl'          => 'nullable|numeric|min:0',
         ]);
 
-        $changes = array_filter($data, fn($v) => $v !== null);
-        if (empty($changes)) {
+        // Enrich milk_items: apply shared slot + refresh price from DB
+        if (!empty($data['milk_items'])) {
+            $sharedSlot = $data['delivery_slot'] ?? 'morning';
+            $enriched   = [];
+            foreach ($data['milk_items'] as $item) {
+                if (empty($item['milk_type'])) continue;
+                $mp = \App\Models\MilkPrice::forType($item['milk_type']);
+                $enriched[] = [
+                    'milk_type' => $item['milk_type'],
+                    'qty'       => (float) ($item['qty'] ?? 1),
+                    'slot'      => $sharedSlot,
+                    'ppl'       => $mp ? (float) $mp->price_per_litre : (float) ($item['ppl'] ?? 0),
+                ];
+            }
+            $data['milk_items'] = $enriched;
+        }
+
+        if (empty($data['milk_items']) && !isset($data['delivery_address']) && !isset($data['delivery_slot']) && !isset($data['delivery_instructions'])) {
             return redirect()->route('member.dashboard')->with('error', 'No changes provided.');
         }
 
         // Capture old values for logging
-        $trackFields = ['milk_type', 'quantity_per_day', 'delivery_slot', 'delivery_address', 'delivery_instructions', 'location_id'];
-        $oldValues   = array_intersect_key($subscription->only($trackFields), $changes);
+        $oldSettings = $subscription->deliverySettings;
+        $oldValues   = $oldSettings ? $oldSettings->only(['milk_type', 'quantity_per_day', 'delivery_slot', 'milk_items']) : [];
 
-        // If qty changed, update future pending delivery logs
-        if (isset($changes['quantity_per_day']) && $changes['quantity_per_day'] != $subscription->quantity_per_day) {
+        // Update future delivery logs if milk_items changed
+        if (!empty($data['milk_items'])) {
+            $totalQty = array_sum(array_column($data['milk_items'], 'qty'));
             DeliveryLog::where('user_subscription_id', $subscription->id)
                 ->where('status', 'pending')
                 ->whereDate('delivery_date', '>=', now()->toDateString())
-                ->update(['quantity_delivered' => $changes['quantity_per_day']]);
+                ->update([
+                    'quantity_delivered' => $totalQty,
+                    'milk_items'         => json_encode($data['milk_items']),
+                ]);
+
+            // Update price_per_litre on subscription (first item, for legacy compat)
+            $mp = \App\Models\MilkPrice::forType($data['milk_items'][0]['milk_type']);
+            if ($mp) $subscription->update(['price_per_litre' => (float) $mp->price_per_litre]);
         }
 
-        // If milk_type changed, update price_per_litre
-        if (isset($changes['milk_type'])) {
-            $mp = \App\Models\MilkPrice::forType($changes['milk_type']);
-            if ($mp) $changes['price_per_litre'] = (float) $mp->price_per_litre;
-        }
+        // Build settings payload
+        $settingsData = array_filter([
+            'milk_items'            => $data['milk_items'] ?? null,
+            'delivery_slot'         => $data['delivery_slot'] ?? null,
+            'delivery_address'      => $data['delivery_address'] ?? null,
+            'delivery_instructions' => $data['delivery_instructions'] ?? null,
+            'location_id'           => $data['location_id'] ?? null,
+            // legacy single-milk fields derived from items
+            'milk_type'             => $data['milk_items'][0]['milk_type'] ?? null,
+            'quantity_per_day'      => !empty($data['milk_items']) ? array_sum(array_column($data['milk_items'], 'qty')) : null,
+        ], fn($v) => $v !== null);
 
-        $subscription->update($changes);
+        // Save to delivery settings table
+        $subscription->deliverySettings()->updateOrCreate(
+            ['user_subscription_id' => $subscription->id],
+            $settingsData
+        );
+
+        // Sync to subscription row for backward compat
+        $syncToSub = array_filter([
+            'milk_type'             => $settingsData['milk_type'] ?? null,
+            'quantity_per_day'      => $settingsData['quantity_per_day'] ?? null,
+            'delivery_slot'         => $data['delivery_slot'] ?? null,
+            'delivery_address'      => $data['delivery_address'] ?? null,
+            'delivery_instructions' => $data['delivery_instructions'] ?? null,
+            'location_id'           => $data['location_id'] ?? null,
+        ], fn($v) => $v !== null);
+
+        if (!empty($syncToSub)) {
+            $subscription->update($syncToSub);
+        }
 
         SubscriptionChangeLog::record(
             $subscription->id,
             auth()->id(),
             'settings_update',
             $oldValues,
-            array_intersect_key($changes, array_flip($trackFields)),
+            $settingsData,
             'Member updated delivery settings'
         );
 

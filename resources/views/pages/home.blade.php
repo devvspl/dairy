@@ -1194,7 +1194,9 @@
                             <article class="tb-card" data-product-id="{{ $product->id }}"
                                 data-product-name="{{ $product->name }}" data-product-price="{{ $product->price }}"
                                 data-product-image="{{ asset($product->main_image) }}"
-                                data-product-slug="{{ $product->slug }}">
+                                data-product-slug="{{ $product->slug }}"
+                                onclick="if(!event.target.closest('button') && !event.target.closest('select')) window.location.href='{{ route('product.detail', $product->slug) }}'"
+                                style="cursor:pointer;">
                                 <div class="tb-card-media">
                                     @if ($product->badge)
                                         <span class="tb-badge {{ $product->badge_color }}">{{ $product->badge }}</span>
@@ -1231,7 +1233,9 @@
                                         
                                     </div>
                                     <button class="tb-add add-to-cart-btn" type="button"
-                                        data-product-id="{{ $product->id }}">ADD TO CART</button>
+                                        data-product-id="{{ $product->id }}">
+                                        {{ in_array($product->slug, ['1-litre-cow-milk','1-litre-buffalo-milk']) ? 'Subscribe Now' : 'Add to Cart' }}
+                                    </button>
                                 </div>
                             </article>
                         @endforeach
@@ -1326,27 +1330,28 @@
                     // Add to Cart buttons
                     document.querySelectorAll('.add-to-cart-btn').forEach(btn => {
                         btn.addEventListener('click', function() {
-                            // Find the parent card (article element)
                             const card = this.closest('article.tb-card');
-                            if (!card) {
-                                console.error('Card not found for button:', this);
+                            if (!card) return;
+
+                            const slug = card.getAttribute('data-product-slug');
+                            const milkSlugs = ['1-litre-cow-milk', '1-litre-buffalo-milk'];
+
+                            if (milkSlugs.includes(slug)) {
+                                // Redirect to dashboard or login
+                                if (IS_MEMBER_LOGGED_IN) {
+                                    window.location.href = '{{ route('member.dashboard') }}';
+                                } else {
+                                    window.location.href = MEMBER_LOGIN_URL;
+                                }
                                 return;
                             }
 
-                            // Get data from the card
+                            // Normal add to cart for other products
                             const productId = card.getAttribute('data-product-id');
                             const productName = card.getAttribute('data-product-name');
                             const productPrice = card.getAttribute('data-product-price');
                             const productImage = card.getAttribute('data-product-image');
                             const productSlug = card.getAttribute('data-product-slug');
-
-                            console.log('Raw data from card:', {
-                                productId,
-                                productName,
-                                productPrice,
-                                productImage,
-                                productSlug
-                            });
 
                             const product = {
                                 id: parseInt(productId),
@@ -1357,7 +1362,6 @@
                                 quantity: 1
                             };
 
-                            console.log('Parsed product object:', product);
                             window.DairyCart.addToCart(product);
                         });
                     });

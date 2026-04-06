@@ -112,9 +112,28 @@
                 <tbody>
                     @forelse($deliveries as $i => $delivery)
                     @php
-                        $sub      = $delivery->subscription;
-                        $customer = $sub->user;
-                        $plan     = $sub->membershipPlan;
+                        $sub        = $delivery->subscription;
+                        $customer   = $sub->user;
+                        $plan       = $sub->membershipPlan;
+                        $milkItems  = $delivery->milk_items ?? [];
+                        $wds        = $sub->deliverySettings;
+                        // Fallback to delivery settings milk_items if log doesn't have them
+                        if (empty($milkItems) && $wds) {
+                            $milkItems = $wds->getMilkItemsResolved();
+                        }
+                        $icons = ['cow'=>'🐄','buffalo'=>'🐃','toned'=>'💧','full_fat'=>'🥛'];
+                        // Daily cost for wallet check
+                        $dailyCost = 0;
+                        if (!empty($milkItems)) {
+                            foreach ($milkItems as $mi) {
+                                $ppl = (float)($mi['ppl'] ?? 0);
+                                if (!$ppl) { $mp2 = \App\Models\MilkPrice::forType($mi['milk_type'] ?? ''); $ppl = $mp2 ? (float)$mp2->price_per_litre : 0; }
+                                $dailyCost += $ppl * (float)($mi['qty'] ?? 1);
+                            }
+                            $dailyCost = round($dailyCost, 2);
+                        } elseif ($sub->price_per_litre && $sub->quantity_per_day) {
+                            $dailyCost = round((float)$sub->price_per_litre * (float)$sub->quantity_per_day, 2);
+                        }
                     @endphp
                     <tr class="border-b hover:bg-gray-50" style="border-color: var(--border);">
                         <td class="px-4 py-3 text-sm" style="color: var(--muted);">
@@ -136,18 +155,29 @@
                             <div class="text-sm font-medium" style="color: var(--text);">
                                 {{ $plan?->name ?? 'Milk Wallet' }}
                             </div>
-                            @if($sub->milk_type)
+                            @if(!empty($milkItems))
+                                <div class="mt-1 space-y-0.5">
+                                    @foreach($milkItems as $mi)
+                                    <div class="text-xs flex items-center gap-1" style="color:var(--muted);">
+                                        <span>{{ $icons[$mi['milk_type']] ?? '🥛' }}</span>
+                                        <span class="font-semibold" style="color:var(--text);">{{ $mi['qty'] }}L</span>
+                                        <span>{{ ucfirst(str_replace('_',' ',$mi['milk_type'])) }}</span>
+                                        @if(!empty($mi['ppl']))<span style="color:var(--green);">₹{{ number_format($mi['ppl'],2) }}/L</span>@endif
+                                    </div>
+                                    @endforeach
+                                </div>
+                            @elseif($sub->milk_type)
                             <div class="text-xs mt-0.5" style="color: var(--muted);">
                                 {{ ucfirst(str_replace('_',' ',$sub->milk_type)) }}
                                 @if($sub->price_per_litre) · ₹{{ number_format($sub->price_per_litre,2) }}/L @endif
                             </div>
                             @endif
-                            @if($sub->delivery_slot)
-                            <div class="text-xs" style="color: var(--muted);">
-                                <i class="fa-solid fa-clock mr-0.5"></i>{{ ucfirst($sub->delivery_slot) }}
+                            @php $slot = !empty($milkItems[0]['slot']) ? $milkItems[0]['slot'] : $sub->delivery_slot; @endphp
+                            @if($slot)
+                            <div class="text-xs mt-0.5" style="color: var(--muted);">
+                                {{ ucfirst($slot) }}
                             </div>
                             @endif
-                            {{-- Delivery status badge --}}
                             @if($sub->delivery_status !== 'active')
                             <span class="inline-block mt-1 px-1.5 py-0.5 text-[10px] rounded-full font-semibold
                                 {{ $sub->delivery_status === 'paused'  ? 'bg-yellow-100 text-yellow-700' : '' }}
@@ -166,7 +196,9 @@
                                 ₹{{ number_format($sub->wallet_balance,2) }}
                             </div>
                             <div class="text-[10px]" style="color: var(--muted);">of ₹{{ number_format($sub->wallet_total,2) }}</div>
-                            @php $dailyCost = $sub->price_per_litre && $sub->quantity_per_day ? round((float)$sub->price_per_litre * (float)$sub->quantity_per_day, 2) : 0; @endphp
+                            @if($dailyCost > 0)
+                            <div class="text-[10px]" style="color:var(--muted);">₹{{ number_format($dailyCost,2) }}/day</div>
+                            @endif
                             @if($dailyCost > 0 && (float)$sub->wallet_balance < $dailyCost)
                                 <div class="text-[10px] font-semibold mt-0.5" style="color:#dc2626;"><i class="fa-solid fa-triangle-exclamation mr-0.5"></i>Insufficient</div>
                             @endif
@@ -194,14 +226,14 @@
                                     <i class="fa-solid {{ ($sub->delivery_status === 'stopped') ? 'fa-stop' : 'fa-pause' }} text-[10px]"></i>
                                     {{ ucfirst($sub->delivery_status) }} — no delivery
                                 </span>
-                            @elseif($delivery->status === 'pending' && isset($dailyCost) && $dailyCost > 0 && (float)$sub->wallet_balance < $dailyCost)
+                            @elseif($delivery->status === 'pending' && $dailyCost > 0 && (float)$sub->wallet_balance < $dailyCost)
                                 <span class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold"
                                     style="background:rgba(220,38,38,0.08); color:#dc2626;">
                                     <i class="fa-solid fa-wallet text-[10px]"></i>
                                     No balance
                                 </span>
                             @else
-                                <button onclick="openModal({{ $delivery->id }}, '{{ $delivery->status }}', '{{ $delivery->quantity_delivered }}', '{{ $delivery->delivery_time }}', '{{ addslashes($delivery->notes ?? '') }}')"
+                                <button onclick="openModal({{ $delivery->id }}, '{{ $delivery->status }}', '{{ $delivery->quantity_delivered }}', '{{ $delivery->delivery_time }}', '{{ addslashes($delivery->notes ?? '') }}', {{ json_encode($milkItems) }})"
                                         class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors hover:opacity-80"
                                         style="background: rgba(47,74,30,0.1); color: var(--green);">
                                     <i class="fa-solid {{ $delivery->status === 'pending' ? 'fa-check' : 'fa-pen-to-square' }}"></i>
@@ -251,11 +283,21 @@
                         <option value="failed">Failed</option>
                     </select>
                 </div>
-                <div>
+
+                {{-- Item-wise qty (shown when milk_items exist) --}}
+                <div id="itemWiseQty" class="hidden space-y-2">
+                    <label class="block text-sm font-medium" style="color: var(--text);">Items Delivered</label>
+                    <div id="itemWiseList" class="space-y-2"></div>
+                    <input type="hidden" name="quantity_delivered" id="qtyInput">
+                </div>
+
+                {{-- Single qty (fallback for no milk_items) --}}
+                <div id="singleQty">
                     <label class="block text-sm font-medium mb-1" style="color: var(--text);">Quantity (L)</label>
-                    <input type="number" step="0.5" name="quantity_delivered" id="qtyInput"
+                    <input type="number" step="1" name="quantity_delivered_single" id="qtyInputSingle"
                            class="w-full px-3 py-2 border rounded-lg" style="border-color: var(--border);">
                 </div>
+
                 <div>
                     <label class="block text-sm font-medium mb-1" style="color: var(--text);">Delivery Time</label>
                     <input type="time" name="delivery_time" id="timeInput"
@@ -460,28 +502,82 @@ const DEFAULT_NOTES = {
     pending   : 'Marked as pending.',
 };
 
+const ICONS = {cow:'🐄', buffalo:'🐃', toned:'💧', full_fat:'🥛'};
+
 document.getElementById('statusSelect').addEventListener('change', function () {
     const note = DEFAULT_NOTES[this.value] || '';
     document.getElementById('notesInput').value = note;
     document.getElementById('notesHint').textContent = note ? '💬 Default: ' + note : '';
 });
 
-function openModal(id, status, qty, time, notes) {
+function recalcTotalQty() {
+    let total = 0;
+    document.querySelectorAll('.item-qty-input').forEach(inp => { total += parseFloat(inp.value) || 0; });
+    document.getElementById('qtyInput').value = total;
+}
+
+function openModal(id, status, qty, time, notes, milkItems) {
     document.getElementById('statusSelect').value = status;
-    document.getElementById('qtyInput').value     = qty;
-    // Strip seconds from time if present (e.g. "11:35:00" → "11:35"), default to current time
+
     const now = new Date();
     const currentTime = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
-    document.getElementById('timeInput').value    = time ? time.substring(0, 5) : currentTime;
-    // Show existing note or the default for the current status
+    document.getElementById('timeInput').value = time ? time.substring(0, 5) : currentTime;
+
     const note = notes || DEFAULT_NOTES[status] || '';
-    document.getElementById('notesInput').value   = note;
+    document.getElementById('notesInput').value = note;
     document.getElementById('notesHint').textContent = DEFAULT_NOTES[status] ? 'Default: ' + DEFAULT_NOTES[status] : '';
-    document.getElementById('updateForm').action  = BASE_URL + id;
+    document.getElementById('updateForm').action = BASE_URL + id;
+
+    if (milkItems && milkItems.length > 0) {
+        // Item-wise mode
+        document.getElementById('itemWiseQty').classList.remove('hidden');
+        document.getElementById('singleQty').classList.add('hidden');
+        document.querySelector('#singleQty input').removeAttribute('name');
+        document.getElementById('qtyInput').setAttribute('name', 'quantity_delivered');
+
+        const list = document.getElementById('itemWiseList');
+        list.innerHTML = milkItems.map((item, idx) => `
+            <div class="flex items-center justify-between p-2.5 rounded-lg border" style="border-color:var(--border);background:#fafafa;">
+                <div class="flex items-center gap-2">
+                    <span class="text-base">${ICONS[item.milk_type] || '🥛'}</span>
+                    <div>
+                        <p class="text-xs font-semibold" style="color:var(--text);">${item.milk_type.replace('_',' ').replace(/\b\w/g,c=>c.toUpperCase())}</p>
+                        <p class="text-[10px]" style="color:var(--muted);">Scheduled: ${item.qty}L</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-1.5">
+                    <button type="button" onclick="stepItemQty(${idx},-1)" class="w-7 h-7 rounded-lg border flex items-center justify-center font-bold text-sm" style="border-color:var(--border);color:var(--green);">−</button>
+                    <input type="number" step="1" min="0" max="${item.qty + 5}" value="${item.qty}"
+                           class="item-qty-input w-12 text-center text-sm font-bold border rounded-lg py-1" style="border-color:var(--border);"
+                           oninput="recalcTotalQty()" data-idx="${idx}">
+                    <button type="button" onclick="stepItemQty(${idx},1)" class="w-7 h-7 rounded-lg border flex items-center justify-center font-bold text-sm" style="border-color:var(--border);color:var(--green);">+</button>
+                    <span class="text-xs" style="color:var(--muted);">L</span>
+                </div>
+            </div>
+        `).join('');
+
+        recalcTotalQty();
+    } else {
+        // Single qty mode
+        document.getElementById('itemWiseQty').classList.add('hidden');
+        document.getElementById('singleQty').classList.remove('hidden');
+        document.getElementById('qtyInput').removeAttribute('name');
+        document.querySelector('#singleQty input').setAttribute('name', 'quantity_delivered');
+        document.getElementById('qtyInputSingle').value = qty;
+    }
+
     const m = document.getElementById('updateModal');
     m.classList.remove('hidden');
     m.classList.add('flex');
     m.scrollTop = 0;
+}
+
+function stepItemQty(idx, delta) {
+    const inp = document.querySelector(`.item-qty-input[data-idx="${idx}"]`);
+    if (!inp) return;
+    const newVal = Math.max(0, Math.round(parseFloat(inp.value || 0) + delta));
+    inp.value = newVal;
+    recalcTotalQty();
 }
 
 function closeModal() {

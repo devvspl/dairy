@@ -87,9 +87,11 @@
                     @php
                         $ws = $walletSubscription;
                         $wPlan = $ws->membershipPlan;
+                        // Use delivery settings from separate table if available, fallback to subscription fields
+                        $wds = $ws->deliverySettings ?? $ws->getOrCreateDeliverySettings();
                         $walletPct = $ws->walletRemainingPercent();
-                        $dailyCost = ($ws->price_per_litre && $ws->quantity_per_day)
-                            ? round((float)$ws->price_per_litre * (float)$ws->quantity_per_day, 2) : 0;
+                        $dailyCost = $wds->dailyCost() ?: (($ws->price_per_litre && $wds->quantity_per_day)
+                            ? round((float)$ws->price_per_litre * (float)$wds->quantity_per_day, 2) : 0);
                         $estDays = ($dailyCost > 0) ? floor((float)$ws->wallet_balance / $dailyCost) : 0;
                         $isStopped = $ws->delivery_status === 'stopped';
                         $isPaused  = $ws->delivery_status === 'paused';
@@ -121,10 +123,16 @@
                                     </div>
                                     {{-- Details chips --}}
                                     <div class="flex flex-wrap gap-x-3 gap-y-0.5 text-xs mb-1.5" style="color:var(--muted);">
-                                        @if($ws->milk_type)<span><i class="fa-solid fa-cow mr-1 text-[10px]"></i>{{ ucfirst(str_replace('_',' ',$ws->milk_type)) }}</span>@endif
-                                        @if($ws->quantity_per_day)<span><i class="fa-solid fa-droplet mr-1 text-[10px]"></i>{{ $ws->quantity_per_day }}L/day</span>@endif
-                                        @if($ws->delivery_slot)<span><i class="fa-solid fa-clock mr-1 text-[10px]"></i>{{ ucfirst($ws->delivery_slot) }}</span>@endif
+                                        @php $resolvedItems = $wds->getMilkItemsResolved(); @endphp
+                                        @if(count($resolvedItems) > 0)
+                                            @foreach($resolvedItems as $mi)
+                                                <span><i class="fa-solid fa-cow mr-1 text-[10px]"></i>{{ ucfirst(str_replace('_',' ',$mi['milk_type'])) }} {{ $mi['qty'] }}L</span>
+                                            @endforeach
+                                        @elseif($wds->milk_type)
+                                            <span><i class="fa-solid fa-cow mr-1 text-[10px]"></i>{{ ucfirst(str_replace('_',' ',$wds->milk_type)) }}</span>
+                                        @endif
                                         @if($ws->price_per_litre)<span><i class="fa-solid fa-tag mr-1 text-[10px]"></i>₹{{ number_format($ws->price_per_litre,2) }}/L</span>@endif
+                                        @if($dailyCost > 0)<span><i class="fa-solid fa-indian-rupee-sign mr-1 text-[10px]"></i>₹{{ number_format($dailyCost,2) }}/day</span>@endif
                                     </div>
                                     @if($dailyCost > 0)
                                     <p class="text-xs" style="color:var(--muted);">
@@ -252,55 +260,71 @@
                             <i class="fa-solid fa-chevron-down text-xs chevron rotate-180 transition-transform duration-200" style="color:var(--green);"></i>
                         </button>
                         <div class="border-t" style="border-color:rgba(47,74,30,0.2);">
-                            <form method="POST" action="{{ route('wallet.update', $ws->id) }}" class="p-4 space-y-5">
+                            <form method="POST" action="{{ route('wallet.update', $ws->id) }}" class="p-4 space-y-5" id="ws-settings-form">
                                 @csrf @method('PATCH')
 
+                                {{-- Milk Type — multi-select tabs, each with qty only --}}
                                 <div>
-                                    <p class="text-xs font-bold mb-2" style="color:var(--text);"><i class="fa-solid fa-cow mr-1.5" style="color:var(--green);"></i>Milk Type</p>
-                                    <div class="grid grid-cols-2 gap-2">
+                                    <p class="text-xs font-bold mb-2" style="color:var(--text);"><i class="fa-solid fa-cow mr-1.5" style="color:var(--green);"></i>Milk Type <span class="font-normal text-[10px]" style="color:var(--muted);">(select one or more)</span></p>
+                                    @php
+                                        $resolvedItems = $wds->getMilkItemsResolved();
+                                        $selectedTypes = collect($resolvedItems)->pluck('milk_type')->toArray();
+                                        $itemsByType   = collect($resolvedItems)->keyBy('milk_type');
+                                        $icons = ['cow'=>'🐄','buffalo'=>'🐃','toned'=>'💧','full_fat'=>'🥛'];
+                                        $commonSlot    = collect($resolvedItems)->first()['slot'] ?? ($wds->delivery_slot ?? 'morning');
+                                    @endphp
+                                    <div class="grid grid-cols-2 gap-2" id="ws-milk-tabs">
                                         @foreach($milkPrices as $mp)
-                                        @php $icons=['cow'=>'fa-cow','buffalo'=>'fa-hippo','toned'=>'fa-droplet','full_fat'=>'fa-bottle-water']; @endphp
-                                        <label class="flex items-center gap-2.5 p-3 rounded-xl border-2 cursor-pointer transition-all hover:border-green-400"
-                                            style="border-color:{{ $ws->milk_type===$mp->milk_type ? 'var(--green)' : 'var(--border)' }};
-                                                   background:{{ $ws->milk_type===$mp->milk_type ? 'rgba(47,74,30,0.05)' : '#fff' }};">
-                                            <input type="radio" name="milk_type" value="{{ $mp->milk_type }}" class="hidden" {{ $ws->milk_type===$mp->milk_type ? 'checked' : '' }}>
-                                            <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-                                                style="background:{{ $ws->milk_type===$mp->milk_type ? 'rgba(47,74,30,0.12)' : 'rgba(0,0,0,0.04)' }};">
-                                                <i class="fas {{ $icons[$mp->milk_type] ?? 'fa-droplet' }} text-xs" style="color:var(--green);"></i>
-                                            </div>
-                                            <div>
-                                                <p class="text-xs font-bold leading-tight" style="color:var(--text);">{{ $mp->label }}</p>
-                                                <p class="text-[10px] font-semibold" style="color:var(--green);">₹{{ number_format($mp->price_per_litre,2) }}/L</p>
-                                            </div>
-                                        </label>
+                                        @php
+                                            $isSelected = in_array($mp->milk_type, $selectedTypes);
+                                            $itemData   = $itemsByType[$mp->milk_type] ?? null;
+                                            $itemQty    = $itemData ? (int)$itemData['qty'] : 1;
+                                        @endphp
+                                        <div class="ws-milk-tab rounded-xl border-2 overflow-hidden transition-all"
+                                            style="border-color:{{ $isSelected ? 'var(--green)' : 'var(--border)' }};"
+                                            data-type="{{ $mp->milk_type }}">
+                                            <label class="flex items-center gap-3 p-3 cursor-pointer"
+                                                style="background:{{ $isSelected ? 'rgba(47,74,30,0.05)' : '#fff' }};">
+                                                <input type="checkbox" class="ws-milk-check hidden"
+                                                    data-type="{{ $mp->milk_type }}"
+                                                    data-ppl="{{ $mp->price_per_litre }}"
+                                                    {{ $isSelected ? 'checked' : '' }}>
+                                                <div class="w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all ws-check-box"
+                                                    style="border-color:{{ $isSelected ? 'var(--green)' : 'var(--border)' }};background:{{ $isSelected ? 'var(--green)' : '#fff' }};">
+                                                    @if($isSelected)<i class="fa-solid fa-check text-[9px] text-white"></i>@endif
+                                                </div>
+                                                <span class="text-lg">{{ $icons[$mp->milk_type] ?? '🥛' }}</span>
+                                                <div class="flex-1">
+                                                    <p class="text-xs font-bold" style="color:var(--text);">{{ $mp->label }}</p>
+                                                    <p class="text-[10px]" style="color:var(--green);">₹{{ number_format($mp->price_per_litre,2) }}/L</p>
+                                                </div>
+                                                {{-- Qty stepper — always visible, inline --}}
+                                                <div class="flex items-center gap-1 ws-qty-wrap {{ $isSelected ? '' : 'invisible' }}" onclick="event.preventDefault()">
+                                                    <button type="button" class="ws-qty-minus w-7 h-7 rounded-lg border-2 flex items-center justify-center font-bold text-sm transition-all"
+                                                        style="border-color:var(--border);color:var(--green);">−</button>
+                                                    <span class="ws-qty-display text-sm font-bold w-6 text-center" style="color:var(--text);">{{ $itemQty }}</span>
+                                                    <button type="button" class="ws-qty-plus w-7 h-7 rounded-lg border-2 flex items-center justify-center font-bold text-sm transition-all"
+                                                        style="border-color:var(--border);color:var(--green);">+</button>
+                                                    <span class="text-[10px]" style="color:var(--muted);">L</span>
+                                                </div>
+                                                <input type="hidden" class="ws-qty-input" name="milk_items[{{ $mp->milk_type }}][qty]" value="{{ $itemQty }}">
+                                                <input type="hidden" name="milk_items[{{ $mp->milk_type }}][milk_type]" value="{{ $mp->milk_type }}">
+                                                <input type="hidden" name="milk_items[{{ $mp->milk_type }}][ppl]" value="{{ $mp->price_per_litre }}">
+                                            </label>
+                                        </div>
                                         @endforeach
                                     </div>
                                 </div>
 
-                                <div>
-                                    <p class="text-xs font-bold mb-2" style="color:var(--text);"><i class="fa-solid fa-scale-balanced mr-1.5" style="color:var(--green);"></i>Quantity per Day</p>
-                                    <div class="grid grid-cols-5 gap-2">
-                                        @foreach([1,2,3,5,8] as $q)
-                                        <label class="text-center py-3 rounded-xl border-2 cursor-pointer text-sm font-bold transition-all"
-                                            style="border-color:{{ (int)$ws->quantity_per_day===$q ? 'var(--green)' : 'var(--border)' }};
-                                                   background:{{ (int)$ws->quantity_per_day===$q ? 'var(--green)' : '#fff' }};
-                                                   color:{{ (int)$ws->quantity_per_day===$q ? '#fff' : 'var(--muted)' }};">
-                                            <input type="radio" name="quantity_per_day" value="{{ $q }}" class="hidden" {{ (int)$ws->quantity_per_day===$q ? 'checked' : '' }}>
-                                            {{ $q }}L
-                                        </label>
-                                        @endforeach
-                                    </div>
-                                </div>
-
+                                {{-- Shared Delivery Slot --}}
                                 <div>
                                     <p class="text-xs font-bold mb-2" style="color:var(--text);"><i class="fa-solid fa-clock mr-1.5" style="color:var(--green);"></i>Delivery Slot</p>
                                     <div class="grid grid-cols-2 gap-3">
                                         @foreach([['value'=>'morning','label'=>'Morning','time'=>'5–8 AM','icon'=>'fa-sun'],['value'=>'evening','label'=>'Evening','time'=>'5–8 PM','icon'=>'fa-moon']] as $slot)
                                         <label class="flex flex-col items-center gap-1.5 p-3.5 rounded-xl border-2 cursor-pointer text-center transition-all"
-                                            style="border-color:{{ $ws->delivery_slot===$slot['value'] ? 'var(--green)' : 'var(--border)' }};
-                                                   background:{{ $ws->delivery_slot===$slot['value'] ? 'rgba(47,74,30,0.05)' : '#fff' }};">
-                                            <input type="radio" name="delivery_slot" value="{{ $slot['value'] }}" class="hidden" {{ $ws->delivery_slot===$slot['value'] ? 'checked' : '' }}>
-                                            <i class="fas {{ $slot['icon'] }} text-lg" style="color:{{ $ws->delivery_slot===$slot['value'] ? 'var(--green)' : 'var(--muted)' }};"></i>
+                                            style="border-color:{{ $commonSlot===$slot['value'] ? 'var(--green)' : 'var(--border)' }};background:{{ $commonSlot===$slot['value'] ? 'rgba(47,74,30,0.05)' : '#fff' }};">
+                                            <input type="radio" name="delivery_slot" value="{{ $slot['value'] }}" class="hidden" {{ $commonSlot===$slot['value'] ? 'checked' : '' }}>
+                                            <i class="fas {{ $slot['icon'] }} text-lg" style="color:{{ $commonSlot===$slot['value'] ? 'var(--green)' : 'var(--muted)' }};"></i>
                                             <p class="text-xs font-bold" style="color:var(--text);">{{ $slot['label'] }}</p>
                                             <p class="text-[10px]" style="color:var(--muted);">{{ $slot['time'] }}</p>
                                         </label>
@@ -312,7 +336,7 @@
                                     <p class="text-xs font-bold mb-1.5" style="color:var(--text);"><i class="fa-solid fa-location-dot mr-1.5" style="color:var(--green);"></i>Delivery Address</p>
                                     <textarea name="delivery_address" rows="2"
                                         class="w-full px-3 py-2.5 text-sm border-2 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none"
-                                        style="border-color:var(--border);">{{ $ws->delivery_address }}</textarea>
+                                        style="border-color:var(--border);">{{ $wds->delivery_address }}</textarea>
                                 </div>
 
                                 <div>
@@ -321,22 +345,25 @@
                                         class="w-full px-3 py-2.5 text-sm border-2 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent"
                                         style="border-color:var(--border);">
                                         <option value="">— Select instruction —</option>
-                                        <option value="Leave at door" {{ $ws->delivery_instructions === 'Leave at door' ? 'selected' : '' }}>Leave at door</option>
-                                        <option value="Ring bell" {{ $ws->delivery_instructions === 'Ring bell' ? 'selected' : '' }}>Ring bell</option>
-                                        <option value="Call before delivery" {{ $ws->delivery_instructions === 'Call before delivery' ? 'selected' : '' }}>Call before delivery</option>
-                                        <option value="Hand to me" {{ $ws->delivery_instructions === 'Hand to me' ? 'selected' : '' }}>Hand to me</option>
-                                        <option value="Leave with security" {{ $ws->delivery_instructions === 'Leave with security' ? 'selected' : '' }}>Leave with security</option>
-                                        <option value="other" {{ !in_array($ws->delivery_instructions, ['', 'Leave at door', 'Ring bell', 'Call before delivery', 'Hand to me', 'Leave with security']) && $ws->delivery_instructions ? 'selected' : '' }}>Other (specify)</option>
+                                        <option value="Leave at door" {{ $wds->delivery_instructions === 'Leave at door' ? 'selected' : '' }}>Leave at door</option>
+                                        <option value="Ring bell" {{ $wds->delivery_instructions === 'Ring bell' ? 'selected' : '' }}>Ring bell</option>
+                                        <option value="Call before delivery" {{ $wds->delivery_instructions === 'Call before delivery' ? 'selected' : '' }}>Call before delivery</option>
+                                        <option value="Hand to me" {{ $wds->delivery_instructions === 'Hand to me' ? 'selected' : '' }}>Hand to me</option>
+                                        <option value="Leave with security" {{ $wds->delivery_instructions === 'Leave with security' ? 'selected' : '' }}>Leave with security</option>
+                                        <option value="other" {{ !in_array($wds->delivery_instructions, ['', 'Leave at door', 'Ring bell', 'Call before delivery', 'Hand to me', 'Leave with security']) && $wds->delivery_instructions ? 'selected' : '' }}>Other (specify)</option>
                                     </select>
                                     <textarea name="delivery_instructions" id="ws-other-instructions" rows="2"
-                                        class="w-full px-3 py-2.5 text-sm border-2 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none mt-2 {{ in_array($ws->delivery_instructions, ['', 'Leave at door', 'Ring bell', 'Call before delivery', 'Hand to me', 'Leave with security']) || !$ws->delivery_instructions ? 'hidden' : '' }}"
+                                        class="w-full px-3 py-2.5 text-sm border-2 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none mt-2 {{ in_array($wds->delivery_instructions, ['', 'Leave at door', 'Ring bell', 'Call before delivery', 'Hand to me', 'Leave with security']) || !$wds->delivery_instructions ? 'hidden' : '' }}"
                                         style="border-color:var(--border);"
-                                        placeholder="Enter your custom instructions…">{{ !in_array($ws->delivery_instructions, ['', 'Leave at door', 'Ring bell', 'Call before delivery', 'Hand to me', 'Leave with security']) ? $ws->delivery_instructions : '' }}</textarea>
+                                        placeholder="Enter your custom instructions…">{{ !in_array($wds->delivery_instructions, ['', 'Leave at door', 'Ring bell', 'Call before delivery', 'Hand to me', 'Leave with security']) ? $wds->delivery_instructions : '' }}</textarea>
                                 </div>
 
                                 <button type="submit" class="w-full py-3 rounded-xl font-bold text-sm text-white transition-all hover:shadow-md" style="background:var(--green);">
                                     <i class="fa-solid fa-check mr-1.5"></i>Save Changes
                                 </button>
+                                <div id="ws-milk-error" class="hidden px-3 py-2.5 rounded-xl text-xs font-semibold text-center" style="background:#fef2f2;border:1px solid #fecaca;color:#dc2626;">
+                                    <i class="fa-solid fa-triangle-exclamation mr-1"></i>Please select at least one milk type.
+                                </div>
                             </form>
 
                             {{-- Extra milk for a specific day --}}
@@ -352,11 +379,21 @@
                                             class="w-full px-3 py-2 text-sm border-2 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent"
                                             style="border-color:var(--border);">
                                     </div>
-                                    <div style="width:90px;">
+                                    <div>
                                         <label class="block text-[10px] font-semibold mb-1" style="color:var(--muted);">Extra (L)</label>
-                                        <input type="number" name="extra_qty" required min="1" max="20" step="1" value="1"
-                                            class="w-full px-3 py-2 text-sm border-2 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                                            style="border-color:var(--border);">
+                                        <div class="flex items-center border-2 rounded-xl overflow-hidden" style="border-color:var(--border);">
+                                            <button type="button"
+                                                onclick="const i=this.nextElementSibling; if(parseInt(i.value)>1) i.value=parseInt(i.value)-1;"
+                                                class="w-9 h-9 flex items-center justify-center text-lg font-bold flex-shrink-0 hover:bg-gray-100 transition-colors"
+                                                style="color:var(--green);">−</button>
+                                            <input type="number" name="extra_qty" required min="1" max="20" step="1" value="1"
+                                                class="w-10 text-center text-sm font-bold border-0 focus:ring-0 focus:outline-none"
+                                                style="color:var(--text);">
+                                            <button type="button"
+                                                onclick="const i=this.previousElementSibling; if(parseInt(i.value)<20) i.value=parseInt(i.value)+1;"
+                                                class="w-9 h-9 flex items-center justify-center text-lg font-bold flex-shrink-0 hover:bg-gray-100 transition-colors"
+                                                style="color:var(--green);">+</button>
+                                        </div>
                                     </div>
                                     <button type="submit" class="px-4 py-2 rounded-xl text-sm font-bold text-white flex-shrink-0" style="background:var(--green);">Add</button>
                                 </form>
@@ -1850,6 +1887,103 @@
         }
 
         if (document.getElementById('wi-qty-input')) wiSetQty(1);
+
+        // ── Delivery Settings — multi-select milk tabs ───────────────
+        @php
+            $wsPricesData = $milkPrices->map(function($mp) {
+                return ['milk_type' => $mp->milk_type, 'label' => $mp->label, 'ppl' => (float)$mp->price_per_litre];
+            })->values();
+        @endphp
+        const WS_PRICES = @json($wsPricesData);
+
+        // Toggle milk tab on/off
+        document.querySelectorAll('.ws-milk-check').forEach(function(chk) {
+            chk.closest('label').addEventListener('click', function(e) {
+                // don't toggle if clicking the stepper buttons
+                if (e.target.closest('.ws-qty-wrap')) return;
+
+                const tab  = chk.closest('.ws-milk-tab');
+                const box  = tab.querySelector('.ws-check-box');
+                const wrap = tab.querySelector('.ws-qty-wrap');
+                const isNowChecked = !chk.checked;
+
+                chk.checked = isNowChecked;
+
+                if (isNowChecked) {
+                    tab.style.borderColor    = 'var(--green)';
+                    this.style.background    = 'rgba(47,74,30,0.05)';
+                    box.style.borderColor    = 'var(--green)';
+                    box.style.background     = 'var(--green)';
+                    box.innerHTML            = '<i class="fa-solid fa-check text-[9px] text-white"></i>';
+                    wrap.classList.remove('invisible');
+                    tab.querySelectorAll('input[name*="milk_items"]').forEach(i => i.disabled = false);
+                } else {
+                    tab.style.borderColor    = 'var(--border)';
+                    this.style.background    = '#fff';
+                    box.style.borderColor    = 'var(--border)';
+                    box.style.background     = '#fff';
+                    box.innerHTML            = '';
+                    wrap.classList.add('invisible');
+                    tab.querySelectorAll('input[name*="milk_items"]').forEach(i => i.disabled = true);
+                }
+            });
+
+            // Disable inputs for unchecked tabs on page load
+            if (!chk.checked) {
+                chk.closest('.ws-milk-tab').querySelectorAll('input[name*="milk_items"]').forEach(i => i.disabled = true);
+            }
+        });
+
+        // Qty stepper (+/-)
+        document.querySelectorAll('.ws-milk-tab').forEach(function(tab) {
+            const minus   = tab.querySelector('.ws-qty-minus');
+            const plus    = tab.querySelector('.ws-qty-plus');
+            const display = tab.querySelector('.ws-qty-display');
+            const input   = tab.querySelector('.ws-qty-input');
+            if (!minus || !plus || !display || !input) return;
+
+            minus.addEventListener('click', function(e) {
+                e.preventDefault();
+                let val = parseInt(input.value) || 1;
+                if (val > 1) { val--; input.value = val; display.textContent = val; }
+            });
+            plus.addEventListener('click', function(e) {
+                e.preventDefault();
+                let val = parseInt(input.value) || 1;
+                if (val < 20) { val++; input.value = val; display.textContent = val; }
+            });
+        });
+
+        // Shared slot cards (delivery_slot radio)
+        document.querySelectorAll('[name="delivery_slot"]').forEach(function(radio) {
+            radio.closest('label')?.addEventListener('click', function() {
+                document.querySelectorAll('[name="delivery_slot"]').forEach(r => {
+                    const lbl = r.closest('label');
+                    if (!lbl) return;
+                    lbl.style.borderColor = 'var(--border)';
+                    lbl.style.background  = '#fff';
+                    const icon = lbl.querySelector('i.fas');
+                    if (icon) icon.style.color = 'var(--muted)';
+                });
+                this.style.borderColor = 'var(--green)';
+                this.style.background  = 'rgba(47,74,30,0.05)';
+                const icon = this.querySelector('i.fas');
+                if (icon) icon.style.color = 'var(--green)';
+            });
+        });
+
+        // Ensure at least one milk type is selected on submit
+        document.getElementById('ws-settings-form')?.addEventListener('submit', function(e) {
+            const anyChecked = Array.from(document.querySelectorAll('.ws-milk-check')).some(c => c.checked);
+            const errEl = document.getElementById('ws-milk-error');
+            if (!anyChecked) {
+                e.preventDefault();
+                errEl.classList.remove('hidden');
+                errEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            } else {
+                errEl.classList.add('hidden');
+            }
+        });
 
         // ── Settings panel interactive radio cards ────────────────────
         // Delivery instructions dropdown handler

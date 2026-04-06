@@ -284,6 +284,17 @@ class PaymentController extends Controller
             // Link order to subscription
             $order->update(['user_subscription_id' => $subscription->id]);
 
+            // Create delivery settings in separate table
+            \App\Models\SubscriptionDeliverySettings::create([
+                'user_subscription_id' => $subscription->id,
+                'milk_type'            => $milkType,
+                'quantity_per_day'     => $qtyPerDay,
+                'delivery_slot'        => $slot,
+                'location_id'          => $locationId,
+                'delivery_address'     => $deliveryAddress,
+                'delivery_instructions'=> null,
+            ]);
+
             // Record initial credit transaction
             MilkWalletTransaction::create([
                 'user_id'              => $user->id,
@@ -408,6 +419,17 @@ class PaymentController extends Controller
                 'milk_type'          => $milkType,
                 'quantity_per_day'   => $quantityPerDay,
                 'delivery_slot'      => $deliverySlot,
+            ]);
+
+            // Create delivery settings in separate table
+            \App\Models\SubscriptionDeliverySettings::create([
+                'user_subscription_id' => $subscription->id,
+                'milk_type'            => $milkType,
+                'quantity_per_day'     => $quantityPerDay,
+                'delivery_slot'        => $deliverySlot,
+                'location_id'          => $locationId,
+                'delivery_address'     => $deliveryAddress,
+                'delivery_instructions'=> null,
             ]);
 
             // Record initial wallet credit transaction for on-demand

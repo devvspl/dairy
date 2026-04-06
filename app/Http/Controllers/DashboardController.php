@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Exports\LocationDeliveriesExport;
 use App\Models\DeliveryLog;
 use App\Models\Location;
+use App\Models\MilkPrice;
 use App\Models\PageVisit;
 use App\Models\ContactInquiry;
 use App\Models\Product;
@@ -53,7 +54,7 @@ class DashboardController extends Controller
 
         // Active on-demand wallet subscription (most recent active)
         // Includes both plan-based on-demand AND wallet-only (no plan) subscriptions
-        $walletSubscription = \App\Models\UserSubscription::with(['membershipPlan', 'walletTransactions'])
+        $walletSubscription = \App\Models\UserSubscription::with(['membershipPlan', 'walletTransactions', 'deliverySettings'])
             ->where('user_id', $user->id)
             ->where('status', 'active')
             ->where(function ($q) {
@@ -126,7 +127,7 @@ class DashboardController extends Controller
         $date   = $request->get('date', now()->format('Y-m-d'));
         $search = $request->get('search', '');
 
-        $query = DeliveryLog::with(['subscription.user', 'subscription.membershipPlan', 'subscription.location'])
+        $query = DeliveryLog::with(['subscription.user', 'subscription.membershipPlan', 'subscription.location', 'subscription.deliverySettings'])
             ->whereHas('subscription', fn($q) => $q->where('location_id', $location->id))
             ->whereDate('delivery_date', $date)
             ->orderByRaw("FIELD(status, 'pending', 'delivered', 'skipped', 'failed')")
@@ -291,48 +292,67 @@ class DashboardController extends Controller
         ]);
 
         // ── Wallet debit/credit logic ─────────────────────────────────
-        if ($subscription && $subscription->isOnDemand() && $subscription->price_per_litre > 0) {
+        if ($subscription && $subscription->isOnDemand()) {
             $dateStr   = $delivery->delivery_date->toDateString();
-            $dailyCost = round($newQty * (float) $subscription->price_per_litre, 2);
+            $milkItems = $delivery->milk_items ?? [];
 
-            // Block marking delivered if wallet has insufficient balance
-            if ($newStatus === 'delivered' && $oldStatus !== 'delivered') {
-                if ((float) $subscription->wallet_balance < $dailyCost) {
-                    return redirect()->back()->with(
-                        'error',
-                        "Cannot mark as delivered — wallet balance ₹" . number_format($subscription->wallet_balance, 2) .
-                        " is less than delivery cost ₹" . number_format($dailyCost, 2) .
-                        ". Member must top up first."
-                    );
-                }
-                $subscription->debitWallet($newQty, $dateStr, $user->id, $delivery->id);
-
-            } elseif ($newStatus === 'delivered' && $oldStatus === 'delivered' && $newQty !== $oldQty) {
-                $diff = $newQty - $oldQty;
-                if ($diff > 0) {
-                    $extraCost = round($diff * (float) $subscription->price_per_litre, 2);
-                    if ((float) $subscription->wallet_balance < $extraCost) {
-                        return redirect()->back()->with(
-                            'error',
-                            "Cannot increase quantity — wallet balance ₹" . number_format($subscription->wallet_balance, 2) .
-                            " is less than extra cost ₹" . number_format($extraCost, 2) . "."
-                        );
+            // Calculate daily cost — multi-milk or legacy
+            if (!empty($milkItems)) {
+                $dailyCost = 0;
+                foreach ($milkItems as $mi) {
+                    $ppl = (float)($mi['ppl'] ?? 0);
+                    if (!$ppl) {
+                        $mp2 = \App\Models\MilkPrice::forType($mi['milk_type'] ?? '');
+                        $ppl = $mp2 ? (float)$mp2->price_per_litre : 0;
                     }
-                    $subscription->debitWallet($diff, $dateStr, $user->id, $delivery->id);
-                } else {
-                    $creditAmt = round(abs($diff) * (float) $subscription->price_per_litre, 2);
-                    $subscription->creditWallet($creditAmt, "Qty adjusted on {$dateStr}", true, $delivery->id);
+                    $dailyCost += $ppl * (float)($mi['qty'] ?? 1);
                 }
-
-            } elseif ($oldStatus === 'delivered' && $newStatus !== 'delivered') {
-                $creditAmt = round($oldQty * (float) $subscription->price_per_litre, 2);
-                if ($creditAmt > 0) {
-                    $subscription->creditWallet($creditAmt, "Delivery reversed on {$dateStr}", true, $delivery->id);
-                }
+                $dailyCost = round($dailyCost, 2);
+            } elseif ($subscription->price_per_litre > 0) {
+                $dailyCost = round($newQty * (float)$subscription->price_per_litre, 2);
+            } else {
+                $dailyCost = 0;
             }
 
-            $subscription->refresh();
-            \App\Models\DeliveryLog::autoGenerate($subscription);
+            if ($dailyCost > 0) {
+                if ($newStatus === 'delivered' && $oldStatus !== 'delivered') {
+                    if ((float)$subscription->wallet_balance < $dailyCost) {
+                        return redirect()->back()->with(
+                            'error',
+                            "Cannot mark as delivered — wallet balance ₹" . number_format($subscription->wallet_balance, 2) .
+                            " is less than delivery cost ₹" . number_format($dailyCost, 2) . ". Member must top up first."
+                        );
+                    }
+                    if (!empty($milkItems)) {
+                        $subscription->debitWalletMultiMilk($milkItems, $dateStr, $delivery->id);
+                    } else {
+                        $subscription->debitWallet($newQty, $dateStr, $user->id, $delivery->id);
+                    }
+
+                } elseif ($newStatus === 'delivered' && $oldStatus === 'delivered' && $newQty !== $oldQty) {
+                    $diff      = $newQty - $oldQty;
+                    $ppl       = $subscription->price_per_litre > 0 ? (float)$subscription->price_per_litre : ($dailyCost / max($oldQty, 1));
+                    $extraCost = round(abs($diff) * $ppl, 2);
+                    if ($diff > 0) {
+                        if ((float)$subscription->wallet_balance < $extraCost) {
+                            return redirect()->back()->with(
+                                'error',
+                                "Cannot increase quantity — wallet balance ₹" . number_format($subscription->wallet_balance, 2) .
+                                " is less than extra cost ₹" . number_format($extraCost, 2) . "."
+                            );
+                        }
+                        $subscription->debitWallet($diff, $dateStr, $user->id, $delivery->id);
+                    } else {
+                        $subscription->creditWallet($extraCost, "Qty adjusted on {$dateStr}", true, $delivery->id);
+                    }
+
+                } elseif ($oldStatus === 'delivered' && $newStatus !== 'delivered') {
+                    $subscription->creditWallet($dailyCost, "Delivery reversed on {$dateStr}", true, $delivery->id);
+                }
+
+                $subscription->refresh();
+                \App\Models\DeliveryLog::autoGenerate($subscription);
+            }
         }
 
         return redirect()->back()->with('success', 'Delivery updated successfully.');

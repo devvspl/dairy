@@ -53,6 +53,32 @@ class UserSubscription extends Model
     }
 
     /**
+     * Get the delivery settings for this subscription
+     */
+    public function deliverySettings(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(SubscriptionDeliverySettings::class, 'user_subscription_id');
+    }
+
+    /**
+     * Get or create delivery settings, merging from subscription fields if new
+     */
+    public function getOrCreateDeliverySettings(): SubscriptionDeliverySettings
+    {
+        return $this->deliverySettings()->firstOrCreate(
+            ['user_subscription_id' => $this->id],
+            [
+                'milk_type'             => $this->milk_type,
+                'quantity_per_day'      => $this->quantity_per_day,
+                'delivery_slot'         => $this->delivery_slot,
+                'location_id'           => $this->location_id,
+                'delivery_address'      => $this->delivery_address,
+                'delivery_instructions' => $this->delivery_instructions,
+            ]
+        );
+    }
+
+    /**
      * Scope to get active subscriptions
      */
     public function scopeActive($query)
@@ -205,6 +231,62 @@ class UserSubscription extends Model
             'litres'               => $litres,
             'balance_after'        => $newBalance,
             'description'          => number_format($litres, 2) . 'L milk delivered',
+            'transaction_date'     => $date,
+            'is_reversal'          => false,
+        ]);
+
+        return true;
+    }
+
+    /**
+     * Debit wallet for a multi-milk delivery.
+     * $milkItems: [["milk_type"=>"cow","qty"=>1,"ppl"=>70], ...]
+     * Calculates total cost across all items and debits once.
+     */
+    public function debitWalletMultiMilk(array $milkItems, string $date, ?int $deliveryLogId = null): bool
+    {
+        if ($deliveryLogId) {
+            $exists = MilkWalletTransaction::where('user_subscription_id', $this->id)
+                ->where('delivery_log_id', $deliveryLogId)
+                ->where('type', 'debit')
+                ->where('is_reversal', false)
+                ->exists();
+            if ($exists) return true;
+        }
+
+        $totalAmount = 0;
+        $totalLitres = 0;
+        $descParts   = [];
+
+        foreach ($milkItems as $item) {
+            $qty = (float) ($item['qty'] ?? 0);
+            $ppl = (float) ($item['ppl'] ?? 0);
+            if ($ppl <= 0) {
+                $mp  = MilkPrice::forType($item['milk_type'] ?? '');
+                $ppl = $mp ? (float) $mp->price_per_litre : 0;
+            }
+            $itemCost     = round($qty * $ppl, 2);
+            $totalAmount += $itemCost;
+            $totalLitres += $qty;
+            $descParts[]  = number_format($qty, 1) . 'L ' . ucfirst($item['milk_type'] ?? '');
+        }
+
+        $totalAmount = round($totalAmount, 2);
+        $newBalance  = round((float) $this->wallet_balance - $totalAmount, 2);
+
+        if ($newBalance < 0) return false;
+
+        $this->update(['wallet_balance' => $newBalance]);
+
+        MilkWalletTransaction::create([
+            'user_id'              => $this->user_id,
+            'user_subscription_id' => $this->id,
+            'delivery_log_id'      => $deliveryLogId,
+            'type'                 => 'debit',
+            'amount'               => $totalAmount,
+            'litres'               => $totalLitres,
+            'balance_after'        => $newBalance,
+            'description'          => implode(' + ', $descParts) . ' delivered',
             'transaction_date'     => $date,
             'is_reversal'          => false,
         ]);
