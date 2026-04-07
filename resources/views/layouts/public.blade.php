@@ -963,7 +963,7 @@
       <ul class="nav">
         <li><a href="{{ route('home') }}" class="{{ request()->routeIs('home') ? 'active' : '' }}"><i class="fa-solid fa-house"></i> Home</a></li>
         <li><a href="{{ route('about') }}" class="{{ request()->routeIs('about') ? 'active' : '' }}"><i class="fa-solid fa-user"></i> About</a></li>
-        <li><a href="{{ route('membership') }}" class="{{ request()->routeIs('membership') ? 'active' : '' }}"><i class="fa-solid fa-id-card-clip"></i> Membership</a></li>
+        {{-- <li><a href="{{ route('membership') }}" class="{{ request()->routeIs('membership') ? 'active' : '' }}"><i class="fa-solid fa-id-card-clip"></i> Membership</a></li> --}}
         <li><a href="{{ route('products') }}" class="{{ request()->routeIs('products') ? 'active' : '' }}"><i class="fa-solid fa-box-open"></i> Products</a></li>
         <li><a href="{{ route('blogs') }}" class="{{ request()->routeIs('blogs') ? 'active' : '' }}"><i class="fa-solid fa-pen-to-square"></i> Blogs</a></li>
         <li><a href="{{ route('contact') }}" class="{{ request()->routeIs('contact') ? 'active' : '' }}"><i class="fa-solid fa-envelope"></i> Contact Us</a></li>
@@ -1016,7 +1016,7 @@
           <a href="{{ route('home') }}">Home</a>
           <a href="{{ route('about') }}">About Us</a>
           <a href="{{ route('contact') }}">Contact Us</a>
-          <a href="{{ route('membership') }}">Membership</a>
+          {{-- <a href="{{ route('membership') }}">Membership</a> --}}
           <a href="{{ route('blogs') }}">Blogs</a>
         </div>
 
