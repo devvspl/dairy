@@ -310,6 +310,51 @@ class WalletController extends Controller
         return redirect()->route('member.dashboard')->with('success', 'Delivery preferences updated.');
     }
 
+    /** DELETE /wallet/{subscription}/extra — remove extra milk for a pending day */
+    public function removeExtra(Request $request, UserSubscription $subscription)
+    {
+        $this->authorizeSubscription($subscription);
+
+        $data = $request->validate([
+            'date' => 'required|date|after:today',
+        ]);
+
+        $settings = $subscription->deliverySettings;
+        $baseQty  = $settings ? $settings->totalQtyPerDay() : (float)($subscription->quantity_per_day ?? 1);
+
+        $log = DeliveryLog::where('user_subscription_id', $subscription->id)
+            ->whereDate('delivery_date', $data['date'])
+            ->where('status', 'pending')
+            ->first();
+
+        if (!$log) {
+            return redirect()->route('member.dashboard')->with('error', 'No pending delivery found for that date.');
+        }
+
+        $currentQty = (float) $log->quantity_delivered;
+
+        if ($currentQty <= $baseQty) {
+            return redirect()->route('member.dashboard')->with('error', 'No extra milk to remove for that date.');
+        }
+
+        $log->update([
+            'quantity_delivered' => $baseQty,
+            'notes'              => ($log->notes ? $log->notes . ' | ' : '') . 'Extra milk removed by member',
+        ]);
+
+        SubscriptionChangeLog::record(
+            $subscription->id,
+            auth()->id(),
+            'extra_milk_removed',
+            ['date' => $data['date'], 'quantity' => $currentQty],
+            ['date' => $data['date'], 'quantity' => $baseQty],
+            "Extra milk removed for {$data['date']}"
+        );
+
+        return redirect()->route('member.dashboard')
+            ->with('success', 'Extra milk removed for ' . \Carbon\Carbon::parse($data['date'])->format('d M Y') . '.');
+    }
+
     /** POST /wallet/{subscription}/extra */
     public function extra(Request $request, UserSubscription $subscription)
     {

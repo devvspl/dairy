@@ -100,7 +100,7 @@
                             <!-- Social Links (Optional) -->
                             <div style="margin: 20px 0;">
                                 <a href="{{ route('home') }}" style="color: #2f4a1e; text-decoration: none; font-size: 13px; font-weight: 600; margin: 0 10px;">
-                                    Visit Website
+                                    Go to Home
                                 </a>
                                 <span style="color: #e7e7e7;">|</span>
                                 <a href="{{ route('contact') }}" style="color: #2f4a1e; text-decoration: none; font-size: 13px; font-weight: 600; margin: 0 10px;">

@@ -880,7 +880,7 @@
             </div>
             <div class="plpg-info">
               <div class="plpg-title">
-                <a href="{{ route('product.detail', $product->slug) }}" style="text-decoration: none; color: inherit;">
+                <a href="{{ in_array($product->slug, ['1-litre-cow-milk','1-litre-buffalo-milk']) ? (auth()->check() ? route('member.dashboard') : route('member.login')) : route('product.detail', $product->slug) }}" style="text-decoration: none; color: inherit;">
                   <strong>{{ $product->name }}</strong>
                 </a>
                 <span class="plpg-rating"><i class="fa-solid fa-star"></i> {{ number_format($product->rating, 1) }}</span>
@@ -895,7 +895,11 @@
                 </div>
                 <div class="plpg-actions">
                   <button class="plpg-iconbtn wishlist-btn" type="button" title="Wishlist" data-product-id="{{ $product->id }}"><i class="fa-regular fa-heart"></i></button>
+                  @if(in_array($product->slug, ['1-litre-cow-milk','1-litre-buffalo-milk']))
+                  <a class="plpg-btn plpg-btn-primary" href="{{ auth()->check() ? route('member.dashboard') : route('member.login') }}"><i class="fa-solid fa-droplet"></i> Subscribe</a>
+                  @else
                   <a class="plpg-btn plpg-btn-primary" href="{{ route('product.detail', $product->slug) }}"><i class="fa-solid fa-eye"></i> View</a>
+                  @endif
                 </div>
               </div>
             </div>
@@ -1495,6 +1499,22 @@
 
   // Start initialization
   initCartWishlist();
+})();
+
+// Milk product card click — redirect to dashboard or login
+(function() {
+  const milkSlugs = ['1-litre-cow-milk', '1-litre-buffalo-milk'];
+  document.querySelectorAll('.plpg-card').forEach(function(card) {
+    const slug = card.getAttribute('data-product-slug');
+    if (!milkSlugs.includes(slug)) return;
+    card.style.cursor = 'pointer';
+    card.addEventListener('click', function(e) {
+      if (e.target.closest('button') || e.target.closest('a')) return;
+      window.location.href = IS_MEMBER_LOGGED_IN
+        ? '{{ route('member.dashboard') }}'
+        : MEMBER_LOGIN_URL;
+    });
+  });
 })();
 
 // View Cart Button Handler

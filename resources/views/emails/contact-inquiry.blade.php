@@ -322,7 +322,7 @@
         <div class="email-footer">
             <p><strong>{{ config('app.name') }}</strong></p>
             <p>
-                <a href="{{ url('/') }}">Visit Website</a> • 
+                <a href="{{ url('/') }}">Go to Home</a> • 
                 <a href="{{ url('/contact') }}">Contact Us</a> • 
                 <a href="{{ url('/products') }}">Products</a>
             </p>

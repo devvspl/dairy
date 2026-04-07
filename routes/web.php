@@ -125,6 +125,7 @@ Route::middleware('auth')->group(function () {
         Route::patch('{subscription}/restart',[App\Http\Controllers\Member\WalletController::class, 'restart'])->name('restart');
         Route::patch('{subscription}/update', [App\Http\Controllers\Member\WalletController::class, 'update'])->name('update');
         Route::post('{subscription}/extra',   [App\Http\Controllers\Member\WalletController::class, 'extra'])->name('extra');
+        Route::delete('{subscription}/extra',  [App\Http\Controllers\Member\WalletController::class, 'removeExtra'])->name('extra.remove');
         Route::post('{subscription}/topup',   [App\Http\Controllers\Member\WalletController::class, 'topup'])->name('topup');
     });
     // Delivery addresses

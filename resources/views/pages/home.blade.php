@@ -1195,7 +1195,13 @@
                                 data-product-name="{{ $product->name }}" data-product-price="{{ $product->price }}"
                                 data-product-image="{{ asset($product->main_image) }}"
                                 data-product-slug="{{ $product->slug }}"
-                                onclick="if(!event.target.closest('button') && !event.target.closest('select')) window.location.href='{{ route('product.detail', $product->slug) }}'"
+                                onclick="if(!event.target.closest('button') && !event.target.closest('select')) {
+                                    @if(in_array($product->slug, ['1-litre-cow-milk','1-litre-buffalo-milk']))
+                                        window.location.href = IS_MEMBER_LOGGED_IN ? '{{ route('member.dashboard') }}' : MEMBER_LOGIN_URL;
+                                    @else
+                                        window.location.href = '{{ route('product.detail', $product->slug) }}';
+                                    @endif
+                                }"
                                 style="cursor:pointer;">
                                 <div class="tb-card-media">
                                     @if ($product->badge)
@@ -1210,7 +1216,12 @@
                                 <div class="tb-card-body">
                                     <div class="tb-name-price">
                                         <h3>{{ $product->name }}</h3>
-                                        <span class="tb-price">₹{{ number_format($product->price, 0) }}</span>
+                                        <div class="text-right">
+                                            <span class="tb-price">₹{{ number_format($product->price, 0) }}</span>
+                                            @if($product->mrp && $product->mrp > $product->price)
+                                                <span style="font-size:12px;color:#9ca3af;text-decoration:line-through;display:block;">₹{{ number_format($product->mrp, 0) }}</span>
+                                            @endif
+                                        </div>
                                     </div>
                                     <p class="tb-meta">{{ $product->meta }}</p>
                                     <div class="tb-rating">

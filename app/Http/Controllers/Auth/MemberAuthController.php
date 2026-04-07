@@ -117,7 +117,7 @@ class MemberAuthController extends Controller
         }
 
         if ($user->verifyOtp($request->otp)) {
-            Auth::login($user);
+            Auth::login($user, true);
 
             $redirect = session()->pull('url.intended_member', route('member.dashboard'));
 
@@ -265,7 +265,7 @@ class MemberAuthController extends Controller
         session()->forget(['register_phone', 'register_otp', 'register_otp_expires']);
 
         // Login user
-        Auth::login($user);
+        Auth::login($user, true);
 
         $redirect = session()->pull('url.intended_member', route('member.dashboard'));
 

@@ -1521,10 +1521,20 @@
 
           dropdown.classList.remove('loading', 'empty');
 
+          const milkSlugs = ['1-litre-cow-milk', '1-litre-buffalo-milk'];
+          const isMemberLoggedIn = {{ auth()->check() && auth()->user()->isMember() ? 'true' : 'false' }};
+          const memberDashUrl = '{{ route('member.dashboard') }}';
+          const memberLoginUrl = '{{ route('member.login') }}';
+
           let html = '';
           products.forEach(product => {
+            const isMilk = milkSlugs.includes(product.slug);
+            const href   = isMilk
+              ? (isMemberLoggedIn ? memberDashUrl : memberLoginUrl)
+              : product.url;
+
             html += `
-              <a href="${product.url}" class="search-result-item">
+              <a href="${href}" class="search-result-item">
                 <img src="${product.image}" alt="${product.name}" class="search-result-img" onerror="this.src='{{ asset('images/products-1.png') }}'">
                 <div class="search-result-info">
                   <h4 class="search-result-name">${highlightText(product.name, query)}</h4>
@@ -1532,7 +1542,7 @@
                   <div class="search-result-price">
                     <span class="search-result-price-current">₹${Math.round(product.price)}</span>
                     ${product.mrp ? `<span class="search-result-price-old">₹${Math.round(product.mrp)}</span>` : ''}
-                    ${product.badge ? `<span class="search-result-badge">${product.badge}</span>` : ''}
+                    ${isMilk ? `<span class="search-result-badge">Subscribe</span>` : (product.badge ? `<span class="search-result-badge">${product.badge}</span>` : '')}
                   </div>
                 </div>
               </a>

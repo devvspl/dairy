@@ -369,6 +369,45 @@
                             {{-- Extra milk for a specific day --}}
                             <div class="border-t p-4" style="border-color:var(--border);">
                                 <p class="text-xs font-bold mb-3" style="color:var(--text);"><i class="fa-solid fa-plus-circle mr-1.5" style="color:var(--green);"></i>Extra Milk for a Day</p>
+
+                                {{-- Upcoming pending deliveries with extra --}}
+                                @php
+                                    $baseQtyForExtra = $wds->totalQtyPerDay() ?: (float)($ws->quantity_per_day ?? 1);
+                                    $upcomingPending = \App\Models\DeliveryLog::where('user_subscription_id', $ws->id)
+                                        ->where('status', 'pending')
+                                        ->whereDate('delivery_date', '>', now()->toDateString())
+                                        ->orderBy('delivery_date')
+                                        ->take(14)
+                                        ->get();
+                                    $withExtra = $upcomingPending->filter(fn($l) => (float)$l->quantity_delivered > $baseQtyForExtra);
+                                @endphp
+                                @if($withExtra->count() > 0)
+                                <div class="mb-3 space-y-1.5">
+                                    <p class="text-[10px] font-semibold mb-1.5" style="color:var(--muted);">Extra milk scheduled — tap Remove to cancel:</p>
+                                    @foreach($withExtra as $extraLog)
+                                    <div class="flex items-center justify-between px-3 py-2 rounded-lg" style="background:rgba(47,74,30,0.04);border:1px solid rgba(47,74,30,0.12);">
+                                        <div class="flex items-center gap-2">
+                                            <i class="fa-solid fa-droplet text-xs" style="color:var(--green);"></i>
+                                            <span class="text-xs font-semibold" style="color:var(--text);">{{ $extraLog->delivery_date->format('d M Y') }}</span>
+                                            <span class="text-[10px] px-1.5 py-0.5 rounded-full font-semibold" style="background:rgba(47,74,30,0.1);color:var(--green);">
+                                                {{ number_format($extraLog->quantity_delivered, 0) }}L
+                                                <span style="color:var(--muted);">(+{{ number_format($extraLog->quantity_delivered - $baseQtyForExtra, 0) }}L)</span>
+                                            </span>
+                                        </div>
+                                        <form method="POST" action="{{ route('wallet.extra.remove', $ws->id) }}">
+                                            @csrf @method('DELETE')
+                                            <input type="hidden" name="date" value="{{ $extraLog->delivery_date->format('Y-m-d') }}">
+                                            <button type="submit" class="text-[10px] font-semibold px-2.5 py-1 rounded-lg transition-colors"
+                                                style="background:rgba(220,38,38,0.08);color:#dc2626;border:1px solid rgba(220,38,38,0.2);"
+                                                onclick="return confirm('Remove extra milk for {{ $extraLog->delivery_date->format('d M Y') }}?')">
+                                                <i class="fa-solid fa-xmark mr-0.5"></i>Remove
+                                            </button>
+                                        </form>
+                                    </div>
+                                    @endforeach
+                                </div>
+                                @endif
+
                                 <form method="POST" action="{{ route('wallet.extra', $ws->id) }}" class="flex gap-2 items-end">
                                     @csrf
                                     <div class="flex-1">
