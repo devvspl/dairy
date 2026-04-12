@@ -934,10 +934,10 @@
                     <div class="apw-pd-priceBox apw-pd-boxbg">
                         <div class="apw-pd-priceRow">
                             <div>
-                                <div class="apw-pd-price">₹ {{ number_format($product->price, 0) }}</div>
-                                @if ($product->mrp)
-                                    <div class="apw-pd-mrp">MRP: ₹ {{ number_format($product->mrp, 0) }}</div>
-                                @endif
+                                <div class="apw-pd-price" id="apwPdPrice">₹ {{ number_format($product->price, 0) }}</div>
+                                <div class="apw-pd-mrp" id="apwPdMrp" @if(!$product->mrp) style="display:none" @endif>
+                                    MRP: ₹ <span id="apwPdMrpVal">{{ number_format($product->mrp ?? 0, 0) }}</span>
+                                </div>
                             </div>
                             @if ($product->discount_percent > 0)
                                 <div class="apw-pd-save">Save {{ $product->discount_percent }}%</div>
@@ -997,6 +997,26 @@
                                     </div>
                                 </div>
                             </div>
+                        @endif
+
+                        {{-- Variants --}}
+                        @if ($product->productVariants && $product->productVariants->count() > 0)
+                        <div class="apw-pd-opts" style="margin-top:14px;">
+                            <div class="apw-pd-label" style="margin-bottom:8px;">Select Variant</div>
+                            <div class="apw-pd-chips" role="list" id="apwVariantChips">
+                                @foreach ($product->productVariants as $index => $variant)
+                                <button class="apw-pd-chip {{ $index === 0 ? 'is-active' : '' }}"
+                                    type="button"
+                                    data-variant-id="{{ $variant->id }}"
+                                    data-price="{{ $variant->price }}"
+                                    data-mrp="{{ $variant->mrp ?? '' }}"
+                                    data-name="{{ $variant->name }}">
+                                    {{ $variant->name }}
+                                    <span style="font-size:12px;color:#5c6b55;margin-left:4px;">₹{{ number_format($variant->price, 0) }}</span>
+                                </button>
+                                @endforeach
+                            </div>
+                        </div>
                         @endif
 
                         <div class="apw-pd-ctaRow">
@@ -1234,7 +1254,7 @@
             });
         })();
 
-
+        // Qty stepper
         (function() {
             const qty = document.getElementById('apwPdQty');
             const dec = document.getElementById('apwPdDecQty');
@@ -1254,23 +1274,71 @@
             qty.addEventListener('input', () => qty.value = clamp(qty.value));
         })();
 
-
+        // Variant selection + price update
         (function() {
-            const btn = document.getElementById('apwPdAddToCartBtn');
+            const chips = document.querySelectorAll('#apwVariantChips .apw-pd-chip');
+            const priceEl = document.getElementById('apwPdPrice');
+            const mrpEl   = document.getElementById('apwPdMrp');
+            const mrpVal  = document.getElementById('apwPdMrpVal');
+
+            // State: currently selected variant
+            let selectedVariantId   = null;
+            let selectedVariantName = null;
+            let selectedPrice       = {{ $product->price }};
+
+            // Init: select first variant if any
+            if (chips.length > 0) {
+                const first = chips[0];
+                selectedVariantId   = parseInt(first.dataset.variantId);
+                selectedVariantName = first.dataset.name;
+                selectedPrice       = parseFloat(first.dataset.price);
+                updatePrice(first);
+            }
+
+            chips.forEach(chip => {
+                chip.addEventListener('click', function() {
+                    chips.forEach(c => c.classList.remove('is-active'));
+                    this.classList.add('is-active');
+                    selectedVariantId   = parseInt(this.dataset.variantId);
+                    selectedVariantName = this.dataset.name;
+                    selectedPrice       = parseFloat(this.dataset.price);
+                    updatePrice(this);
+                });
+            });
+
+            function updatePrice(chip) {
+                const p = parseFloat(chip.dataset.price);
+                const m = chip.dataset.mrp ? parseFloat(chip.dataset.mrp) : null;
+                if (priceEl) priceEl.textContent = '₹ ' + Math.round(p).toLocaleString('en-IN');
+                if (mrpEl && mrpVal) {
+                    if (m && m > p) {
+                        mrpVal.textContent = Math.round(m).toLocaleString('en-IN');
+                        mrpEl.style.display = '';
+                    } else {
+                        mrpEl.style.display = 'none';
+                    }
+                }
+            }
+
+            // Add to Cart
+            const btn      = document.getElementById('apwPdAddToCartBtn');
             const qtyInput = document.getElementById('apwPdQty');
             if (!btn) return;
 
             btn.addEventListener('click', () => {
                 const quantity = parseInt(qtyInput?.value || 1);
+                const name = selectedVariantName
+                    ? "{{ $product->name }}" + ' (' + selectedVariantName + ')'
+                    : "{{ $product->name }}";
 
-                // Get product data from page
                 const product = {
-                    id: {{ $product->id }},
-                    name: "{{ $product->name }}",
-                    price: {{ $product->price }},
-                    image: "{{ asset($product->images[0] ?? $product->image) }}",
-                    slug: "{{ $product->slug }}",
-                    quantity: quantity
+                    id:         {{ $product->id }},
+                    variant_id: selectedVariantId,
+                    name:       name,
+                    price:      selectedPrice,
+                    image:      "{{ asset($product->images[0] ?? $product->image) }}",
+                    slug:       "{{ $product->slug }}",
+                    quantity:   quantity
                 };
 
                 if (window.DairyCart) {
@@ -1280,11 +1348,7 @@
                 const old = btn.textContent;
                 btn.textContent = 'Added ✓';
                 btn.style.transform = 'translateY(-2px)';
-
-                setTimeout(() => {
-                    btn.textContent = old;
-                    btn.style.transform = '';
-                }, 1200);
+                setTimeout(() => { btn.textContent = old; btn.style.transform = ''; }, 1200);
             });
         })();
     </script>

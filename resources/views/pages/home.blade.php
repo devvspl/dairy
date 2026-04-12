@@ -787,7 +787,9 @@
                     <div class="tb-prod-track" id="tbProdTrack">
                         @foreach ($products as $product)
                             <article class="tb-card" data-product-id="{{ $product->id }}"
-                                data-product-name="{{ $product->name }}" data-product-price="{{ $product->price }}"
+                                data-product-name="{{ $product->name }}"
+                                data-product-name-base="{{ $product->name }}"
+                                data-product-price="{{ $product->price }}"
                                 data-product-image="{{ asset($product->main_image) }}"
                                 data-product-slug="{{ $product->slug }}"
                                 onclick="if(!event.target.closest('button') && !event.target.closest('select')) {
@@ -826,20 +828,18 @@
                                             {{ number_format($product->reviews_count) }} Reviews</span>
                                     </div>
                                     @php $availableVariants = $product->productVariants ? $product->productVariants->filter(fn($v) => $v->stock_quantity === null || $v->stock_quantity > 0) : collect(); @endphp
-                                    <div class="tb-variant" @if($availableVariants->count() === 0) style="display:none;" @endif>
+                                    <div class="tb-variant">
                                         <select aria-label="Select variant" onclick="event.stopPropagation()"
                                             onchange="event.stopPropagation();
                                                 var card = this.closest('article.tb-card');
                                                 var opt = this.options[this.selectedIndex];
                                                 var p = opt.dataset.price;
                                                 var m = opt.dataset.mrp;
-                                                var n = opt.dataset.name;
                                                 var priceEl = document.getElementById('price-{{ $product->id }}');
                                                 var mrpEl = document.querySelector('.tb-mrp-{{ $product->id }}');
                                                 if(p) {
                                                     priceEl.textContent = '₹' + Math.round(parseFloat(p)).toLocaleString('en-IN');
                                                     card.setAttribute('data-product-price', p);
-                                                    if(n) card.setAttribute('data-product-name', card.getAttribute('data-product-name').split(' — ')[0] + ' — ' + n);
                                                     if(m && parseFloat(m) > parseFloat(p)) {
                                                         mrpEl.textContent = '₹' + Math.round(parseFloat(m)).toLocaleString('en-IN');
                                                         mrpEl.style.display = 'block';
@@ -847,8 +847,8 @@
                                                         mrpEl.style.display = 'none';
                                                     }
                                                 }">
-                                            @if ($product->productVariants && $product->productVariants->count() > 0)
-                                                @foreach ($product->productVariants->filter(fn($v) => $v->stock_quantity === null || $v->stock_quantity > 0) as $variant)
+                                            @if ($availableVariants->count() > 0)
+                                                @foreach ($availableVariants as $variant)
                                                     <option value="{{ $variant->id }}"
                                                         data-price="{{ $variant->price }}"
                                                         data-mrp="{{ $variant->mrp ?? '' }}"
@@ -859,6 +859,8 @@
                                                         @endif
                                                     </option>
                                                 @endforeach
+                                            @else
+                                                <option value="" data-price="{{ $product->price }}" data-mrp="{{ $product->mrp ?? '' }}" data-name="">Standard</option>
                                             @endif
                                         </select>
                                     </div>
@@ -1373,17 +1375,18 @@
 
                             // Read current (possibly variant-updated) price from data attribute
                             const productId    = card.getAttribute('data-product-id');
-                            const productName  = card.getAttribute('data-product-name');
+                            const productName  = card.getAttribute('data-product-name-base') || card.getAttribute('data-product-name');
                             const productPrice = parseFloat(card.getAttribute('data-product-price'));
                             const productImage = card.getAttribute('data-product-image');
                             const productSlug  = card.getAttribute('data-product-slug');
 
-                            // Append selected variant name to product name if variant chosen
+                            // Get selected variant info
                             const sel = card.querySelector('.tb-variant select');
-                            const variantId   = sel && sel.value && sel.options[sel.selectedIndex]?.dataset?.price ? parseInt(sel.value) : null;
-                            const variantName = sel && sel.options[sel.selectedIndex]?.dataset?.name;
+                            const selectedOpt = sel && sel.options[sel.selectedIndex];
+                            const variantId   = selectedOpt && selectedOpt.dataset.price ? parseInt(sel.value) : null;
+                            const variantName = selectedOpt && selectedOpt.dataset.name;
                             const displayName = variantName
-                                ? productName.split(' — ')[0] + ' (' + variantName + ')'
+                                ? productName + ' (' + variantName + ')'
                                 : productName;
 
                             window.DairyCart.addToCart({

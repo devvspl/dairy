@@ -7,8 +7,28 @@
   'use strict';
 
   // Storage keys
-  const CART_KEY = 'dairy_cart';
+  const CART_KEY     = 'dairy_cart';
   const WISHLIST_KEY = 'dairy_wishlist';
+  const CART_VERSION = 'dairy_cart_v6';
+
+  // Only clear cart if it has corrupted items (missing variant_id field)
+  // Don't clear on every version bump — that would wipe valid cart data on refresh
+  (function migrateCart() {
+    try {
+      const raw = localStorage.getItem(CART_KEY);
+      if (!raw) return;
+      const items = JSON.parse(raw);
+      if (!Array.isArray(items)) { localStorage.removeItem(CART_KEY); return; }
+      // If any item is missing variant_id key entirely (not null, but absent), migrate it
+      const needsMigration = items.some(i => i && !('variant_id' in i));
+      if (needsMigration) {
+        const migrated = items.map(i => ({ ...i, variant_id: i.variant_id ?? null }));
+        localStorage.setItem(CART_KEY, JSON.stringify(migrated));
+      }
+    } catch(e) {
+      localStorage.removeItem(CART_KEY);
+    }
+  })();
 
   // Helper: Get data from localStorage
   function getStorage(key) {
@@ -29,12 +49,13 @@
                  typeof item.quantity === 'number' &&
                  item.quantity > 0;
         }).map(item => ({
-          id: item.id,
-          name: item.name,
-          price: parseFloat(item.price),
-          image: item.image || '',
-          slug: item.slug || '',
-          quantity: parseInt(item.quantity) || 1
+          id:         parseInt(item.id),
+          variant_id: item.variant_id ? parseInt(item.variant_id) : null,
+          name:       item.name,
+          price:      parseFloat(item.price),
+          image:      item.image || '',
+          slug:       item.slug || '',
+          quantity:   parseInt(item.quantity) || 1
         }));
       } else if (key === WISHLIST_KEY) {
         return parsed.filter(item => {
@@ -133,9 +154,19 @@
       return false;
     }
 
-    const existingIndex = cart.findIndex(item =>
-      item.id === product.id && (item.variant_id || null) === (product.variant_id || null)
-    );
+    const existingIndex = cart.findIndex(item => {
+      const sameId      = parseInt(item.id) === parseInt(product.id);
+      const itemVid     = item.variant_id ? parseInt(item.variant_id) : null;
+      const prodVid     = product.variant_id ? parseInt(product.variant_id) : null;
+      const sameVariant = itemVid === prodVid;
+      return sameId && sameVariant;
+    });
+
+    console.log('Cart lookup:', {
+      productId: product.id, variantId: product.variant_id,
+      cartItems: cart.map(i => ({id: i.id, variant_id: i.variant_id})),
+      foundAt: existingIndex
+    });
 
     if (existingIndex > -1) {
       // Update quantity and price (variant may have changed)
@@ -146,8 +177,8 @@
     } else {
       // Add new item
       const newItem = {
-        id:         product.id,
-        variant_id: product.variant_id || null,
+        id:         parseInt(product.id),
+        variant_id: product.variant_id ? parseInt(product.variant_id) : null,
         name:       product.name,
         price:      product.price,
         image:      product.image || '',
@@ -168,9 +199,9 @@
   function removeFromCart(productId, variantId) {
     let cart = getCart();
     if (variantId !== undefined) {
-      cart = cart.filter(item => !(item.id === productId && (item.variant_id || null) === (variantId || null)));
+      cart = cart.filter(item => !(String(item.id) === String(productId) && String(item.variant_id || '') === String(variantId || '')));
     } else {
-      cart = cart.filter(item => item.id !== productId);
+      cart = cart.filter(item => String(item.id) !== String(productId));
     }
     setStorage(CART_KEY, cart);
     updateCartBadge();
@@ -182,8 +213,8 @@
   function updateCartQuantity(productId, quantity, variantId) {
     const cart = getCart();
     const item = variantId !== undefined
-      ? cart.find(i => i.id === productId && (i.variant_id || null) === (variantId || null))
-      : cart.find(i => i.id === productId);
+      ? cart.find(i => String(i.id) === String(productId) && String(i.variant_id || '') === String(variantId || ''))
+      : cart.find(i => String(i.id) === String(productId));
     
     if (item) {
       if (quantity <= 0) {

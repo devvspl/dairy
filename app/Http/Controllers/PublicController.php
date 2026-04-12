@@ -136,7 +136,11 @@ class PublicController extends Controller
 
     public function productDetail($slug)
     {
-        $product = Product::active()->with('category')->where('slug', $slug)->firstOrFail();
+        $product = Product::active()->with(['category', 'productVariants' => function($q) {
+            $q->where(function($q) {
+                $q->whereNull('stock_quantity')->orWhere('stock_quantity', '>', 0);
+            })->orderBy('order');
+        }])->where('slug', $slug)->firstOrFail();
         $relatedProducts = Product::active()
             ->where('category_id', $product->category_id)
             ->where('id', '!=', $product->id)
