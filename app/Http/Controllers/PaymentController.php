@@ -673,16 +673,17 @@ class PaymentController extends Controller
         }
 
         $request->validate([
-            'items'            => 'required|array|min:1',
-            'items.*.id'       => 'required|integer|exists:products,id',
-            'items.*.name'     => 'required|string',
-            'items.*.price'    => 'required|numeric|min:0',
-            'items.*.quantity' => 'required|integer|min:1',
-            'customer_name'    => 'required|string|max:255',
-            'customer_phone'   => 'required|string|max:20',
-            'customer_email'   => 'nullable|email|max:255',
-            'delivery_address' => 'required|string|max:500',
-            'coupon_code'      => 'nullable|string|max:50',
+            'items'               => 'required|array|min:1',
+            'items.*.id'          => 'required|integer|exists:products,id',
+            'items.*.variant_id'  => 'nullable|integer',
+            'items.*.name'        => 'required|string',
+            'items.*.price'       => 'required|numeric|min:0',
+            'items.*.quantity'    => 'required|integer|min:1',
+            'customer_name'       => 'required|string|max:255',
+            'customer_phone'      => 'required|string|max:20',
+            'customer_email'      => 'nullable|email|max:255',
+            'delivery_address'    => 'required|string|max:500',
+            'coupon_code'         => 'nullable|string|max:50',
         ]);
 
         // Verify prices server-side and check stock
@@ -696,7 +697,7 @@ class PaymentController extends Controller
             }
 
             // Check if a variant is selected — use variant price & stock
-            $variantId   = $item['variant_id'] ?? null;
+            $variantId   = isset($item['variant_id']) && $item['variant_id'] ? (int)$item['variant_id'] : null;
             $variant     = null;
             $itemPrice   = (float) $product->price;
             $itemName    = $item['name'] ?? $product->name;
@@ -709,6 +710,18 @@ class PaymentController extends Controller
                     $itemPrice = (float) $variant->price;
                     if ($variant->stock_quantity !== null && $variant->stock_quantity <= 0) {
                         return response()->json(['success' => false, 'message' => "{$product->name} ({$variant->name}) is out of stock."], 422);
+                    }
+                }
+            } else {
+                // No variant_id — try to match by client-sent price against variants
+                $clientPrice = (float) ($item['price'] ?? 0);
+                if ($clientPrice > 0 && $clientPrice != (float) $product->price) {
+                    $matchedVariant = \App\Models\ProductVariant::where('product_id', $product->id)
+                        ->where('price', $clientPrice)
+                        ->first();
+                    if ($matchedVariant) {
+                        $variant   = $matchedVariant;
+                        $itemPrice = (float) $matchedVariant->price;
                     }
                 }
             }
