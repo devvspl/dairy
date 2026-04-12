@@ -98,6 +98,88 @@
             </div>
         </div>
 
+        <!-- Variants -->
+        <div class="mb-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-bold" style="color: var(--text);">Variants <span class="text-sm font-normal" style="color:var(--muted);">(optional — e.g. 500ml, 1L, Red, Large)</span></h3>
+                <button type="button" onclick="addVariantRow()" class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-semibold text-white" style="background:var(--green);">
+                    <i class="fa-solid fa-plus text-xs"></i> Add Variant
+                </button>
+            </div>
+            <div id="variants-list" class="space-y-2"></div>
+            <input type="hidden" name="variants_data" id="variants_data">
+            <p class="text-xs mt-2" style="color:var(--muted);">Each variant can have its own price, MRP, SKU and stock. The base price above is used when no variants are defined.</p>
+        </div>
+
+        <script>
+        let variantRows = [];
+
+        function renderVariants() {
+            const list = document.getElementById('variants-list');
+            if (variantRows.length === 0) {
+                list.innerHTML = '<p class="text-sm py-2" style="color:var(--muted);">No variants added. Click "Add Variant" to add one.</p>';
+                document.getElementById('variants_data').value = '[]';
+                return;
+            }
+            list.innerHTML = variantRows.map((v, i) => `
+                <div class="grid grid-cols-12 gap-2 items-end p-3 rounded-lg border" style="border-color:var(--border);background:#fafafa;">
+                    <div class="col-span-3">
+                        ${i === 0 ? '<label class="block text-xs font-semibold mb-1" style="color:var(--muted);">Name *</label>' : ''}
+                        <input type="text" placeholder="e.g. 500ml" value="${v.name}"
+                            oninput="variantRows[${i}].name=this.value;syncVariantsData()"
+                            class="w-full px-2 py-1.5 text-sm border rounded-lg" style="border-color:var(--border);">
+                    </div>
+                    <div class="col-span-2">
+                        ${i === 0 ? '<label class="block text-xs font-semibold mb-1" style="color:var(--muted);">Price *</label>' : ''}
+                        <input type="number" placeholder="0.00" step="0.01" min="0" value="${v.price}"
+                            oninput="variantRows[${i}].price=this.value;syncVariantsData()"
+                            class="w-full px-2 py-1.5 text-sm border rounded-lg" style="border-color:var(--border);">
+                    </div>
+                    <div class="col-span-2">
+                        ${i === 0 ? '<label class="block text-xs font-semibold mb-1" style="color:var(--muted);">MRP</label>' : ''}
+                        <input type="number" placeholder="0.00" step="0.01" min="0" value="${v.mrp}"
+                            oninput="variantRows[${i}].mrp=this.value;syncVariantsData()"
+                            class="w-full px-2 py-1.5 text-sm border rounded-lg" style="border-color:var(--border);">
+                    </div>
+                    <div class="col-span-2">
+                        ${i === 0 ? '<label class="block text-xs font-semibold mb-1" style="color:var(--muted);">SKU</label>' : ''}
+                        <input type="text" placeholder="SKU" value="${v.sku}"
+                            oninput="variantRows[${i}].sku=this.value;syncVariantsData()"
+                            class="w-full px-2 py-1.5 text-sm border rounded-lg" style="border-color:var(--border);">
+                    </div>
+                    <div class="col-span-2">
+                        ${i === 0 ? '<label class="block text-xs font-semibold mb-1" style="color:var(--muted);">Stock</label>' : ''}
+                        <input type="number" placeholder="0" min="0" value="${v.stock_quantity}"
+                            oninput="variantRows[${i}].stock_quantity=this.value;syncVariantsData()"
+                            class="w-full px-2 py-1.5 text-sm border rounded-lg" style="border-color:var(--border);">
+                    </div>
+                    <div class="col-span-1 flex justify-end">
+                        <button type="button" onclick="removeVariantRow(${i})" class="w-8 h-8 rounded-lg flex items-center justify-center text-red-500 hover:bg-red-50 border border-red-200">
+                            <i class="fa-solid fa-trash text-xs"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+            syncVariantsData();
+        }
+
+        function addVariantRow() {
+            variantRows.push({ name: '', price: '', mrp: '', sku: '', stock_quantity: 0 });
+            renderVariants();
+        }
+
+        function removeVariantRow(i) {
+            variantRows.splice(i, 1);
+            renderVariants();
+        }
+
+        function syncVariantsData() {
+            document.getElementById('variants_data').value = JSON.stringify(variantRows);
+        }
+
+        renderVariants();
+        </script>
+
         <!-- Stock -->
         <div class="mb-6">
             <h3 class="text-lg font-bold mb-4" style="color: var(--text);">Stock</h3>

@@ -695,14 +695,33 @@ class PaymentController extends Controller
                 return response()->json(['success' => false, 'message' => "{$product->name} is out of stock."], 422);
             }
 
+            // Check if a variant is selected — use variant price & stock
+            $variantId   = $item['variant_id'] ?? null;
+            $variant     = null;
+            $itemPrice   = (float) $product->price;
+            $itemName    = $item['name'] ?? $product->name;
+
+            if ($variantId) {
+                $variant = \App\Models\ProductVariant::where('id', $variantId)
+                    ->where('product_id', $product->id)
+                    ->first();
+                if ($variant) {
+                    $itemPrice = (float) $variant->price;
+                    if ($variant->stock_quantity !== null && $variant->stock_quantity <= 0) {
+                        return response()->json(['success' => false, 'message' => "{$product->name} ({$variant->name}) is out of stock."], 422);
+                    }
+                }
+            }
+
             $items[] = [
-                'id'       => $product->id,
-                'name'     => $product->name,
-                'price'    => (float) $product->price,
-                'quantity' => (int) $item['quantity'],
-                'image'    => $product->main_image,
+                'id'         => $product->id,
+                'variant_id' => $variant?->id,
+                'name'       => $itemName,
+                'price'      => $itemPrice,
+                'quantity'   => (int) $item['quantity'],
+                'image'      => $product->main_image,
             ];
-            $total += $product->price * $item['quantity'];
+            $total += $itemPrice * $item['quantity'];
         }
 
         // Apply coupon server-side
@@ -808,6 +827,16 @@ class PaymentController extends Controller
 
                 // Deduct stock for each item
                 foreach ($order->items as $item) {
+                    // Deduct variant stock if variant_id present
+                    if (!empty($item['variant_id'])) {
+                        $variant = \App\Models\ProductVariant::find($item['variant_id']);
+                        if ($variant && $variant->stock_quantity !== null) {
+                            $newQty = max(0, $variant->stock_quantity - $item['quantity']);
+                            $variant->update(['stock_quantity' => $newQty]);
+                        }
+                    }
+
+                    // Always deduct product-level stock too
                     Product::where('id', $item['id'])->each(function ($product) use ($item) {
                         if ($product->stock_quantity !== null) {
                             $newQty = max(0, $product->stock_quantity - $item['quantity']);

@@ -104,7 +104,7 @@
                                 </a>
                                 <span style="color: #e7e7e7;">|</span>
                                 <a href="{{ route('contact') }}" style="color: #2f4a1e; text-decoration: none; font-size: 13px; font-weight: 600; margin: 0 10px;">
-                                    Contact Support
+                                    Contact Us
                                 </a>
                             </div>
 

@@ -24,7 +24,7 @@ class HomePageSeeder extends Seeder
             'subtitle' => 'Premium essentials delivering purity, quality, and trust daily.',
             'button_text' => 'Shop Now',
             'button_link' => '/products',
-            'link_text' => 'Explore Products',
+            'link_text' => 'Shop Now',
             'link_url' => '/products',
             'image' => 'images/cow.png',
             'order' => 1,
@@ -382,7 +382,7 @@ class HomePageSeeder extends Seeder
                 'Fast support & reliable delivery',
             ],
             'buttons' => [
-                ['text' => 'Explore Products', 'link' => '/products', 'type' => 'primary'],
+                ['text' => 'Shop Now', 'link' => '/products', 'type' => 'primary'],
                 ['text' => 'Membership', 'link' => '/membership', 'type' => 'secondary'],
             ],
             'meta' => [

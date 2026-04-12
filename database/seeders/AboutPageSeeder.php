@@ -24,7 +24,7 @@ class AboutPageSeeder extends Seeder
                 ['icon' => 'fa-circle-check', 'text' => 'Batch Consistency'],
                 ['icon' => 'fa-truck-fast', 'text' => 'Fast Dispatch'],
             ],
-            'hero_button_1_text' => 'Explore Products',
+            'hero_button_1_text' => 'Shop Now',
             'hero_button_1_link' => '/products',
             'hero_button_2_text' => 'Talk to Us',
             'hero_button_2_link' => '/contact',

@@ -110,7 +110,10 @@ class ProductController extends Controller
             }
         }
 
-        Product::create($validated);
+        $product = Product::create($validated);
+
+        // Save variants
+        $this->syncVariants($product, $request->input('variants_data'));
 
         return redirect()->route('admin.products.index')->with('success', 'Product created successfully!');
     }
@@ -124,7 +127,8 @@ class ProductController extends Controller
     {
         $types = Type::active()->get();
         $categories = Category::active()->get();
-        return view('admin.products.edit', compact('product', 'types', 'categories'));
+        $productVariants = $product->productVariants()->get();
+        return view('admin.products.edit', compact('product', 'types', 'categories', 'productVariants'));
     }
 
     public function update(Request $request, Product $product)
@@ -195,6 +199,9 @@ class ProductController extends Controller
 
         $product->update($validated);
 
+        // Sync variants
+        $this->syncVariants($product, $request->input('variants_data'));
+
         return redirect()->route('admin.products.index')->with('success', 'Product updated successfully!');
     }
 
@@ -248,6 +255,28 @@ class ProductController extends Controller
         ]);
 
         return response()->json(['success' => true]);
+    }
+
+    private function syncVariants(Product $product, ?string $variantsJson): void
+    {
+        $variants = $variantsJson ? (json_decode($variantsJson, true) ?? []) : [];
+
+        // Delete all existing variants and re-insert (simple sync)
+        $product->productVariants()->delete();
+
+        foreach ($variants as $i => $v) {
+            if (empty(trim($v['name'] ?? ''))) continue;
+            \App\Models\ProductVariant::create([
+                'product_id'     => $product->id,
+                'name'           => trim($v['name']),
+                'price'          => (float) ($v['price'] ?? 0),
+                'mrp'            => !empty($v['mrp']) ? (float) $v['mrp'] : null,
+                'sku'            => trim($v['sku'] ?? '') ?: null,
+                'stock_quantity' => (int) ($v['stock_quantity'] ?? 0),
+                'order'          => $i,
+                'is_active'      => true,
+            ]);
+        }
     }
 
 }

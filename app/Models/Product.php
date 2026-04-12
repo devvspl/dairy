@@ -83,6 +83,11 @@ class Product extends Model
         return $this->belongsTo(Type::class);
     }
 
+    public function productVariants()
+    {
+        return $this->hasMany(ProductVariant::class)->orderBy('order');
+    }
+
     public function scopeInStock($query)
     {
         return $query->where('stock_status', 'available');

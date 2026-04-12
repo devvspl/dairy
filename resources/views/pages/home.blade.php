@@ -253,17 +253,17 @@
                 .tb-subtitle {
                     max-width: 100%;
                 }
-                
+
                 .tb-media-card img {
-                    
+
                     object-fit: none !important;
-                    
+
                 }
             }
- 
-     
-     
- 
+
+
+
+
             @media (max-width: 560px) {
                 .tb-hero {
                     padding: 12px 0 18px;
@@ -448,23 +448,10 @@
                 }
             }
         </style>
-        
+
         <style>
-              @media (max-width: 768px){
-                  
-                  
-                  
-                  
-              }
-            
-            
+            @media (max-width: 768px) {}
         </style>
-        
-        
-        
-        
-        
-        
     @endpush
     <!---Banner start -->
     <section class="tb-hero">
@@ -513,20 +500,24 @@
     <!--<section class="tb-cats">-->
     <!--    <div class="container">-->
     <!--        <div class="tb-cats-grid">-->
-    <!--            @foreach ($categories as $category)-->
+    <!--            @foreach ($categories as $category)
+    -->
     <!--                <a href="{{ $category->link ?: route('products', ['category' => $category->slug]) }}" class="tb-cat">-->
     <!--                    <span class="tb-cat-ico bg-{{ $category->bg_color }}">-->
-    <!--                        @if ($category->icon_type === 'svg')-->
+    <!--                        @if ($category->icon_type === 'svg')
+    -->
     <!--                            <svg class="tb-cat-svg" viewBox="0 0 64 64" aria-hidden="true">-->
     <!--                                {!! $category->svg_path !!}-->
     <!--                            </svg>-->
-    <!--                        @else-->
+<!--                        @else-->
     <!--                            <span class="tb-price-chip">{!! $category->price_text !!}</span>-->
-    <!--                        @endif-->
+    <!--
+    @endif-->
     <!--                    </span>-->
     <!--                    <span class="tb-cat-title">{{ $category->title }}</span>-->
     <!--                </a>-->
-    <!--            @endforeach-->
+    <!--
+    @endforeach-->
     <!--        </div>-->
     <!--    </div>-->
     <!--</section>-->
@@ -618,7 +609,10 @@
             /* About Section */
             .tb-abintro-sec {
                 padding: 40px 0;
-                background: #fff;
+                background:
+                    radial-gradient(circle at 15% 15%, rgba(241, 204, 36, 0.10), transparent 55%),
+                    radial-gradient(circle at 85% 75%, rgba(47, 74, 30, 0.08), transparent 60%),
+                    #fff;
             }
 
             .tb-abintro-wrap {
@@ -776,6 +770,112 @@
             }
         </style>
     @endpush
+
+    <!--- product section -->
+    <section class="tb-products">
+        <div class="container">
+            <div class="tb-prod-head">
+                <div class="tb-prod-title">
+                    <h2>Most Loved</h2>
+                    <p>Top picks people keep coming back for</p>
+                </div>
+                <a href="{{ route('products') }}" class="tb-shopmore">Shop More</a>
+            </div>
+            <div class="tb-prod-slider" id="tbProdSlider">
+                <button class="tb-prod-arrow left" type="button" aria-label="Previous products">‹</button>
+                <div class="tb-prod-viewport" id="tbProdViewport">
+                    <div class="tb-prod-track" id="tbProdTrack">
+                        @foreach ($products as $product)
+                            <article class="tb-card" data-product-id="{{ $product->id }}"
+                                data-product-name="{{ $product->name }}" data-product-price="{{ $product->price }}"
+                                data-product-image="{{ asset($product->main_image) }}"
+                                data-product-slug="{{ $product->slug }}"
+                                onclick="if(!event.target.closest('button') && !event.target.closest('select')) {
+                                    @if (in_array($product->slug, ['1-litre-cow-milk', '1-litre-buffalo-milk'])) window.location.href = IS_MEMBER_LOGGED_IN ? '{{ route('member.dashboard') }}' : MEMBER_LOGIN_URL;
+                                    @else
+                                        window.location.href = '{{ route('product.detail', $product->slug) }}'; @endif
+                                }"
+                                style="cursor:pointer;">
+                                <div class="tb-card-media">
+                                    @if ($product->badge)
+                                        <span class="tb-badge {{ $product->badge_color }}">{{ $product->badge }}</span>
+                                    @endif
+                                    <button class="tb-wish wishlist-btn" type="button" aria-label="Add to wishlist"
+                                        data-product-id="{{ $product->id }}">
+                                        <i class="fa-regular fa-heart"></i>
+                                    </button>
+                                    <img class="tb-img" src="{{ asset($product->main_image) }}"
+                                        alt="{{ $product->name }}">
+                                </div>
+                                <div class="tb-card-body">
+                                    <div class="tb-name-price">
+                                        <h3>{{ $product->name }}</h3>
+                                        <div class="text-right">
+                                            <span class="tb-price" id="price-{{ $product->id }}">₹{{ number_format($product->price, 0) }}</span>
+                                            @if ($product->mrp && $product->mrp > $product->price)
+                                                <span class="tb-mrp-{{ $product->id }}" style="font-size:12px;color:#9ca3af;text-decoration:line-through;display:block;">₹{{ number_format($product->mrp, 0) }}</span>
+                                            @else
+                                                <span class="tb-mrp-{{ $product->id }}" style="font-size:12px;color:#9ca3af;text-decoration:line-through;display:none;"></span>
+                                            @endif
+                                        </div>
+                                    </div>
+                                    <p class="tb-meta">{{ $product->meta }}</p>
+                                    <div class="tb-rating">
+                                        <span class="tb-stars">{{ str_repeat('★', (int) $product->rating) }}</span>
+                                        <span class="tb-rev">{{ $product->rating }} |
+                                            {{ number_format($product->reviews_count) }} Reviews</span>
+                                    </div>
+                                    <div class="tb-variant">
+                                        <select aria-label="Select variant" onclick="event.stopPropagation()"
+                                            onchange="event.stopPropagation();
+                                                var card = this.closest('article.tb-card');
+                                                var opt = this.options[this.selectedIndex];
+                                                var p = opt.dataset.price;
+                                                var m = opt.dataset.mrp;
+                                                var n = opt.dataset.name;
+                                                var priceEl = document.getElementById('price-{{ $product->id }}');
+                                                var mrpEl = document.querySelector('.tb-mrp-{{ $product->id }}');
+                                                if(p) {
+                                                    priceEl.textContent = '₹' + Math.round(parseFloat(p)).toLocaleString('en-IN');
+                                                    card.setAttribute('data-product-price', p);
+                                                    if(n) card.setAttribute('data-product-name', card.getAttribute('data-product-name').split(' — ')[0] + ' — ' + n);
+                                                    if(m && parseFloat(m) > parseFloat(p)) {
+                                                        mrpEl.textContent = '₹' + Math.round(parseFloat(m)).toLocaleString('en-IN');
+                                                        mrpEl.style.display = 'block';
+                                                    } else {
+                                                        mrpEl.style.display = 'none';
+                                                    }
+                                                }">
+                                            @if ($product->productVariants && $product->productVariants->count() > 0)
+                                                @foreach ($product->productVariants as $variant)
+                                                    <option value="{{ $variant->id }}"
+                                                        data-price="{{ $variant->price }}"
+                                                        data-mrp="{{ $variant->mrp ?? '' }}"
+                                                        data-name="{{ $variant->name }}">
+                                                        {{ $variant->name }} — ₹{{ number_format($variant->price, 0) }}
+                                                        @if($variant->mrp && $variant->mrp > $variant->price)
+                                                            (MRP ₹{{ number_format($variant->mrp, 0) }})
+                                                        @endif
+                                                    </option>
+                                                @endforeach
+                                            @else
+                                                <option>Standard</option>
+                                            @endif
+                                        </select>
+                                    </div>
+                                    <button class="tb-add add-to-cart-btn" type="button"
+                                        data-product-id="{{ $product->id }}">
+                                        {{ in_array($product->slug, ['1-litre-cow-milk', '1-litre-buffalo-milk']) ? 'Subscribe Now' : 'Add to Cart' }}
+                                    </button>
+                                </div>
+                            </article>
+                        @endforeach
+                    </div>
+                </div>
+                <button class="tb-prod-arrow right" type="button" aria-label="Next products">›</button>
+            </div>
+        </div>
+    </section>
     <!--- about section -->
     @if ($aboutSection)
         <section class="tb-abintro-sec" id="tbAbIntroSec">
@@ -828,11 +928,11 @@
         <style>
             /* Products Section */
             .tb-products {
-                padding: 40px 0 50px;
-                background:
-                    radial-gradient(circle at 15% 15%, rgba(241, 204, 36, 0.10), transparent 55%),
-                    radial-gradient(circle at 85% 75%, rgba(47, 74, 30, 0.08), transparent 60%),
-                    #fff;
+                /* padding: 40px 0 50px; */
+                /* background:
+                            radial-gradient(circle at 15% 15%, rgba(241, 204, 36, 0.10), transparent 55%),
+                            radial-gradient(circle at 85% 75%, rgba(47, 74, 30, 0.08), transparent 60%),
+                            #fff; */
                 margin: 20px 0px;
             }
 
@@ -867,7 +967,7 @@
                 font-weight: 900;
                 transition: 200ms ease;
                 border: 1px solid rgba(0, 0, 0, 0.06);
-                
+
             }
 
             .tb-shopmore:hover {
@@ -1108,14 +1208,11 @@
                 .tb-prod-title h2 {
                     font-size: 36px;
                 }
-                
-                .tb-splitcoll-img.big{
-                    
 
-                }
-                
-                
-                
+                .tb-splitcoll-img.big {}
+
+
+
             }
 
             @media (max-width: 700px) {
@@ -1129,7 +1226,7 @@
                 }
 
                 .tb-card {
-                    
+
                     flex: 0 0 100%;
                     min-width: 0;
                 }
@@ -1160,102 +1257,21 @@
                 .tb-shopmore {
                     padding: 10px 14px;
                     white-space: nowrap;
-                  
+
                 }
             }
-            
-              @media (min-width:700px) and (max-width: 992px){
-                  .tb-card{
-        flex: 0 0 calc((100% - 18px)/2);
-    }
-                
-                  
-                  
-              }
-            
-            
+
+            @media (min-width:700px) and (max-width: 992px) {
+                .tb-card {
+                    flex: 0 0 calc((100% - 18px)/2);
+                }
+
+
+
+            }
         </style>
     @endpush
-    <!--- product section -->
-    <section class="tb-products">
-        <div class="container">
-            <div class="tb-prod-head">
-                <div class="tb-prod-title">
-                    <h2>Most Loved</h2>
-                    <p>Top picks people keep coming back for</p>
-                </div>
-                <a href="{{ route('products') }}" class="tb-shopmore">Shop More</a>
-            </div>
-            <div class="tb-prod-slider" id="tbProdSlider">
-                <button class="tb-prod-arrow left" type="button" aria-label="Previous products">‹</button>
-                <div class="tb-prod-viewport" id="tbProdViewport">
-                    <div class="tb-prod-track" id="tbProdTrack">
-                        @foreach ($products as $product)
-                            <article class="tb-card" data-product-id="{{ $product->id }}"
-                                data-product-name="{{ $product->name }}" data-product-price="{{ $product->price }}"
-                                data-product-image="{{ asset($product->main_image) }}"
-                                data-product-slug="{{ $product->slug }}"
-                                onclick="if(!event.target.closest('button') && !event.target.closest('select')) {
-                                    @if(in_array($product->slug, ['1-litre-cow-milk','1-litre-buffalo-milk']))
-                                        window.location.href = IS_MEMBER_LOGGED_IN ? '{{ route('member.dashboard') }}' : MEMBER_LOGIN_URL;
-                                    @else
-                                        window.location.href = '{{ route('product.detail', $product->slug) }}';
-                                    @endif
-                                }"
-                                style="cursor:pointer;">
-                                <div class="tb-card-media">
-                                    @if ($product->badge)
-                                        <span class="tb-badge {{ $product->badge_color }}">{{ $product->badge }}</span>
-                                    @endif
-                                    <button class="tb-wish wishlist-btn" type="button" aria-label="Add to wishlist"
-                                        data-product-id="{{ $product->id }}">
-                                        <i class="fa-regular fa-heart"></i>
-                                    </button>
-                                    <img class="tb-img" src="{{ asset($product->main_image) }}" alt="{{ $product->name }}">
-                                </div>
-                                <div class="tb-card-body">
-                                    <div class="tb-name-price">
-                                        <h3>{{ $product->name }}</h3>
-                                        <div class="text-right">
-                                            <span class="tb-price">₹{{ number_format($product->price, 0) }}</span>
-                                            @if($product->mrp && $product->mrp > $product->price)
-                                                <span style="font-size:12px;color:#9ca3af;text-decoration:line-through;display:block;">₹{{ number_format($product->mrp, 0) }}</span>
-                                            @endif
-                                        </div>
-                                    </div>
-                                    <p class="tb-meta">{{ $product->meta }}</p>
-                                    <div class="tb-rating">
-                                        <span class="tb-stars">{{ str_repeat('★', (int) $product->rating) }}</span>
-                                        <span class="tb-rev">{{ $product->rating }} |
-                                            {{ number_format($product->reviews_count) }} Reviews</span>
-                                    </div>
-                                    <div class="tb-variant">
-                                        <select aria-label="Select variant"  >
-                                            @if ($product->variants && is_array($product->variants))
-                                                @foreach ($product->variants as $variant)
-                                                    <option >{{ $variant }}</option>
-                                                @endforeach
-                                            @else
-                                                <option style='background-color:navy!important;'>Standard</option>
-                                            @endif
-                                        </select>
-                                        
-                                 
-                                        
-                                    </div>
-                                    <button class="tb-add add-to-cart-btn" type="button"
-                                        data-product-id="{{ $product->id }}">
-                                        {{ in_array($product->slug, ['1-litre-cow-milk','1-litre-buffalo-milk']) ? 'Subscribe Now' : 'Add to Cart' }}
-                                    </button>
-                                </div>
-                            </article>
-                        @endforeach
-                    </div>
-                </div>
-                <button class="tb-prod-arrow right" type="button" aria-label="Next products">›</button>
-            </div>
-        </div>
-    </section>
+
     @push('scripts')
         <script>
             (function() {
@@ -1348,7 +1364,6 @@
                             const milkSlugs = ['1-litre-cow-milk', '1-litre-buffalo-milk'];
 
                             if (milkSlugs.includes(slug)) {
-                                // Redirect to dashboard or login
                                 if (IS_MEMBER_LOGGED_IN) {
                                     window.location.href = '{{ route('member.dashboard') }}';
                                 } else {
@@ -1357,23 +1372,30 @@
                                 return;
                             }
 
-                            // Normal add to cart for other products
-                            const productId = card.getAttribute('data-product-id');
-                            const productName = card.getAttribute('data-product-name');
-                            const productPrice = card.getAttribute('data-product-price');
+                            // Read current (possibly variant-updated) price from data attribute
+                            const productId    = card.getAttribute('data-product-id');
+                            const productName  = card.getAttribute('data-product-name');
+                            const productPrice = parseFloat(card.getAttribute('data-product-price'));
                             const productImage = card.getAttribute('data-product-image');
-                            const productSlug = card.getAttribute('data-product-slug');
+                            const productSlug  = card.getAttribute('data-product-slug');
 
-                            const product = {
-                                id: parseInt(productId),
-                                name: productName,
-                                price: parseFloat(productPrice),
-                                image: productImage,
-                                slug: productSlug,
-                                quantity: 1
-                            };
+                            // Append selected variant name to product name if variant chosen
+                            const sel = card.querySelector('.tb-variant select');
+                            const variantId   = sel && sel.value && sel.options[sel.selectedIndex]?.dataset?.price ? parseInt(sel.value) : null;
+                            const variantName = sel && sel.options[sel.selectedIndex]?.dataset?.name;
+                            const displayName = variantName
+                                ? productName.split(' — ')[0] + ' (' + variantName + ')'
+                                : productName;
 
-                            window.DairyCart.addToCart(product);
+                            window.DairyCart.addToCart({
+                                id:         parseInt(productId),
+                                variant_id: variantId,
+                                name:       displayName,
+                                price:      productPrice,
+                                image:      productImage,
+                                slug:       productSlug,
+                                quantity:   1
+                            });
                         });
                     });
 
@@ -1418,6 +1440,13 @@
 
                 // Start initialization
                 initCartWishlist();
+
+                // Init variant prices on page load
+                document.querySelectorAll('.tb-variant select').forEach(function(sel) {
+                    if (sel.options.length > 0 && sel.options[0].dataset.price) {
+                        sel.dispatchEvent(new Event('change'));
+                    }
+                });
 
                 // Debug: Log first product card data
                 const firstCard = document.querySelector('[data-product-id]');
@@ -1704,7 +1733,7 @@
 
             .tb-splitcoll-point span {
                 font-weight: 750;
-               
+
                 line-height: 1.55;
                 font-size: 16px;
             }
@@ -1831,9 +1860,7 @@
                     grid-template-columns: 1fr;
                 }
 
-                .tb-splitcoll-img.big {
-                    
-                }
+                .tb-splitcoll-img.big {}
             }
 
             @media(max-width:560px) {
@@ -1946,17 +1973,17 @@
                 .tb-usps-grid {
                     grid-template-columns: repeat(2, 1fr);
                 }
-                
-                
-                
+
+
+
             }
-            
-            
-            
-            
-            
-            
-            
+
+
+
+
+
+
+
 
             @media (max-width: 640px) {
                 .tb-usps-head h2 {
@@ -1973,21 +2000,21 @@
             }
         </style>
     @endpush
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     <!-- Content Section -->
     @if ($whyItWorks)
         <section class="tb-splitcoll-sec" id="tbSplitCollSec">
@@ -2050,18 +2077,18 @@
                 @endforeach
             </div>
         </div>
-        
-        
-       <style>
-    .tb-ms-play {
-        display: none !important;
-    }
-    
-    .tb-ms-overlay {
-        background: linear-gradient(180deg, rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.3)) !important;
-    }
-</style>
-        
+
+
+        <style>
+            .tb-ms-play {
+                display: none !important;
+            }
+
+            .tb-ms-overlay {
+                background: linear-gradient(180deg, rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.3)) !important;
+            }
+        </style>
+
     </section>
     <!-- Video/Media Section -->
     @if ($videoSection)

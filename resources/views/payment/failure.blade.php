@@ -80,10 +80,10 @@
                style="background-color: var(--green);">
                 <i class="fa-solid fa-rotate-left mr-2"></i>Try Again
             </a>
-            <a href="{{ route('member.support-tickets.index') }}" 
+            <a href="{{ route('contact') }}" 
                class="flex-1 py-3 px-6 rounded-lg font-bold border transition-colors hover:bg-gray-50"
                style="border-color: var(--border); color: var(--text);">
-                <i class="fa-solid fa-headset mr-2"></i>Contact Support
+                <i class="fa-solid fa-headset mr-2"></i>Contact Us
             </a>
         </div>
     </div>

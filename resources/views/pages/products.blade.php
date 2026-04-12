@@ -618,7 +618,7 @@
   position:fixed;
   inset:0;
   background:rgba(0,0,0,.55);
-  z-index:120;
+  z-index:999;
   display:none;
   padding:16px;
 }
@@ -720,7 +720,7 @@
       <p>Daily essentials with clean handling, consistent quality, and quick dispatch.</p>
 
       <div class="plpg-hero-row">
-        <a href="#plpgList" class="plpg-btn plpg-btn-primary"><i class="fa-solid fa-store"></i> Browse Products</a>
+        <a href="#plpgList" class="plpg-btn plpg-btn-primary"><i class="fa-solid fa-store"></i> Our Products</a>
       </div>
 
       <div class="plpg-hero-badges">
