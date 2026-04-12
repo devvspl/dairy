@@ -1175,7 +1175,7 @@
             <!-- Brand -->
             <div class="tb-foot-brand">
                 <!--<h3>{{ config('app.name') }}</h3>-->
-                <h3 style="font-size:21.28px;">Nulac Dairy Pvt. Ltd.</h3>
+                <h3 style="font-size:21.28px;">Nulac Dairy Private Limited</h3>
 
                 <p>Pure, clean, and ethically sourced food products crafted for modern Indian families.</p>
 
@@ -1199,9 +1199,9 @@
 
             <div class="tb-foot-links">
                 <h4>Products</h4>
-                <a href="{{ route('products') }}">Milk</a>
-                <!--<a href="{{ route('products') }}">Ghee</a>-->
-                <!--<a href="{{ route('products') }}">Paneer</a>-->
+                <a href="{{ route('products') }}?search=Milk">Milk</a>
+                <a href="{{ route('products') }}?search=Cow+Ghee">Cow Ghee</a>
+                <a href="{{ route('products') }}?search=Buffalo+Ghee">Buffalo Ghee</a>
             </div>
 
             <div class="tb-foot-links">
