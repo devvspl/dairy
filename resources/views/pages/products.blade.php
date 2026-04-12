@@ -581,7 +581,7 @@
   position:fixed;
   inset:0;
   background:rgba(0,0,0,.48);
-  z-index:100;
+  z-index:9999;
   display:none;
 }
 #plpgProductPage .plpg-drawer.open{ display:block; }
@@ -960,7 +960,7 @@
           </div>
         </div>
 
-        <div class="plpg-block">
+        <div class="plpg-block" style="display:none">
           <div class="plpg-block-title"><span><i class="fa-solid fa-tags"></i> Category</span><small>Choose</small></div>
           <div class="plpg-block-content">
             @foreach($categories as $category)
