@@ -133,21 +133,26 @@
       return false;
     }
 
-    const existingIndex = cart.findIndex(item => item.id === product.id);
+    const existingIndex = cart.findIndex(item =>
+      item.id === product.id && (item.variant_id || null) === (product.variant_id || null)
+    );
 
     if (existingIndex > -1) {
-      // Update quantity if item exists
+      // Update quantity and price (variant may have changed)
       cart[existingIndex].quantity += product.quantity || 1;
+      cart[existingIndex].price = product.price; // always use latest price
+      cart[existingIndex].name  = product.name;  // update name (may include variant)
       console.log('Updated existing cart item:', cart[existingIndex]);
     } else {
       // Add new item
       const newItem = {
-        id: product.id,
-        name: product.name,
-        price: product.price,
-        image: product.image || '',
-        slug: product.slug || '',
-        quantity: product.quantity || 1
+        id:         product.id,
+        variant_id: product.variant_id || null,
+        name:       product.name,
+        price:      product.price,
+        image:      product.image || '',
+        slug:       product.slug || '',
+        quantity:   product.quantity || 1
       };
       cart.push(newItem);
       console.log('Added new cart item:', newItem);
@@ -159,10 +164,14 @@
     return true;
   }
 
-  // Remove item from cart
-  function removeFromCart(productId) {
+  // Remove item from cart (by product id + variant_id)
+  function removeFromCart(productId, variantId) {
     let cart = getCart();
-    cart = cart.filter(item => item.id !== productId);
+    if (variantId !== undefined) {
+      cart = cart.filter(item => !(item.id === productId && (item.variant_id || null) === (variantId || null)));
+    } else {
+      cart = cart.filter(item => item.id !== productId);
+    }
     setStorage(CART_KEY, cart);
     updateCartBadge();
     showToast('Item removed from cart', 'success');
@@ -170,9 +179,11 @@
   }
 
   // Update item quantity in cart
-  function updateCartQuantity(productId, quantity) {
+  function updateCartQuantity(productId, quantity, variantId) {
     const cart = getCart();
-    const item = cart.find(item => item.id === productId);
+    const item = variantId !== undefined
+      ? cart.find(i => i.id === productId && (i.variant_id || null) === (variantId || null))
+      : cart.find(i => i.id === productId);
     
     if (item) {
       if (quantity <= 0) {

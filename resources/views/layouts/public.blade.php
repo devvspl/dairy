@@ -2035,14 +2035,14 @@
                   <div class="dairy-offcanvas-info">
                     <a href="${productUrl}" class="dairy-offcanvas-name">${itemName}</a>
                     <div class="dairy-offcanvas-qty">
-                      <button onclick="updateCartQty(${item.id}, ${itemQty - 1})" aria-label="Decrease quantity">&#8722;</button>
+                      <button onclick="updateCartQty(${item.id}, ${itemQty - 1}, ${item.variant_id || 'null'})" aria-label="Decrease quantity">&#8722;</button>
                       <span>${itemQty}</span>
-                      <button onclick="updateCartQty(${item.id}, ${itemQty + 1})" aria-label="Increase quantity">+</button>
+                      <button onclick="updateCartQty(${item.id}, ${itemQty + 1}, ${item.variant_id || 'null'})" aria-label="Increase quantity">+</button>
                       <span style="color:#9ca3af;font-size:11px;margin-left:2px;">&#215; &#8377;${itemPrice.toFixed(0)}</span>
                     </div>
                   </div>
                   <div style="display:flex;flex-direction:column;align-items:flex-end;justify-content:space-between;flex-shrink:0;gap:6px;">
-                    <button class="dairy-offcanvas-remove" onclick="removeFromCart(${item.id})" aria-label="Remove item">
+                    <button class="dairy-offcanvas-remove" onclick="removeFromCart(${item.id}, ${item.variant_id || 'null'})" aria-label="Remove item">
                       <i class="fa-solid fa-trash"></i>
                     </button>
                     <span style="font-weight:800;font-size:14px;color:#2f4a1e;">&#8377;${itemTotal.toFixed(0)}</span>
@@ -2070,17 +2070,17 @@
             }
 
             // Global functions for cart operations
-            window.updateCartQty = function(productId, newQty) {
+            window.updateCartQty = function(productId, newQty, variantId) {
                 if (window.DairyCart) {
-                    window.DairyCart.updateCartQuantity(productId, newQty);
-                    openCart(); // Refresh cart display
+                    window.DairyCart.updateCartQuantity(productId, newQty, variantId);
+                    openCart();
                 }
             };
 
-            window.removeFromCart = function(productId) {
+            window.removeFromCart = function(productId, variantId) {
                 if (window.DairyCart) {
-                    window.DairyCart.removeFromCart(productId);
-                    openCart(); // Refresh cart display
+                    window.DairyCart.removeFromCart(productId, variantId);
+                    openCart();
                 }
             };
 
