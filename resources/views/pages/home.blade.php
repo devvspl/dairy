@@ -825,7 +825,8 @@
                                         <span class="tb-rev">{{ $product->rating }} |
                                             {{ number_format($product->reviews_count) }} Reviews</span>
                                     </div>
-                                    <div class="tb-variant">
+                                    @php $availableVariants = $product->productVariants ? $product->productVariants->filter(fn($v) => $v->stock_quantity === null || $v->stock_quantity > 0) : collect(); @endphp
+                                    <div class="tb-variant" @if($availableVariants->count() === 0) style="display:none;" @endif>
                                         <select aria-label="Select variant" onclick="event.stopPropagation()"
                                             onchange="event.stopPropagation();
                                                 var card = this.closest('article.tb-card');
@@ -847,7 +848,7 @@
                                                     }
                                                 }">
                                             @if ($product->productVariants && $product->productVariants->count() > 0)
-                                                @foreach ($product->productVariants as $variant)
+                                                @foreach ($product->productVariants->filter(fn($v) => $v->stock_quantity === null || $v->stock_quantity > 0) as $variant)
                                                     <option value="{{ $variant->id }}"
                                                         data-price="{{ $variant->price }}"
                                                         data-mrp="{{ $variant->mrp ?? '' }}"
@@ -858,8 +859,6 @@
                                                         @endif
                                                     </option>
                                                 @endforeach
-                                            @else
-                                                <option>Standard</option>
                                             @endif
                                         </select>
                                     </div>
