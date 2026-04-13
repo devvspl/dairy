@@ -455,15 +455,16 @@ class WalletController extends Controller
      */
     private function adjustStartDateForCutoff(\Carbon\Carbon $requestedDate, string $cutoffTime): \Carbon\Carbon
     {
-        $now = now();
-        $cutoff = \Carbon\Carbon::parse($cutoffTime);
-        
+        $now = now(); // uses app timezone from config/app.php
+
+        // Parse cutoff as today's date + cutoff time in app timezone
+        $cutoff = \Carbon\Carbon::today($now->timezone)->setTimeFromTimeString($cutoffTime);
+
         // Only apply cutoff logic if the requested date is today
-        if ($requestedDate->isToday() && $now->greaterThan($cutoff)) {
-            // Past cutoff time, push to tomorrow
-            return $requestedDate->addDay();
+        if ($requestedDate->isSameDay($now) && $now->greaterThan($cutoff)) {
+            return $requestedDate->copy()->addDay();
         }
-        
+
         return $requestedDate;
     }
 }
