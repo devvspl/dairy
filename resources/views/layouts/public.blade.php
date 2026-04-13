@@ -1121,8 +1121,7 @@
             <ul class="nav">
                 <li><a href="{{ route('home') }}" class="{{ request()->routeIs('home') ? 'active' : '' }}"><i
                             class="fa-solid fa-house"></i> Home</a></li>
-                <li><a href="{{ route('about') }}" class="{{ request()->routeIs('about') ? 'active' : '' }}"><i
-                            class="fa-solid fa-user"></i> About</a></li>
+                <li><a href="{{ route('about') }}" class="{{ request()->routeIs('about') ? 'active' : '' }}"><i class="fa-solid fa-building"></i> About Us</a></li>
                 {{-- <li><a href="{{ route('membership') }}" class="{{ request()->routeIs('membership') ? 'active' : '' }}"><i class="fa-solid fa-id-card-clip"></i> Membership</a></li> --}}
                 <li><a href="{{ route('products') }}"
                         class="{{ request()->routeIs('products') ? 'active' : '' }}"><i
