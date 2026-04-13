@@ -1427,7 +1427,7 @@
             function checkExtraCutoff() {
                 if (!extraDateInput || !extraWarningDiv || !extraWarningText) return;
                 
-                const selectedDate = extraDateInput.value;
+                const selectedDate = extraDateInput.value; // YYYY-MM-DD
                 const today = new Date().toISOString().split('T')[0];
                 
                 if (selectedDate !== today) {
@@ -1450,13 +1450,14 @@
                 if (currentTime > cutoffTime) {
                     const tomorrow = new Date(now);
                     tomorrow.setDate(tomorrow.getDate() + 1);
-                    const tomorrowStr = tomorrow.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+                    const tomorrowStr = tomorrow.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+                    const tomorrowISO = tomorrow.toISOString().split('T')[0];
                     
-                    extraWarningText.textContent = `Cutoff time (${cutoffTime}) passed. Extra milk will be added to ${tomorrowStr}.`;
+                    extraWarningText.textContent = `Cutoff time (${cutoffTime}) has passed. Date auto-moved to ${tomorrowStr}.`;
                     extraWarningDiv.classList.remove('hidden');
                     
                     // Auto-adjust to tomorrow
-                    extraDateInput.value = tomorrow.toISOString().split('T')[0];
+                    extraDateInput.value = tomorrowISO;
                 } else {
                     extraWarningDiv.classList.add('hidden');
                 }
@@ -1464,8 +1465,27 @@
             
             if (extraDateInput) {
                 extraDateInput.addEventListener('change', checkExtraCutoff);
-                checkExtraCutoff(); // Initial check
+                // Run immediately on load
+                checkExtraCutoff();
             }
+
+            // Also block form submit if date is today and past cutoff
+            extraDateInput?.closest('form')?.addEventListener('submit', function(e) {
+                const selectedDate = extraDateInput.value;
+                const today = new Date().toISOString().split('T')[0];
+                if (selectedDate === today) {
+                    const milkType = '{{ $walletSubscription->milk_type }}';
+                    const milkPrice = MILK_PRICES_CUTOFF.find(mp => mp.milk_type === milkType);
+                    if (milkPrice) {
+                        const now = new Date();
+                        const currentTime = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+                        if (currentTime > milkPrice.cutoff_time) {
+                            e.preventDefault();
+                            checkExtraCutoff(); // re-run to auto-adjust date
+                        }
+                    }
+                }
+            });
 
             function renderCal(days) {
                 const grid = document.getElementById('cal-grid');
