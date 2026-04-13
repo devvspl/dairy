@@ -164,7 +164,7 @@
                     </div>
                     <div class="col-span-1 flex justify-end">
                         <button type="button" onclick="removeVariantRow(${i})" class="w-8 h-8 rounded-lg flex items-center justify-center text-red-500 hover:bg-red-50 border border-red-200">
-                            <i class="fa-solid fa-trash text-xs"></i>
+                           Remove
                         </button>
                     </div>
                 </div>

@@ -1359,6 +1359,14 @@
     });
   });
 
+  // Desktop search — apply on Enter
+  q?.addEventListener("keydown", (e)=>{
+    if(e.key === "Enter") {
+      e.preventDefault();
+      applyFilters({ query: q.value, types: types(), categories: categories(), min: minEl.value, max: maxEl.value, rating: rateEl(), sort: sortEl.value });
+    }
+  });
+
   // Desktop Clear
   root.querySelector("#plpgClearFilters")?.addEventListener("click", ()=>{
     q.value = "";
@@ -1396,6 +1404,15 @@
       sort: sortEl.value
     });
     drawer.classList.remove("open");
+  });
+
+  // Mobile search — apply on Enter
+  qM?.addEventListener("keydown", (e)=>{
+    if(e.key === "Enter") {
+      e.preventDefault();
+      applyFilters({ query: qM.value, types: typesM(), categories: categoriesM(), min: minM.value, max: maxM.value, rating: rateM(), sort: sortEl.value });
+      drawer.classList.remove("open");
+    }
   });
 
   // Mobile Clear
