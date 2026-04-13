@@ -412,9 +412,19 @@
                                     @csrf
                                     <div class="flex-1">
                                         <label class="block text-[10px] font-semibold mb-1" style="color:var(--muted);">Date</label>
+                                        @php
+                                            $milkForCutoff = $milkPrices->firstWhere('milk_type', $ws->milk_type);
+                                            $cutoffPassed = false;
+                                            if ($milkForCutoff && $milkForCutoff->cutoff_time) {
+                                                $cutoffCarbon = \Carbon\Carbon::today()->setTimeFromTimeString($milkForCutoff->cutoff_time);
+                                                $cutoffPassed = now()->greaterThan($cutoffCarbon);
+                                            }
+                                            $extraMinDate = $cutoffPassed ? now()->addDay()->format('Y-m-d') : now()->format('Y-m-d');
+                                            $extraDefaultDate = now()->addDay()->format('Y-m-d');
+                                        @endphp
                                         <input type="date" name="date" id="extra-date-{{ $ws->id }}" required
-                                            min="{{ now()->format('Y-m-d') }}" max="{{ now()->addDays(30)->format('Y-m-d') }}"
-                                            value="{{ now()->addDay()->format('Y-m-d') }}"
+                                            min="{{ $extraMinDate }}" max="{{ now()->addDays(30)->format('Y-m-d') }}"
+                                            value="{{ $extraDefaultDate }}"
                                             class="w-full px-3 py-2 text-sm border-2 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent"
                                             style="border-color:var(--border);">
                                     </div>
