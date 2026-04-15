@@ -720,7 +720,7 @@
       <p>Daily essentials with clean handling, consistent quality, and quick dispatch.</p>
 
       <div class="plpg-hero-row">
-        <a href="#plpgList" class="plpg-btn plpg-btn-primary"><i class="fa-solid fa-store"></i> Our Products</a>
+        {{-- <a href="#plpgList" class="plpg-btn plpg-btn-primary"><i class="fa-solid fa-store"></i> Our Products</a> --}}
       </div>
 
       <div class="plpg-hero-badges">
@@ -876,7 +876,7 @@
             @endif
             <div class="plpg-media">
               <img src="{{ asset($product->main_image) }}" alt="{{ $product->name }}">
-              <button class="plpg-quick" type="button" data-quick="true"><i class="fa-solid fa-eye"></i> Quick View</button>
+              {{-- <button class="plpg-quick" type="button" data-quick="true"><i class="fa-solid fa-eye"></i> Quick View</button> --}}
             </div>
             <div class="plpg-info">
               <div class="plpg-title">
@@ -1196,7 +1196,6 @@
           ${badgeHtml}
           <div class="plpg-media">
             <img src="${product.image || ''}" alt="${product.name || 'Product'}">
-            <button class="plpg-quick" type="button" data-quick="true"><i class="fa-solid fa-eye"></i> Quick View</button>
           </div>
           <div class="plpg-info">
             <div class="plpg-title">

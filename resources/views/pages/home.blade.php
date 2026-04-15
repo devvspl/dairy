@@ -24,7 +24,7 @@
 
             .tb-hero {
                 background: #fff;
-                padding: 5px 0 26px;
+                padding: 5px 0 16px;
             }
 
 
@@ -47,7 +47,7 @@
                 display: grid;
                 grid-template-columns: 1fr 1fr;
                 gap: 18px;
-                padding: 60px 80px;
+                padding: 40px 60px;
                 align-items: center;
             }
 
@@ -140,7 +140,7 @@
             .tb-media-card {
                 width: 100%;
                 max-width: 100%;
-                height: auto;
+                height: 320px;
                 border-radius: 18px;
                 overflow: hidden;
                 box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
@@ -228,7 +228,7 @@
             @media (max-width: 980px) {
                 .tb-slide {
                     grid-template-columns: 1fr;
-                    padding: 26px 22px 58px;
+                    padding: 20px 22px 50px;
                     gap: 16px;
                 }
 
@@ -243,7 +243,7 @@
 
                 .tb-media-card {
                     max-width: 520px;
-                    height: 240px;
+                    height: 200px;
                 }
 
                 .tb-title {
@@ -266,11 +266,11 @@
 
             @media (max-width: 560px) {
                 .tb-hero {
-                    padding: 12px 0 18px;
+                    padding: 8px 0 12px;
                 }
 
                 .tb-slide {
-                    padding: 18px 16px 62px;
+                    padding: 16px 16px 54px;
                 }
 
                 .tb-title {
@@ -282,7 +282,7 @@
                 }
 
                 .tb-media-card {
-                    height: 210px;
+                    height: 180px;
                 }
 
                 .tb-arrow {
@@ -528,79 +528,155 @@
                 var track = document.getElementById('tbSlides');
                 if (!slider || !track) return;
 
-                var slides = track.querySelectorAll('.tb-slide');
+                var originalSlides = Array.from(track.querySelectorAll('.tb-slide'));
                 var dots = slider.querySelectorAll('.tb-dot');
                 var prev = slider.querySelector('.tb-prev');
                 var next = slider.querySelector('.tb-next');
 
-                var index = 0;
-                var total = slides.length;
+                var total = originalSlides.length;
+                if (total === 0) return;
+
+                var currentIndex = 0;
                 var timer = null;
                 var interval = 4500;
+                var isTransitioning = false;
 
-                function goTo(i) {
-                    index = (i + total) % total;
-                    track.style.transform = 'translateX(' + (-index * 100) + '%)';
-                    dots.forEach(function(d) {
-                        d.classList.remove('is-active');
+                // Clone first and last slides for seamless infinite loop
+                var firstClone = originalSlides[0].cloneNode(true);
+                var lastClone = originalSlides[total - 1].cloneNode(true);
+
+                track.appendChild(firstClone);
+                track.insertBefore(lastClone, originalSlides[0]);
+
+                // Position at first real slide (index 1 because of prepended clone)
+                currentIndex = 1;
+                track.style.transform = 'translateX(-100%)';
+
+                function updateDots() {
+                    var realIndex = currentIndex - 1;
+                    if (realIndex < 0) realIndex = total - 1;
+                    if (realIndex >= total) realIndex = 0;
+
+                    dots.forEach(function(dot, i) {
+                        dot.classList.toggle('is-active', i === realIndex);
                     });
-                    if (dots[index]) dots[index].classList.add('is-active');
                 }
 
-                function start() {
-                    stop();
-                    timer = setInterval(function() {
-                        goTo(index + 1);
-                    }, interval);
+                function slide(index, animate) {
+                    if (animate === false) {
+                        track.style.transition = 'none';
+                    } else {
+                        track.style.transition = 'transform 500ms ease';
+                    }
+
+                    currentIndex = index;
+                    track.style.transform = 'translateX(' + (-currentIndex * 100) + '%)';
+                    updateDots();
+
+                    if (animate === false) {
+                        // Force reflow to apply the no-transition immediately
+                        track.offsetHeight;
+                    }
                 }
 
-                function stop() {
+                function handleTransitionEnd() {
+                    isTransitioning = false;
+
+                    // At cloned first slide (after last real slide)
+                    if (currentIndex === total + 1) {
+                        slide(1, false);
+                    }
+                    // At cloned last slide (before first real slide)
+                    else if (currentIndex === 0) {
+                        slide(total, false);
+                    }
+                }
+
+                track.addEventListener('transitionend', handleTransitionEnd);
+
+                function goNext() {
+                    if (isTransitioning) return;
+                    isTransitioning = true;
+                    slide(currentIndex + 1, true);
+                }
+
+                function goPrev() {
+                    if (isTransitioning) return;
+                    isTransitioning = true;
+                    slide(currentIndex - 1, true);
+                }
+
+                function goToSlide(slideIndex) {
+                    if (isTransitioning) return;
+                    isTransitioning = true;
+                    slide(slideIndex + 1, true);
+                }
+
+                function startAutoplay() {
+                    stopAutoplay();
+                    timer = setInterval(goNext, interval);
+                }
+
+                function stopAutoplay() {
                     if (timer) {
                         clearInterval(timer);
                         timer = null;
                     }
                 }
 
-                prev.addEventListener('click', function() {
-                    goTo(index - 1);
-                    start();
-                });
-                next.addEventListener('click', function() {
-                    goTo(index + 1);
-                    start();
-                });
+                // Event listeners
+                if (prev) {
+                    prev.addEventListener('click', function() {
+                        goPrev();
+                        startAutoplay();
+                    });
+                }
+
+                if (next) {
+                    next.addEventListener('click', function() {
+                        goNext();
+                        startAutoplay();
+                    });
+                }
 
                 dots.forEach(function(dot, i) {
                     dot.addEventListener('click', function() {
-                        goTo(i);
-                        start();
+                        goToSlide(i);
+                        startAutoplay();
                     });
                 });
 
-                slider.addEventListener('mouseenter', stop);
-                slider.addEventListener('mouseleave', start);
+                slider.addEventListener('mouseenter', stopAutoplay);
+                slider.addEventListener('mouseleave', startAutoplay);
 
-                var startX = 0,
-                    endX = 0;
+                // Touch support
+                var touchStartX = 0;
+                var touchEndX = 0;
+
                 slider.addEventListener('touchstart', function(e) {
-                    startX = e.touches[0].clientX;
-                    stop();
+                    touchStartX = e.touches[0].clientX;
+                    stopAutoplay();
                 }, {
                     passive: true
                 });
 
                 slider.addEventListener('touchend', function(e) {
-                    endX = e.changedTouches[0].clientX;
-                    var diff = endX - startX;
-                    if (Math.abs(diff) > 40) {
-                        if (diff > 0) goTo(index - 1);
-                        else goTo(index + 1);
+                    touchEndX = e.changedTouches[0].clientX;
+                    var diff = touchEndX - touchStartX;
+
+                    if (Math.abs(diff) > 50) {
+                        if (diff > 0) {
+                            goPrev();
+                        } else {
+                            goNext();
+                        }
                     }
-                    start();
+                    startAutoplay();
                 });
 
-                goTo(0);
-                start();
+                // Initialize
+                updateDots();
+                startAutoplay();
             })();
         </script>
     @endpush
@@ -787,8 +863,7 @@
                     <div class="tb-prod-track" id="tbProdTrack">
                         @foreach ($products as $product)
                             <article class="tb-card" data-product-id="{{ $product->id }}"
-                                data-product-name="{{ $product->name }}"
-                                data-product-name-base="{{ $product->name }}"
+                                data-product-name="{{ $product->name }}" data-product-name-base="{{ $product->name }}"
                                 data-product-price="{{ $product->price }}"
                                 data-product-image="{{ asset($product->main_image) }}"
                                 data-product-slug="{{ $product->slug }}"
@@ -813,11 +888,14 @@
                                     <div class="tb-name-price">
                                         <h3>{{ $product->name }}</h3>
                                         <div class="text-right">
-                                            <span class="tb-price" id="price-{{ $product->id }}">₹{{ number_format($product->price, 0) }}</span>
+                                            <span class="tb-price"
+                                                id="price-{{ $product->id }}">₹{{ number_format($product->price, 0) }}</span>
                                             @if ($product->mrp && $product->mrp > $product->price)
-                                                <span class="tb-mrp-{{ $product->id }}" style="font-size:12px;color:#9ca3af;text-decoration:line-through;display:block;">₹{{ number_format($product->mrp, 0) }}</span>
+                                                <span class="tb-mrp-{{ $product->id }}"
+                                                    style="font-size:12px;color:#9ca3af;text-decoration:line-through;display:block;">₹{{ number_format($product->mrp, 0) }}</span>
                                             @else
-                                                <span class="tb-mrp-{{ $product->id }}" style="font-size:12px;color:#9ca3af;text-decoration:line-through;display:none;"></span>
+                                                <span class="tb-mrp-{{ $product->id }}"
+                                                    style="font-size:12px;color:#9ca3af;text-decoration:line-through;display:none;"></span>
                                             @endif
                                         </div>
                                     </div>
@@ -854,13 +932,14 @@
                                                         data-mrp="{{ $variant->mrp ?? '' }}"
                                                         data-name="{{ $variant->name }}">
                                                         {{ $variant->name }} — ₹{{ number_format($variant->price, 0) }}
-                                                        @if($variant->mrp && $variant->mrp > $variant->price)
+                                                        @if ($variant->mrp && $variant->mrp > $variant->price)
                                                             (MRP ₹{{ number_format($variant->mrp, 0) }})
                                                         @endif
                                                     </option>
                                                 @endforeach
                                             @else
-                                                <option value="" data-price="{{ $product->price }}" data-mrp="{{ $product->mrp ?? '' }}" data-name="">Standard</option>
+                                                <option value="" data-price="{{ $product->price }}"
+                                                    data-mrp="{{ $product->mrp ?? '' }}" data-name="">Standard</option>
                                             @endif
                                         </select>
                                     </div>
@@ -877,63 +956,16 @@
             </div>
         </div>
     </section>
-    <!--- about section -->
-    @if ($aboutSection)
-        <section class="tb-abintro-sec" id="tbAbIntroSec">
-            <div class="container">
-                <div class="tb-abintro-wrap">
-                    <!-- LEFT CONTENT -->
-                    <div class="tb-abintro-left">
-                        @if ($aboutSection->kicker)
-                            <span class="tb-abintro-kicker">{{ $aboutSection->kicker }}</span>
-                        @endif
-                        <h2>{{ $aboutSection->title }}</h2>
-                        <p>{{ $aboutSection->description }}</p>
-                        @if ($aboutSection->button_text && $aboutSection->button_link)
-                            <a href="{{ $aboutSection->button_link }}" class="tb-abintro-btn">
-                                {{ $aboutSection->button_text }}
-                            </a>
-                        @endif
-                        @if ($aboutSection->mini_items && count($aboutSection->mini_items) > 0)
-                            <div class="tb-abintro-mini">
-                                @foreach ($aboutSection->mini_items as $item)
-                                    <div class="tb-abintro-mini-item">
-                                        <strong>{{ $item['title'] ?? '' }}</strong>
-                                        <span>{{ $item['text'] ?? '' }}</span>
-                                    </div>
-                                @endforeach
-                            </div>
-                        @endif
-                    </div>
-                    <!-- RIGHT IMAGE -->
-                    <div class="tb-abintro-right">
-                        <div class="tb-abintro-img"
-                            @if ($aboutSection->image) style="background-image: url('{{ asset($aboutSection->image) }}');" @endif
-                            aria-label="About image"></div>
-                        @if ($aboutSection->badge_rating || $aboutSection->badge_text)
-                            <div class="tb-abintro-badge">
-                                @if ($aboutSection->badge_rating)
-                                    <strong><i class="fa-solid fa-star"></i> {{ $aboutSection->badge_rating }}</strong>
-                                @endif
-                                @if ($aboutSection->badge_text)
-                                    <span>{{ $aboutSection->badge_text }}</span>
-                                @endif
-                            </div>
-                        @endif
-                    </div>
-                </div>
-            </div>
-        </section>
-    @endif
+
     @push('styles')
         <style>
             /* Products Section */
             .tb-products {
                 /* padding: 40px 0 50px; */
                 /* background:
-                            radial-gradient(circle at 15% 15%, rgba(241, 204, 36, 0.10), transparent 55%),
-                            radial-gradient(circle at 85% 75%, rgba(47, 74, 30, 0.08), transparent 60%),
-                            #fff; */
+                                    radial-gradient(circle at 15% 15%, rgba(241, 204, 36, 0.10), transparent 55%),
+                                    radial-gradient(circle at 85% 75%, rgba(47, 74, 30, 0.08), transparent 60%),
+                                    #fff; */
                 margin: 20px 0px;
             }
 
@@ -1284,9 +1316,21 @@
                 var btnPrev = slider.querySelector('.tb-prod-arrow.left');
                 var btnNext = slider.querySelector('.tb-prod-arrow.right');
 
-                var index = 0;
+                var originalCards = Array.from(track.querySelectorAll('.tb-card'));
+                var totalCards = originalCards.length;
 
-                function cardWidth() {
+                if (totalCards === 0) return;
+
+                var currentIndex = 0;
+                var isTransitioning = false;
+
+                // Clone all cards and append them for infinite loop
+                originalCards.forEach(function(card) {
+                    var clone = card.cloneNode(true);
+                    track.appendChild(clone);
+                });
+
+                function getCardWidth() {
                     var first = track.querySelector('.tb-card');
                     if (!first) return 0;
                     var styles = window.getComputedStyle(track);
@@ -1294,53 +1338,88 @@
                     return first.getBoundingClientRect().width + gap;
                 }
 
-                function maxIndex() {
+                function getVisibleCards() {
                     var vw = viewport.getBoundingClientRect().width;
-                    var cw = cardWidth();
-                    if (!cw) return 0;
-                    var visible = Math.max(1, Math.round(vw / cw));
-                    var total = track.querySelectorAll('.tb-card').length;
-                    return Math.max(0, total - visible);
+                    var cw = getCardWidth();
+                    if (!cw) return 1;
+                    return Math.max(1, Math.floor(vw / cw));
                 }
 
-                function update() {
-                    var cw = cardWidth();
-                    var max = maxIndex();
-                    if (index > max) index = max;
-                    if (index < 0) index = 0;
+                function slide(index, animate) {
+                    if (animate === false) {
+                        track.style.transition = 'none';
+                    } else {
+                        track.style.transition = 'transform 520ms ease';
+                    }
 
-                    track.style.transform = 'translateX(' + (-index * cw) + 'px)';
+                    var cw = getCardWidth();
+                    currentIndex = index;
+                    track.style.transform = 'translateX(' + (-currentIndex * cw) + 'px)';
+
+                    if (animate === false) {
+                        track.offsetHeight; // Force reflow
+                    }
                 }
 
-                btnPrev && btnPrev.addEventListener('click', function() {
-                    index--;
-                    update();
-                });
-                btnNext && btnNext.addEventListener('click', function() {
-                    index++;
-                    update();
-                });
+                function handleTransitionEnd() {
+                    isTransitioning = false;
 
-                var startX = 0,
-                    endX = 0;
+                    // If we've scrolled past all original cards, jump back to start
+                    if (currentIndex >= totalCards) {
+                        slide(0, false);
+                    }
+                    // If we've scrolled before first card, jump to end
+                    else if (currentIndex < 0) {
+                        slide(totalCards - 1, false);
+                    }
+                }
+
+                track.addEventListener('transitionend', handleTransitionEnd);
+
+                function goNext() {
+                    if (isTransitioning) return;
+                    isTransitioning = true;
+                    slide(currentIndex + 1, true);
+                }
+
+                function goPrev() {
+                    if (isTransitioning) return;
+                    isTransitioning = true;
+                    slide(currentIndex - 1, true);
+                }
+
+                btnPrev && btnPrev.addEventListener('click', goPrev);
+                btnNext && btnNext.addEventListener('click', goNext);
+
+                // Touch support
+                var touchStartX = 0;
+                var touchEndX = 0;
+
                 viewport.addEventListener('touchstart', function(e) {
-                    startX = e.touches[0].clientX;
+                    touchStartX = e.touches[0].clientX;
                 }, {
                     passive: true
                 });
 
                 viewport.addEventListener('touchend', function(e) {
-                    endX = e.changedTouches[0].clientX;
-                    var diff = endX - startX;
+                    touchEndX = e.changedTouches[0].clientX;
+                    var diff = touchEndX - touchStartX;
+
                     if (Math.abs(diff) > 40) {
-                        if (diff < 0) index++;
-                        else index--;
-                        update();
+                        if (diff < 0) {
+                            goNext();
+                        } else {
+                            goPrev();
+                        }
                     }
                 });
 
-                window.addEventListener('resize', update);
-                update();
+                window.addEventListener('resize', function() {
+                    slide(currentIndex, false);
+                });
+
+                // Initialize
+                slide(0, false);
             })();
 
             // Cart and Wishlist Event Listeners
@@ -1355,81 +1434,92 @@
 
                     console.log('DairyCart loaded, initializing event listeners');
 
-                    // Add to Cart buttons
-                    document.querySelectorAll('.add-to-cart-btn').forEach(btn => {
-                        btn.addEventListener('click', function() {
-                            const card = this.closest('article.tb-card');
-                            if (!card) return;
+                    // Function to attach event listeners to cards
+                    function attachCardListeners(card) {
+                        // Add to Cart button
+                        var addToCartBtn = card.querySelector('.add-to-cart-btn');
+                        if (addToCartBtn && !addToCartBtn.dataset.listenerAttached) {
+                            addToCartBtn.dataset.listenerAttached = 'true';
+                            addToCartBtn.addEventListener('click', function(e) {
+                                e.stopPropagation();
+                                var parentCard = this.closest('article.tb-card');
+                                if (!parentCard) return;
 
-                            const slug = card.getAttribute('data-product-slug');
-                            const milkSlugs = ['1-litre-cow-milk', '1-litre-buffalo-milk'];
+                                const slug = parentCard.getAttribute('data-product-slug');
+                                const milkSlugs = ['1-litre-cow-milk', '1-litre-buffalo-milk'];
 
-                            if (milkSlugs.includes(slug)) {
-                                if (IS_MEMBER_LOGGED_IN) {
-                                    window.location.href = '{{ route('member.dashboard') }}';
-                                } else {
-                                    window.location.href = MEMBER_LOGIN_URL;
+                                if (milkSlugs.includes(slug)) {
+                                    if (IS_MEMBER_LOGGED_IN) {
+                                        window.location.href = '{{ route('member.dashboard') }}';
+                                    } else {
+                                        window.location.href = MEMBER_LOGIN_URL;
+                                    }
+                                    return;
                                 }
-                                return;
-                            }
 
-                            // Read current (possibly variant-updated) price from data attribute
-                            const productId    = card.getAttribute('data-product-id');
-                            const productName  = card.getAttribute('data-product-name-base') || card.getAttribute('data-product-name');
-                            const productPrice = parseFloat(card.getAttribute('data-product-price'));
-                            const productImage = card.getAttribute('data-product-image');
-                            const productSlug  = card.getAttribute('data-product-slug');
+                                const productId = parentCard.getAttribute('data-product-id');
+                                const productName = parentCard.getAttribute('data-product-name-base') || parentCard
+                                    .getAttribute('data-product-name');
+                                const productPrice = parseFloat(parentCard.getAttribute('data-product-price'));
+                                const productImage = parentCard.getAttribute('data-product-image');
+                                const productSlug = parentCard.getAttribute('data-product-slug');
 
-                            // Get selected variant info
-                            const sel = card.querySelector('.tb-variant select');
-                            const selectedOpt = sel && sel.options[sel.selectedIndex];
-                            const variantId   = selectedOpt && selectedOpt.dataset.price ? parseInt(sel.value) : null;
-                            const variantName = selectedOpt && selectedOpt.dataset.name;
-                            const displayName = variantName
-                                ? productName + ' (' + variantName + ')'
-                                : productName;
+                                const sel = parentCard.querySelector('.tb-variant select');
+                                const selectedOpt = sel && sel.options[sel.selectedIndex];
+                                const variantId = selectedOpt && selectedOpt.dataset.price ? parseInt(sel.value) :
+                                    null;
+                                const variantName = selectedOpt && selectedOpt.dataset.name;
+                                const displayName = variantName ?
+                                    productName + ' (' + variantName + ')' :
+                                    productName;
 
-                            window.DairyCart.addToCart({
-                                id:         parseInt(productId),
-                                variant_id: variantId,
-                                name:       displayName,
-                                price:      productPrice,
-                                image:      productImage,
-                                slug:       productSlug,
-                                quantity:   1
+                                window.DairyCart.addToCart({
+                                    id: parseInt(productId),
+                                    variant_id: variantId,
+                                    name: displayName,
+                                    price: productPrice,
+                                    image: productImage,
+                                    slug: productSlug,
+                                    quantity: 1
+                                });
                             });
-                        });
-                    });
+                        }
 
-                    // Wishlist buttons
-                    document.querySelectorAll('.wishlist-btn').forEach(btn => {
-                        btn.addEventListener('click', function() {
-                            // Find the parent card (article element)
-                            const card = this.closest('article.tb-card');
-                            if (!card) {
-                                console.error('Card not found for wishlist button:', this);
-                                return;
-                            }
+                        // Wishlist button
+                        var wishlistBtn = card.querySelector('.wishlist-btn');
+                        if (wishlistBtn && !wishlistBtn.dataset.listenerAttached) {
+                            wishlistBtn.dataset.listenerAttached = 'true';
+                            wishlistBtn.addEventListener('click', function(e) {
+                                e.stopPropagation();
+                                const parentCard = this.closest('article.tb-card');
+                                if (!parentCard) {
+                                    console.error('Card not found for wishlist button:', this);
+                                    return;
+                                }
 
-                            const productId = parseInt(card.getAttribute('data-product-id'));
-                            const product = {
-                                id: productId,
-                                name: card.getAttribute('data-product-name'),
-                                price: parseFloat(card.getAttribute('data-product-price')),
-                                image: card.getAttribute('data-product-image'),
-                                slug: card.getAttribute('data-product-slug')
-                            };
+                                const productId = parseInt(parentCard.getAttribute('data-product-id'));
+                                const product = {
+                                    id: productId,
+                                    name: parentCard.getAttribute('data-product-name'),
+                                    price: parseFloat(parentCard.getAttribute('data-product-price')),
+                                    image: parentCard.getAttribute('data-product-image'),
+                                    slug: parentCard.getAttribute('data-product-slug')
+                                };
 
-                            const isAdded = window.DairyCart.toggleWishlist(product);
-                            const icon = this.querySelector('i');
-                            if (icon) {
-                                icon.className = isAdded ? 'fa-solid fa-heart' : 'fa-regular fa-heart';
-                            }
-                        });
-                    });
+                                const isAdded = window.DairyCart.toggleWishlist(product);
+                                const icon = this.querySelector('i');
+                                if (icon) {
+                                    icon.className = isAdded ? 'fa-solid fa-heart' : 'fa-regular fa-heart';
+                                }
+                            });
+                        }
+                    }
+
+                    // Attach listeners to all cards (including clones)
+                    document.querySelectorAll('.tb-card').forEach(attachCardListeners);
 
                     // Update wishlist button states on page load
-                    document.querySelectorAll('.wishlist-btn').forEach(btn => {
+                    document.querySelectorAll('.wishlist-btn').forEach(function(btn) {
                         const productId = parseInt(btn.dataset.productId);
                         if (window.DairyCart.isInWishlist(productId)) {
                             const icon = btn.querySelector('i');
@@ -2232,6 +2322,55 @@
             </div>
         </div>
     </section>
+
+    <!--- about section -->
+    @if ($aboutSection)
+        <section class="tb-abintro-sec" id="tbAbIntroSec">
+            <div class="container">
+                <div class="tb-abintro-wrap">
+                    <!-- LEFT CONTENT -->
+                    <div class="tb-abintro-left">
+                        @if ($aboutSection->kicker)
+                            <span class="tb-abintro-kicker">{{ $aboutSection->kicker }}</span>
+                        @endif
+                        <h2>{{ $aboutSection->title }}</h2>
+                        <p>{{ $aboutSection->description }}</p>
+                        @if ($aboutSection->button_text && $aboutSection->button_link)
+                            <a href="{{ $aboutSection->button_link }}" class="tb-abintro-btn">
+                                {{ $aboutSection->button_text }}
+                            </a>
+                        @endif
+                        @if ($aboutSection->mini_items && count($aboutSection->mini_items) > 0)
+                            <div class="tb-abintro-mini">
+                                @foreach ($aboutSection->mini_items as $item)
+                                    <div class="tb-abintro-mini-item">
+                                        <strong>{{ $item['title'] ?? '' }}</strong>
+                                        <span>{{ $item['text'] ?? '' }}</span>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @endif
+                    </div>
+                    <!-- RIGHT IMAGE -->
+                    <div class="tb-abintro-right">
+                        <div class="tb-abintro-img"
+                            @if ($aboutSection->image) style="background-image: url('{{ asset($aboutSection->image) }}');" @endif
+                            aria-label="About image"></div>
+                        @if ($aboutSection->badge_rating || $aboutSection->badge_text)
+                            <div class="tb-abintro-badge">
+                                @if ($aboutSection->badge_rating)
+                                    <strong><i class="fa-solid fa-star"></i> {{ $aboutSection->badge_rating }}</strong>
+                                @endif
+                                @if ($aboutSection->badge_text)
+                                    <span>{{ $aboutSection->badge_text }}</span>
+                                @endif
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            </div>
+        </section>
+    @endif
 @endsection
 @push('styles')
     <style>
