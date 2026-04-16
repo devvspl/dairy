@@ -1323,6 +1323,8 @@
 
                 var currentIndex = 0;
                 var isTransitioning = false;
+                var autoScrollTimer = null;
+                var autoScrollInterval = 3500; // Auto-scroll every 3.5 seconds
 
                 // Clone all cards and append them for infinite loop
                 originalCards.forEach(function(card) {
@@ -1388,8 +1390,31 @@
                     slide(currentIndex - 1, true);
                 }
 
-                btnPrev && btnPrev.addEventListener('click', goPrev);
-                btnNext && btnNext.addEventListener('click', goNext);
+                function startAutoScroll() {
+                    stopAutoScroll();
+                    autoScrollTimer = setInterval(goNext, autoScrollInterval);
+                }
+
+                function stopAutoScroll() {
+                    if (autoScrollTimer) {
+                        clearInterval(autoScrollTimer);
+                        autoScrollTimer = null;
+                    }
+                }
+
+                btnPrev && btnPrev.addEventListener('click', function() {
+                    goPrev();
+                    startAutoScroll(); // Restart auto-scroll after manual interaction
+                });
+
+                btnNext && btnNext.addEventListener('click', function() {
+                    goNext();
+                    startAutoScroll(); // Restart auto-scroll after manual interaction
+                });
+
+                // Pause auto-scroll on hover
+                slider.addEventListener('mouseenter', stopAutoScroll);
+                slider.addEventListener('mouseleave', startAutoScroll);
 
                 // Touch support
                 var touchStartX = 0;
@@ -1397,6 +1422,7 @@
 
                 viewport.addEventListener('touchstart', function(e) {
                     touchStartX = e.touches[0].clientX;
+                    stopAutoScroll();
                 }, {
                     passive: true
                 });
@@ -1412,6 +1438,7 @@
                             goPrev();
                         }
                     }
+                    startAutoScroll(); // Restart auto-scroll after touch interaction
                 });
 
                 window.addEventListener('resize', function() {
@@ -1420,6 +1447,7 @@
 
                 // Initialize
                 slide(0, false);
+                startAutoScroll(); // Start auto-scrolling
             })();
 
             // Cart and Wishlist Event Listeners
