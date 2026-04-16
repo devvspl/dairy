@@ -461,7 +461,7 @@
                     @foreach ($sliders as $index => $slider)
                         <article class="tb-slide {{ $index === 0 ? 'is-active' : '' }}">
                             <div class="tb-slide-content">
-                                <p class="tb-kicker">{{ $slider->kicker }}</p>
+                                {{-- <p class="tb-kicker">{{ $slider->kicker }}</p> --}}
                                 @if ($index === 0)
                                     <h1 class="tb-title">{{ $slider->title }}</h1>
                                 @else
