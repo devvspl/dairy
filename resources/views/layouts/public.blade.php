@@ -176,6 +176,7 @@
         }
 
         .search input::placeholder {
+            font-weight: 700;
             color: #999;
         }
 
@@ -2647,6 +2648,89 @@
                 }, 300);
             }
         });
+    </script>
+
+    <!-- Animated Search Placeholder -->
+    <script>
+        (function() {
+            const searchInput = document.getElementById('searchInput');
+            if (!searchInput) return;
+
+            // Get product names from the page
+            const productCards = document.querySelectorAll('[data-product-name]');
+            const productNames = Array.from(productCards)
+                .map(card => card.getAttribute('data-product-name'))
+                .filter((name, index, self) => name && self.indexOf(name) === index);
+
+            if (productNames.length === 0) return;
+
+            const prefix = 'Search for ';
+            const typingSpeed  = 90;
+            const deletingSpeed = 45;
+            const pauseDuration = 2000;
+
+            let productIndex = 0;
+            let charIndex    = 0;   // tracks full string (prefix + product name)
+            let isDeleting   = false;
+            let isPaused     = false;
+            let timer        = null;
+
+            function fullText() {
+                return prefix + productNames[productIndex];
+            }
+
+            function tick() {
+                if (document.activeElement === searchInput || searchInput.value.length > 0) {
+                    timer = setTimeout(tick, 500);
+                    return;
+                }
+
+                if (isPaused) {
+                    isPaused = false;
+                    timer = setTimeout(tick, pauseDuration);
+                    return;
+                }
+
+                const text = fullText();
+
+                if (!isDeleting) {
+                    charIndex++;
+                    searchInput.placeholder = text.substring(0, charIndex);
+
+                    if (charIndex === text.length) {
+                        isPaused  = true;
+                        isDeleting = true;
+                    }
+                    timer = setTimeout(tick, typingSpeed);
+                } else {
+                    charIndex--;
+                    searchInput.placeholder = text.substring(0, charIndex);
+
+                    // Stop deleting once we've cleared the product name (keep prefix visible briefly)
+                    if (charIndex === 0) {
+                        isDeleting   = false;
+                        productIndex = (productIndex + 1) % productNames.length;
+                    }
+                    timer = setTimeout(tick, deletingSpeed);
+                }
+            }
+
+            timer = setTimeout(tick, 1200);
+
+            searchInput.addEventListener('focus', function() {
+                clearTimeout(timer);
+                searchInput.placeholder = 'Search products...';
+            });
+
+            searchInput.addEventListener('blur', function() {
+                if (searchInput.value.length === 0) {
+                    charIndex    = 0;
+                    isDeleting   = false;
+                    isPaused     = false;
+                    timer = setTimeout(tick, 600);
+                }
+            });
+        })();
     </script>
 </body>
 

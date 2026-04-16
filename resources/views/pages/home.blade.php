@@ -447,6 +447,12 @@
                     height: 50px;
                 }
             }
+
+            @media (max-width: 768px) {
+                .mm-done {
+                    display: none !important;
+                }
+            }
         </style>
 
         <style>
@@ -461,13 +467,13 @@
                     @foreach ($sliders as $index => $slider)
                         <article class="tb-slide {{ $index === 0 ? 'is-active' : '' }}">
                             <div class="tb-slide-content">
-                                {{-- <p class="tb-kicker">{{ $slider->kicker }}</p> --}}
+                                <p class="tb-kicker mm-done">{{ $slider->kicker }}</p>
                                 @if ($index === 0)
                                     <h1 class="tb-title">{{ $slider->title }}</h1>
                                 @else
                                     <h2 class="tb-title">{{ $slider->title }}</h2>
                                 @endif
-                                {{-- <p class="tb-subtitle">{{ $slider->subtitle }}</p> --}}
+                                <p class="tb-subtitle mm-done">{{ $slider->subtitle }}</p>
                                 <div class="tb-cta">
                                     <a class="tb-btn" href="{{ $slider->button_link }}">{{ $slider->button_text }}</a>
                                     <a class="tb-link" href="{{ $slider->link_url }}">{{ $slider->link_text }}</a>
@@ -963,9 +969,9 @@
             .tb-products {
                 /* padding: 40px 0 50px; */
                 /* background:
-                                    radial-gradient(circle at 15% 15%, rgba(241, 204, 36, 0.10), transparent 55%),
-                                    radial-gradient(circle at 85% 75%, rgba(47, 74, 30, 0.08), transparent 60%),
-                                    #fff; */
+                                            radial-gradient(circle at 15% 15%, rgba(241, 204, 36, 0.10), transparent 55%),
+                                            radial-gradient(circle at 85% 75%, rgba(47, 74, 30, 0.08), transparent 60%),
+                                            #fff; */
                 margin: 20px 0px;
             }
 
