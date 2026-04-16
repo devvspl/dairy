@@ -274,7 +274,7 @@
                 }
 
                 .tb-title {
-                    font-size: 20px;
+                    font-size: 16px;
                 }
 
                 .tb-subtitle {
