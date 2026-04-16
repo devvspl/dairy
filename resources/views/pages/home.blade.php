@@ -467,7 +467,7 @@
                                 @else
                                     <h2 class="tb-title">{{ $slider->title }}</h2>
                                 @endif
-                                <p class="tb-subtitle">{{ $slider->subtitle }}</p>
+                                {{-- <p class="tb-subtitle">{{ $slider->subtitle }}</p> --}}
                                 <div class="tb-cta">
                                     <a class="tb-btn" href="{{ $slider->button_link }}">{{ $slider->button_text }}</a>
                                     <a class="tb-link" href="{{ $slider->link_url }}">{{ $slider->link_text }}</a>
