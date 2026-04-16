@@ -1748,7 +1748,8 @@
         <div class="container">
             <div class="tb-why-head">
                 <div>
-                    <h2>Why People Choose Us</h2>
+                    {{-- <h2>Why People Choose Us</h2> --}}
+                    <h2>Why Us?</h2>
                     <p>Clean ingredients, honest sourcing, and quality you can trust.</p>
                 </div>
                 <a href="{{ route('about') }}" class="tb-why-cta">Learn More</a>
