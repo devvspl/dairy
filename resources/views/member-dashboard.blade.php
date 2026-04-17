@@ -383,26 +383,60 @@
                                 @endphp
                                 @if($withExtra->count() > 0)
                                 <div class="mb-3 space-y-1.5">
-                                    <p class="text-[10px] font-semibold mb-1.5" style="color:var(--muted);">Extra milk scheduled — tap Remove to cancel:</p>
+                                    <p class="text-[10px] font-semibold mb-1.5" style="color:var(--muted);">Extra milk scheduled — adjust or remove:</p>
                                     @foreach($withExtra as $extraLog)
-                                    <div class="flex items-center justify-between px-3 py-2 rounded-lg" style="background:rgba(47,74,30,0.04);border:1px solid rgba(47,74,30,0.12);">
-                                        <div class="flex items-center gap-2">
-                                            <i class="fa-solid fa-droplet text-xs" style="color:var(--green);"></i>
-                                            <span class="text-xs font-semibold" style="color:var(--text);">{{ $extraLog->delivery_date->format('d M Y') }}</span>
-                                            <span class="text-[10px] px-1.5 py-0.5 rounded-full font-semibold" style="background:rgba(47,74,30,0.1);color:var(--green);">
-                                                {{ number_format($extraLog->quantity_delivered, 0) }}L
-                                                <span style="color:var(--muted);">(+{{ number_format($extraLog->quantity_delivered - $baseQtyForExtra, 0) }}L)</span>
-                                            </span>
+                                    @php $extraAdded = $extraLog->quantity_delivered - $baseQtyForExtra; @endphp
+                                    <div class="rounded-xl border p-3" style="border-color:rgba(47,74,30,0.15); background:rgba(47,74,30,0.03);">
+                                        {{-- Date + current qty --}}
+                                        <div class="flex items-center justify-between mb-2.5">
+                                            <div class="flex items-center gap-2">
+                                                <i class="fa-solid fa-calendar-day text-xs" style="color:var(--green);"></i>
+                                                <span class="text-xs font-bold" style="color:var(--text);">{{ $extraLog->delivery_date->format('d M Y') }}</span>
+                                                <span class="text-[10px] px-1.5 py-0.5 rounded-full font-semibold" style="background:rgba(47,74,30,0.1);color:var(--green);">
+                                                    {{ number_format($extraLog->quantity_delivered, 0) }}L total
+                                                </span>
+                                                <span class="text-[10px] font-semibold" style="color:var(--muted);">(base {{ number_format($baseQtyForExtra, 0) }}L + extra {{ number_format($extraAdded, 0) }}L)</span>
+                                            </div>
                                         </div>
-                                        <form method="POST" action="{{ route('wallet.extra.remove', $ws->id) }}">
-                                            @csrf @method('DELETE')
-                                            <input type="hidden" name="date" value="{{ $extraLog->delivery_date->format('Y-m-d') }}">
-                                            <button type="submit" class="text-[10px] font-semibold px-2.5 py-1 rounded-lg transition-colors"
-                                                style="background:rgba(220,38,38,0.08);color:#dc2626;border:1px solid rgba(220,38,38,0.2);"
-                                                onclick="return confirm('Remove extra milk for {{ $extraLog->delivery_date->format('d M Y') }}?')">
-                                                <i class="fa-solid fa-xmark mr-0.5"></i>Remove
-                                            </button>
-                                        </form>
+                                        {{-- Adjust row --}}
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-[10px] font-semibold flex-shrink-0" style="color:var(--muted);">Set total:</span>
+                                            <form method="POST" action="{{ route('wallet.extra.adjust', $ws->id) }}" class="flex items-center gap-1.5 flex-1">
+                                                @csrf @method('PATCH')
+                                                <input type="hidden" name="date" value="{{ $extraLog->delivery_date->format('Y-m-d') }}">
+                                                <div class="flex items-center border-2 rounded-xl overflow-hidden" style="border-color:var(--border);">
+                                                    <button type="button"
+                                                        onclick="const i=this.nextElementSibling; const min=parseInt(i.dataset.min); if(parseInt(i.value)>min) i.value=parseInt(i.value)-1;"
+                                                        class="w-8 h-8 flex items-center justify-center font-bold text-base hover:bg-gray-100 transition-colors flex-shrink-0"
+                                                        style="color:var(--green);">−</button>
+                                                    <input type="number" name="new_qty"
+                                                        value="{{ (int)$extraLog->quantity_delivered }}"
+                                                        min="{{ (int)$baseQtyForExtra }}" max="50" step="1"
+                                                        data-min="{{ (int)$baseQtyForExtra }}"
+                                                        class="w-10 text-center text-sm font-bold border-0 focus:ring-0 focus:outline-none"
+                                                        style="color:var(--text);">
+                                                    <button type="button"
+                                                        onclick="const i=this.previousElementSibling; if(parseInt(i.value)<50) i.value=parseInt(i.value)+1;"
+                                                        class="w-8 h-8 flex items-center justify-center font-bold text-base hover:bg-gray-100 transition-colors flex-shrink-0"
+                                                        style="color:var(--green);">+</button>
+                                                </div>
+                                                <span class="text-[10px]" style="color:var(--muted);">L</span>
+                                                <button type="submit" class="px-3 py-1.5 rounded-lg text-[11px] font-bold transition-colors flex-shrink-0"
+                                                    style="background:rgba(47,74,30,0.1);color:var(--green);border:1px solid rgba(47,74,30,0.2);">
+                                                    <i class="fa-solid fa-check mr-0.5"></i>Update
+                                                </button>
+                                            </form>
+                                            {{-- Remove all extra --}}
+                                            <form method="POST" action="{{ route('wallet.extra.remove', $ws->id) }}" class="flex-shrink-0">
+                                                @csrf @method('DELETE')
+                                                <input type="hidden" name="date" value="{{ $extraLog->delivery_date->format('Y-m-d') }}">
+                                                <button type="submit" class="px-3 py-1.5 rounded-lg text-[11px] font-bold transition-colors"
+                                                    style="background:rgba(220,38,38,0.08);color:#dc2626;border:1px solid rgba(220,38,38,0.2);"
+                                                    onclick="return confirm('Reset to base {{ number_format($baseQtyForExtra, 0) }}L for {{ $extraLog->delivery_date->format('d M Y') }}?')">
+                                                    <i class="fa-solid fa-xmark mr-0.5"></i>Reset
+                                                </button>
+                                            </form>
+                                        </div>
                                     </div>
                                     @endforeach
                                 </div>

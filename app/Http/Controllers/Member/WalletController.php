@@ -310,8 +310,53 @@ class WalletController extends Controller
     }
 
     /** DELETE /wallet/{subscription}/extra — remove extra milk for a pending day */
-    public function removeExtra(Request $request, UserSubscription $subscription)
+    public function adjustExtra(Request $request, UserSubscription $subscription)
     {
+        $this->authorizeSubscription($subscription);
+
+        $data = $request->validate([
+            'date'    => 'required|date|after:today',
+            'new_qty' => 'required|numeric|min:1|max:50',
+        ]);
+
+        $settings = $subscription->deliverySettings;
+        $baseQty  = $settings ? $settings->totalQtyPerDay() : (float)($subscription->quantity_per_day ?? 1);
+        $newQty   = (float) $data['new_qty'];
+
+        if ($newQty < $baseQty) {
+            return redirect()->route('member.dashboard')
+                ->with('error', 'Quantity cannot be less than your base daily quantity (' . $baseQty . 'L).');
+        }
+
+        $log = DeliveryLog::where('user_subscription_id', $subscription->id)
+            ->whereDate('delivery_date', $data['date'])
+            ->where('status', 'pending')
+            ->first();
+
+        if (!$log) {
+            return redirect()->route('member.dashboard')->with('error', 'No pending delivery found for that date.');
+        }
+
+        $oldQty = (float) $log->quantity_delivered;
+        $log->update([
+            'quantity_delivered' => $newQty,
+            'notes'              => ($log->notes ? $log->notes . ' | ' : '') . "Quantity adjusted to {$newQty}L by member",
+        ]);
+
+        SubscriptionChangeLog::record(
+            $subscription->id,
+            auth()->id(),
+            'extra_milk_adjusted',
+            ['date' => $data['date'], 'quantity' => $oldQty],
+            ['date' => $data['date'], 'quantity' => $newQty],
+            "Delivery quantity adjusted to {$newQty}L for {$data['date']}"
+        );
+
+        return redirect()->route('member.dashboard')
+            ->with('success', 'Delivery updated to ' . $newQty . 'L for ' . \Carbon\Carbon::parse($data['date'])->format('d M Y') . '.');
+    }
+
+    public function removeExtra(Request $request, UserSubscription $subscription)    {
         $this->authorizeSubscription($subscription);
 
         $data = $request->validate([
