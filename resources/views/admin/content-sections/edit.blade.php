@@ -15,7 +15,7 @@
         </a>
     </div>
 
-    <form method="POST" action="{{ route('admin.content-sections.update', $contentSection) }}">
+    <form method="POST" action="{{ route('admin.content-sections.update', $contentSection) }}" enctype="multipart/form-data">
             @csrf @method('PUT')
             <div class="space-y-4">
                 <div>
@@ -50,18 +50,39 @@
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-sm font-medium mb-2" style="color: var(--text);">Image Path</label>
-                        <input type="text" name="image" value="{{ old('image', $contentSection->image) }}" class="w-full px-3 py-2 border rounded-lg" style="border-color: var(--border);">
-                        @error('image')<p class="text-red-600 text-sm mt-1">{{ $message }}</p>@enderror
+                        <label class="block text-sm font-medium mb-2" style="color: var(--text);">Image</label>
+                        @if ($contentSection->image)
+                            <div class="mb-2">
+                                <img src="{{ Str::startsWith($contentSection->image, ['http://', 'https://']) ? $contentSection->image : asset($contentSection->image) }}" class="h-16 rounded object-cover" alt="Current Image">
+                            </div>
+                        @endif
+                        <input type="file" name="image_upload" class="w-full px-3 py-2 border rounded-lg" style="border-color: var(--border);">
                     </div>
                     <div>
+                        <label class="block text-sm font-medium mb-2" style="color: var(--text);">Image Path (Manual)</label>
+                        <input type="text" name="image" value="{{ old('image', $contentSection->image) }}" class="w-full px-3 py-2 border rounded-lg" style="border-color: var(--border);" placeholder="storage/content_sections/...">
+                        @error('image')<p class="text-red-600 text-sm mt-1">{{ $message }}</p>@enderror
+                    </div>
+                    <div class="col-span-2">
                         <label class="block text-sm font-medium mb-2" style="color: var(--text);">Video ID</label>
                         <input type="text" name="video_id" value="{{ old('video_id', $contentSection->video_id) }}" class="w-full px-3 py-2 border rounded-lg" style="border-color: var(--border);">
                         @error('video_id')<p class="text-red-600 text-sm mt-1">{{ $message }}</p>@enderror
                     </div>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium mb-2" style="color: var(--text);">Gallery Images <span class="text-xs font-normal" style="color: var(--muted);">(JSON array)</span></label>
+                    <label class="block text-sm font-medium mb-2" style="color: var(--text);">Gallery Images Upload <span class="text-xs font-normal" style="color: var(--muted);">(Select up to 2 images)</span></label>
+                    @if ($contentSection->gallery_images)
+                        <div class="flex gap-2 mb-2">
+                            @foreach ($contentSection->gallery_images as $gImg)
+                                <img src="{{ Str::startsWith($gImg, ['http://', 'https://']) ? $gImg : asset($gImg) }}" class="h-16 rounded object-cover" alt="Gallery Image">
+                            @endforeach
+                        </div>
+                    @endif
+                    <input type="file" name="gallery_images_upload[]" multiple accept="image/*" class="w-full px-3 py-2 border rounded-lg" style="border-color: var(--border);" onchange="if(this.files.length > 2) { alert('You can only select a maximum of 2 images.'); this.value = ''; }">
+                    @error('gallery_images_upload')<p class="text-red-600 text-sm mt-1">{{ $message }}</p>@enderror
+                    @error('gallery_images_upload.*')<p class="text-red-600 text-sm mt-1">{{ $message }}</p>@enderror
+                    
+                    <label class="block text-sm font-medium mb-2 mt-4" style="color: var(--text);">Gallery Images <span class="text-xs font-normal" style="color: var(--muted);">(JSON array)</span></label>
                     <textarea name="gallery_images" rows="2" class="w-full px-3 py-2 border rounded-lg font-mono text-sm" style="border-color: var(--border);">{{ old('gallery_images', $contentSection->gallery_images ? json_encode($contentSection->gallery_images) : '') }}</textarea>
                     @error('gallery_images')<p class="text-red-600 text-sm mt-1">{{ $message }}</p>@enderror
                 </div>

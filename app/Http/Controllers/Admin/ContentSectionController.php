@@ -42,6 +42,9 @@ class ContentSectionController extends Controller
             'buttons' => ['nullable', 'string'],
             'image' => ['nullable', 'string', 'max:255'],
             'video_id' => ['nullable', 'string', 'max:255'],
+            'image_upload' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif,svg,webp', 'max:2048'],
+            'gallery_images_upload' => ['nullable', 'array', 'max:2'],
+            'gallery_images_upload.*' => ['image', 'mimes:jpeg,png,jpg,gif,svg,webp', 'max:2048'],
             'gallery_images' => ['nullable', 'string'],
             'meta' => ['nullable', 'string'],
             'is_active' => ['boolean'],
@@ -57,6 +60,25 @@ class ContentSectionController extends Controller
             } else {
                 $validated[$field] = null;
             }
+        }
+
+        if ($request->hasFile('image_upload')) {
+            $imagePath = $request->file('image_upload')->store('content_sections', 'public');
+            $validated['image'] = 'storage/' . $imagePath;
+        }
+
+        if ($request->hasFile('gallery_images_upload')) {
+            $galleryPaths = [];
+            foreach ($request->file('gallery_images_upload') as $file) {
+                $path = $file->store('content_sections', 'public');
+                $galleryPaths[] = 'storage/' . $path;
+            }
+            $existing = is_array($validated['gallery_images']) ? $validated['gallery_images'] : [];
+            $validated['gallery_images'] = array_slice(array_merge($existing, $galleryPaths), -2);
+        }
+
+        if (is_array($validated['gallery_images'])) {
+            $validated['gallery_images'] = array_slice($validated['gallery_images'], 0, 2);
         }
 
         ContentSection::create($validated);
@@ -85,6 +107,9 @@ class ContentSectionController extends Controller
             'buttons' => ['nullable', 'string'],
             'image' => ['nullable', 'string', 'max:255'],
             'video_id' => ['nullable', 'string', 'max:255'],
+            'image_upload' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif,svg,webp', 'max:2048'],
+            'gallery_images_upload' => ['nullable', 'array', 'max:2'],
+            'gallery_images_upload.*' => ['image', 'mimes:jpeg,png,jpg,gif,svg,webp', 'max:2048'],
             'gallery_images' => ['nullable', 'string'],
             'meta' => ['nullable', 'string'],
             'is_active' => ['boolean'],
@@ -100,6 +125,25 @@ class ContentSectionController extends Controller
             } else {
                 $validated[$field] = null;
             }
+        }
+
+        if ($request->hasFile('image_upload')) {
+            $imagePath = $request->file('image_upload')->store('content_sections', 'public');
+            $validated['image'] = 'storage/' . $imagePath;
+        }
+
+        if ($request->hasFile('gallery_images_upload')) {
+            $galleryPaths = [];
+            foreach ($request->file('gallery_images_upload') as $file) {
+                $path = $file->store('content_sections', 'public');
+                $galleryPaths[] = 'storage/' . $path;
+            }
+            $existing = is_array($validated['gallery_images']) ? $validated['gallery_images'] : [];
+            $validated['gallery_images'] = array_slice(array_merge($existing, $galleryPaths), -2);
+        }
+
+        if (is_array($validated['gallery_images'])) {
+            $validated['gallery_images'] = array_slice($validated['gallery_images'], 0, 2);
         }
 
         $contentSection->update($validated);

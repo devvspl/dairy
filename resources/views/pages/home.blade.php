@@ -2235,7 +2235,8 @@
                     <!-- RIGHT VIDEO -->
                     <div class="tb-ms-right">
                         <div class="tb-ms-video" role="button" tabindex="0" aria-label="Play video"
-                            data-youtube="{{ $videoSection->video_id }}">
+                            data-youtube="{{ $videoSection->video_id }}"
+                            @if($videoSection->image) style="background: radial-gradient(circle at 30% 30%, rgba(241, 204, 36, .28), transparent 60%), radial-gradient(circle at 70% 70%, rgba(47, 74, 30, .28), transparent 60%), url('{{ Str::startsWith($videoSection->image, ['http://', 'https://']) ? $videoSection->image : asset($videoSection->image) }}'); background-size: cover; background-position: center;" @endif>
                             <div class="tb-ms-overlay"></div>
                             <!-- ghost text -->
                             <div class="tb-ms-ghost">{{ $videoSection->meta['ghost_text'] ?? 'OUR STORY' }}</div>
