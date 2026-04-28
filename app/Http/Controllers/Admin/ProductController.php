@@ -199,7 +199,6 @@ class ProductController extends Controller
 
         $product->update($validated);
 
-        // Sync variants
         $this->syncVariants($product, $request->input('variants_data'));
 
         return redirect()->route('admin.products.index')->with('success', 'Product updated successfully!');
