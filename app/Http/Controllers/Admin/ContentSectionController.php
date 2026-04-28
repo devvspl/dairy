@@ -14,10 +14,11 @@ class ContentSectionController extends Controller
 
         if ($request->has('search')) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->where('section_key', 'like', "%{$search}%")
-                  ->orWhere('title', 'like', "%{$search}%")
-                  ->orWhere('kicker', 'like', "%{$search}%");
+            $query->where(function ($q) use ($search) {
+                $q
+                    ->where('section_key', 'like', "%{$search}%")
+                    ->orWhere('title', 'like', "%{$search}%")
+                    ->orWhere('kicker', 'like', "%{$search}%");
             });
         }
 
@@ -51,7 +52,7 @@ class ContentSectionController extends Controller
         ]);
 
         $validated['is_active'] = $request->has('is_active');
-        
+
         // Convert JSON strings to arrays
         foreach (['points', 'buttons', 'gallery_images', 'meta'] as $field) {
             if (!empty($validated[$field])) {
@@ -63,15 +64,18 @@ class ContentSectionController extends Controller
         }
 
         if ($request->hasFile('image_upload')) {
-            $imagePath = $request->file('image_upload')->store('content_sections', 'public');
-            $validated['image'] = 'storage/' . $imagePath;
+            $file = $request->file('image_upload');
+            $filename = time() . '_' . $file->getClientOriginalName();
+            $file->move(public_path('content_sections'), $filename);
+            $validated['image'] = 'content_sections/' . $filename;
         }
 
         if ($request->hasFile('gallery_images_upload')) {
             $galleryPaths = [];
             foreach ($request->file('gallery_images_upload') as $file) {
-                $path = $file->store('content_sections', 'public');
-                $galleryPaths[] = 'storage/' . $path;
+                $filename = time() . '_' . uniqid() . '_' . $file->getClientOriginalName();
+                $file->move(public_path('content_sections'), $filename);
+                $galleryPaths[] = 'content_sections/' . $filename;
             }
             $existing = is_array($validated['gallery_images']) ? $validated['gallery_images'] : [];
             $validated['gallery_images'] = array_slice(array_merge($existing, $galleryPaths), -2);
@@ -116,7 +120,7 @@ class ContentSectionController extends Controller
         ]);
 
         $validated['is_active'] = $request->has('is_active');
-        
+
         // Convert JSON strings to arrays
         foreach (['points', 'buttons', 'gallery_images', 'meta'] as $field) {
             if (!empty($validated[$field])) {
@@ -126,17 +130,19 @@ class ContentSectionController extends Controller
                 $validated[$field] = null;
             }
         }
-
         if ($request->hasFile('image_upload')) {
-            $imagePath = $request->file('image_upload')->store('content_sections', 'public');
-            $validated['image'] = 'storage/' . $imagePath;
+            $file = $request->file('image_upload');
+            $filename = time() . '_' . $file->getClientOriginalName();
+            $file->move(public_path('content_sections'), $filename);
+            $validated['image'] = 'content_sections/' . $filename;
         }
 
         if ($request->hasFile('gallery_images_upload')) {
             $galleryPaths = [];
             foreach ($request->file('gallery_images_upload') as $file) {
-                $path = $file->store('content_sections', 'public');
-                $galleryPaths[] = 'storage/' . $path;
+                $filename = time() . '_' . uniqid() . '_' . $file->getClientOriginalName();
+                $file->move(public_path('content_sections'), $filename);
+                $galleryPaths[] = 'content_sections/' . $filename;
             }
             $existing = is_array($validated['gallery_images']) ? $validated['gallery_images'] : [];
             $validated['gallery_images'] = array_slice(array_merge($existing, $galleryPaths), -2);
