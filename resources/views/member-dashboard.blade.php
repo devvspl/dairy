@@ -919,7 +919,7 @@
 
                 {{-- Share buttons --}}
                 @php
-                    $referralLink = route('register', ['ref' => $referralCode->code]);
+                    $referralLink = url('/member/register?ref=' . $referralCode->code);
                     $shareText = urlencode("Join Nulac and get fresh milk delivered daily! Use my referral code {$referralCode->code} when signing up. 🥛\n{$referralLink}");
                 @endphp
                 <div class="grid grid-cols-2 gap-3 mb-4">

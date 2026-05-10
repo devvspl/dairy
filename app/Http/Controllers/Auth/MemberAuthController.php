@@ -3,10 +3,14 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\ReferralCode;
+use App\Models\ReferralUsage;
 use App\Models\User;
+use App\Models\UserSubscription;
 use App\Services\OtpService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class MemberAuthController extends Controller
@@ -195,10 +199,11 @@ class MemberAuthController extends Controller
     public function register(Request $request)
     {
         $validator = \Validator::make($request->all(), [
-            'name'  => 'required|string|max:255',
-            'phone' => 'required|digits:10|unique:users,phone',
-            'email' => 'nullable|email|unique:users,email',
-            'otp'   => 'nullable|digits:6'
+            'name'          => 'required|string|max:255',
+            'phone'         => 'required|digits:10|unique:users,phone',
+            'email'         => 'nullable|email|unique:users,email',
+            'otp'           => 'nullable|digits:6',
+            'referral_code' => 'nullable|string|max:20',
         ]);
 
         if ($validator->fails()) {
@@ -251,21 +256,59 @@ class MemberAuthController extends Controller
             }
         }
 
-        // Create user
-        $user = User::create([
-            'name' => $request->name,
-            'phone' => $request->phone,
-            'email' => $request->email,
-            'user_type' => 'Member',
-            'mobile_verified_at' => now(),
-            'otp_verified_at' => now(),
-        ]);
+        DB::transaction(function () use ($request) {
+            // Create user
+            $user = User::create([
+                'name'                => $request->name,
+                'phone'               => $request->phone,
+                'email'               => $request->email,
+                'user_type'           => 'Member',
+                'mobile_verified_at'  => now(),
+                'otp_verified_at'     => now(),
+            ]);
 
-        // Clear session
-        session()->forget(['register_phone', 'register_otp', 'register_otp_expires']);
+            // Process referral code if provided
+            $referralCodeStr = strtoupper(trim($request->referral_code ?? ''));
+            if ($referralCodeStr) {
+                $referralCode = ReferralCode::where('code', $referralCodeStr)
+                    ->where('is_active', true)
+                    ->first();
 
-        // Login user
-        Auth::login($user, true);
+                if ($referralCode && $referralCode->user_id !== $user->id) {
+                    ReferralUsage::create([
+                        'referral_code_id' => $referralCode->id,
+                        'referred_user_id' => $user->id,
+                        'referrer_reward'  => 100.00,
+                        'referee_reward'   => 0,
+                        'status'           => 'completed',
+                        'completed_at'     => now(),
+                    ]);
+
+                    $referralCode->increment('total_referrals');
+                    $referralCode->increment('total_earnings', 100.00);
+
+                    // Credit ₹100 to referrer's active wallet
+                    $referrerSub = UserSubscription::where('user_id', $referralCode->user_id)
+                        ->where('status', 'active')
+                        ->whereNotNull('wallet_balance')
+                        ->latest()
+                        ->first();
+
+                    if ($referrerSub) {
+                        $referrerSub->creditWallet(
+                            100.00,
+                            '🎉 Referral bonus — ' . $user->name . ' joined using your code'
+                        );
+                    }
+                }
+            }
+
+            // Clear session
+            session()->forget(['register_phone', 'register_otp', 'register_otp_expires']);
+
+            // Login user
+            Auth::login($user, true);
+        });
 
         $redirect = session()->pull('url.intended_member', route('member.dashboard'));
 

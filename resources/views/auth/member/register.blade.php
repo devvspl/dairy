@@ -78,6 +78,23 @@
         >
     </div>
 
+    <div class="mb-3 sm:mb-4">
+        <label for="referral_code" class="block text-xs font-medium mb-1 sm:mb-1.5" style="color: var(--text-dark);">
+            <i class="fa-solid fa-gift mr-1" style="color: var(--primary-green);"></i>
+            Referral Code <span class="text-xs" style="color: var(--text-muted);">(Optional)</span>
+        </label>
+        <input
+            type="text"
+            id="referral_code"
+            maxlength="20"
+            class="w-full px-2.5 sm:px-3 py-2 sm:py-2.5 text-xs sm:text-sm border rounded-lg transition-all uppercase tracking-widest"
+            style="border-color: var(--border-color); color: var(--text-dark);"
+            placeholder="Enter referral code"
+            value="{{ request('ref') }}"
+        >
+        <p class="mt-0.5 text-[10px]" style="color: var(--text-muted);">Have a friend's code? Enter it to give them ₹100 bonus.</p>
+    </div>
+
     <button 
         type="button"
         id="sendOtpBtn"
@@ -220,7 +237,8 @@ function sendRegisterOtp() {
         return;
     }
     
-    registrationData = { name, phone, email };
+    const referralCode = document.getElementById('referral_code').value.trim().toUpperCase();
+    registrationData = { name, phone, email, referral_code: referralCode };
     
     const btn = document.getElementById('sendOtpBtn');
     const btnText = document.getElementById('sendOtpText');
@@ -285,6 +303,11 @@ function completeRegistrationWithoutOtp() {
         payload.email = registrationData.email;
     }
     
+    // Include referral code if provided
+    if (registrationData.referral_code) {
+        payload.referral_code = registrationData.referral_code;
+    }
+    
     fetch('{{ route('member.register.submit') }}', {
         method: 'POST',
         headers: {
@@ -339,7 +362,8 @@ function completeRegistration() {
             name: registrationData.name,
             phone: registrationData.phone,
             email: registrationData.email,
-            otp: otp
+            otp: otp,
+            referral_code: registrationData.referral_code || ''
         })
     })
     .then(response => response.json().then(data => ({ ok: response.ok, data })))
