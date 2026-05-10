@@ -79,6 +79,13 @@
                     class="tab-btn flex-1 py-3.5 text-sm font-semibold transition-all flex items-center justify-center gap-2">
                     <i class="fa-solid fa-receipt"></i><span>History</span>
                 </button>
+                <button onclick="switchTab('referral')" id="tab-referral"
+                    class="tab-btn flex-1 py-3.5 text-sm font-semibold transition-all flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-gift"></i><span>Refer</span>
+                    @if($referralCode->total_referrals > 0)
+                        <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style="background:var(--green);color:#fff;">{{ $referralCode->total_referrals }}</span>
+                    @endif
+                </button>
             </div>
 
             {{-- ===== TAB: WALLET ===== --}}
@@ -865,6 +872,126 @@
                 @endif
             </div>
 
+            {{-- ===== TAB: REFERRAL ===== --}}
+            <div id="panel-referral" class="tab-panel p-4 lg:p-6 hidden">
+
+                {{-- Header card --}}
+                <div class="rounded-2xl p-5 mb-4 text-center" style="background: linear-gradient(135deg, var(--green) 0%, #3d6b2e 100%);">
+                    <div class="w-14 h-14 rounded-full mx-auto mb-3 flex items-center justify-center" style="background: rgba(255,255,255,0.2);">
+                        <i class="fa-solid fa-gift text-2xl text-white"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-white mb-1">Refer & Earn ₹100</h3>
+                    <p class="text-sm" style="color: rgba(255,255,255,0.8);">Share your code — earn ₹100 wallet credit for every friend who joins</p>
+                </div>
+
+                {{-- Stats row --}}
+                <div class="grid grid-cols-3 gap-3 mb-4">
+                    <div class="rounded-xl p-3 text-center border" style="border-color: var(--border); background: var(--surface);">
+                        <p class="text-xl font-bold" style="color: var(--green);">{{ $referralCode->total_referrals }}</p>
+                        <p class="text-[10px] mt-0.5" style="color: var(--muted);">Friends Joined</p>
+                    </div>
+                    <div class="rounded-xl p-3 text-center border" style="border-color: var(--border); background: var(--surface);">
+                        <p class="text-xl font-bold" style="color: var(--green);">₹{{ number_format($referralCode->total_earnings, 0) }}</p>
+                        <p class="text-[10px] mt-0.5" style="color: var(--muted);">Total Earned</p>
+                    </div>
+                    <div class="rounded-xl p-3 text-center border" style="border-color: var(--border); background: var(--surface);">
+                        <p class="text-xl font-bold" style="color: var(--green);">₹100</p>
+                        <p class="text-[10px] mt-0.5" style="color: var(--muted);">Per Referral</p>
+                    </div>
+                </div>
+
+                {{-- Your code --}}
+                <div class="rounded-2xl border-2 p-4 mb-4" style="border-color: var(--green); background: rgba(47,74,30,0.03);">
+                    <p class="text-xs font-semibold mb-2" style="color: var(--muted);">Your Referral Code</p>
+                    <div class="flex items-center gap-3">
+                        <div class="flex-1 px-4 py-3 rounded-xl text-center font-mono text-xl font-bold tracking-widest border-2"
+                            style="border-color: var(--green); color: var(--green); background: #fff; letter-spacing: 0.2em;">
+                            {{ $referralCode->code }}
+                        </div>
+                        <button onclick="copyReferralCode('{{ $referralCode->code }}')"
+                            class="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 transition-all hover:scale-105"
+                            style="background: var(--green); color: #fff;" title="Copy code">
+                            <i class="fa-solid fa-copy text-sm" id="copy-icon"></i>
+                        </button>
+                    </div>
+                    <p class="text-[10px] mt-2 text-center" style="color: var(--muted);">Tap the copy button or share the link below</p>
+                </div>
+
+                {{-- Share buttons --}}
+                @php
+                    $referralLink = route('register', ['ref' => $referralCode->code]);
+                    $shareText = urlencode("Join Nulac and get fresh milk delivered daily! Use my referral code {$referralCode->code} when signing up. 🥛\n{$referralLink}");
+                @endphp
+                <div class="grid grid-cols-2 gap-3 mb-4">
+                    <a href="https://wa.me/?text={{ $shareText }}" target="_blank"
+                        class="flex items-center justify-center gap-2 py-3 rounded-xl font-semibold text-sm transition-all hover:scale-105"
+                        style="background: #25d366; color: #fff;">
+                        <i class="fa-brands fa-whatsapp text-lg"></i> Share on WhatsApp
+                    </a>
+                    <button onclick="copyReferralLink('{{ $referralLink }}')"
+                        class="flex items-center justify-center gap-2 py-3 rounded-xl font-semibold text-sm transition-all hover:scale-105 border-2"
+                        style="border-color: var(--green); color: var(--green); background: #fff;">
+                        <i class="fa-solid fa-link text-sm"></i> Copy Link
+                    </button>
+                </div>
+
+                {{-- How it works --}}
+                <div class="rounded-xl p-4 mb-4" style="background: rgba(47,74,30,0.04); border: 1px solid rgba(47,74,30,0.12);">
+                    <p class="text-xs font-bold mb-3" style="color: var(--text);">How it works</p>
+                    <div class="space-y-2.5">
+                        @foreach([
+                            ['icon' => 'fa-share-nodes', 'text' => 'Share your referral code or link with friends'],
+                            ['icon' => 'fa-user-plus', 'text' => 'Friend signs up using your code'],
+                            ['icon' => 'fa-wallet', 'text' => 'You instantly get ₹100 added to your milk wallet'],
+                        ] as $step)
+                        <div class="flex items-center gap-3">
+                            <div class="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0" style="background: var(--green);">
+                                <i class="fa-solid {{ $step['icon'] }} text-[10px] text-white"></i>
+                            </div>
+                            <p class="text-xs" style="color: var(--text);">{{ $step['text'] }}</p>
+                        </div>
+                        @endforeach
+                    </div>
+                </div>
+
+                {{-- Referral history --}}
+                <div>
+                    <h4 class="text-sm font-bold mb-3" style="color: var(--text);">
+                        <i class="fa-solid fa-users mr-1.5" style="color: var(--green);"></i>Friends Who Joined
+                    </h4>
+                    @if($referralUsages->count() > 0)
+                        <div class="space-y-2">
+                            @foreach($referralUsages as $usage)
+                            <div class="flex items-center justify-between px-4 py-3 rounded-xl border"
+                                style="border-color: var(--border); background: #f0fdf4;">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 font-bold text-sm"
+                                        style="background: rgba(47,74,30,0.12); color: var(--green);">
+                                        {{ strtoupper(substr($usage->referredUser->name ?? '?', 0, 1)) }}
+                                    </div>
+                                    <div>
+                                        <p class="text-xs font-semibold" style="color: var(--text);">{{ $usage->referredUser->name ?? 'Unknown' }}</p>
+                                        <p class="text-[10px]" style="color: var(--muted);">{{ $usage->created_at->format('d M Y') }}</p>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-sm font-bold" style="color: #16a34a;">+₹{{ number_format($usage->referrer_reward, 0) }}</p>
+                                    <span class="text-[10px] px-1.5 py-0.5 rounded-full font-semibold"
+                                        style="background: rgba(22,163,74,0.1); color: #16a34a;">{{ ucfirst($usage->status) }}</span>
+                                </div>
+                            </div>
+                            @endforeach
+                        </div>
+                    @else
+                        <div class="text-center py-8 rounded-xl border" style="border-color: var(--border);">
+                            <i class="fa-solid fa-user-group text-3xl mb-2" style="color: var(--muted);"></i>
+                            <p class="text-sm font-semibold" style="color: var(--text);">No referrals yet</p>
+                            <p class="text-xs mt-1" style="color: var(--muted);">Share your code and start earning!</p>
+                        </div>
+                    @endif
+                </div>
+            </div>
+
         </div>{{-- end tab container --}}
     </div>{{-- end space-y --}}
 
@@ -1271,6 +1398,26 @@
             localStorage.setItem('dashTab', name);
         }
         (function () { switchTab(localStorage.getItem('dashTab') || 'wallet'); })();
+
+        // ── Referral copy helpers ─────────────────────────────────────
+        function copyReferralCode(code) {
+            navigator.clipboard.writeText(code).then(() => {
+                const icon = document.getElementById('copy-icon');
+                if (icon) { icon.className = 'fa-solid fa-check text-sm'; setTimeout(() => icon.className = 'fa-solid fa-copy text-sm', 2000); }
+            }).catch(() => {
+                const el = document.createElement('textarea');
+                el.value = code; document.body.appendChild(el); el.select(); document.execCommand('copy'); document.body.removeChild(el);
+            });
+        }
+        function copyReferralLink(link) {
+            navigator.clipboard.writeText(link).then(() => {
+                alert('Referral link copied!');
+            }).catch(() => {
+                const el = document.createElement('textarea');
+                el.value = link; document.body.appendChild(el); el.select(); document.execCommand('copy'); document.body.removeChild(el);
+                alert('Referral link copied!');
+            });
+        }
 
         // ── Modal state ───────────────────────────────────────────────
         let currentPlanPrice = 0, currentPlanDuration = '', currentPlanId = null;

@@ -87,10 +87,22 @@ class DashboardController extends Controller
         $savedAddresses = $user->deliveryAddresses()->with('location')->get();
         $milkPrices     = \App\Models\MilkPrice::active()->ordered()->get();
 
+        // Referral data
+        $referralCode = \App\Models\ReferralCode::firstOrCreate(
+            ['user_id' => $user->id],
+            ['is_active' => true]
+        );
+        $referralUsages = \App\Models\ReferralUsage::where('referral_code_id', $referralCode->id)
+            ->with('referredUser')
+            ->latest()
+            ->take(10)
+            ->get();
+
         return view('member-dashboard', compact(
             'subscriptionHistory', 'onDemandPlans', 'onDemandSubscriptions',
             'walletSubscription', 'walletCalendarData', 'deliveryCalendarData',
-            'savedAddresses', 'milkPrices'
+            'savedAddresses', 'milkPrices',
+            'referralCode', 'referralUsages'
         ));
     }
 

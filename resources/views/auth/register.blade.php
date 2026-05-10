@@ -136,6 +136,32 @@
             </div>
         </div>
 
+        {{-- Referral Code --}}
+        <div class="mb-6">
+            <label for="referral_code" class="block text-sm font-medium mb-2" style="color: var(--text);">
+                Referral Code <span style="color: var(--muted);">(Optional)</span>
+            </label>
+            <div class="relative">
+                <input
+                    type="text"
+                    id="referral_code"
+                    name="referral_code"
+                    value="{{ old('referral_code', $referralCode ?? '') }}"
+                    placeholder="Enter referral code"
+                    maxlength="20"
+                    class="w-full px-4 py-3 border rounded-lg focus:outline-none transition-all uppercase tracking-widest @error('referral_code') border-red-500 @enderror"
+                    style="border-color: var(--border); color: var(--text);"
+                    onfocus="this.style.borderColor='var(--green)'; this.style.boxShadow='0 0 0 3px rgba(47, 74, 30, 0.1)'"
+                    onblur="this.style.borderColor='var(--border)'; this.style.boxShadow='none'"
+                >
+                <i class="fa-solid fa-gift absolute right-3 top-1/2 -translate-y-1/2 text-sm" style="color: var(--muted);"></i>
+            </div>
+            @error('referral_code')
+                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+            @enderror
+            <p class="mt-1 text-xs" style="color: var(--muted);">Have a friend's referral code? Enter it to give them a ₹100 bonus.</p>
+        </div>
+
         <button 
             type="submit" 
             :disabled="loading"
