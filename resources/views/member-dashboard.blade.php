@@ -1399,23 +1399,54 @@
         }
         (function () { switchTab(localStorage.getItem('dashTab') || 'wallet'); })();
 
+        // ── Referral toast ────────────────────────────────────────────
+        function showReferralToast(msg, type = 'success') {
+            const existing = document.getElementById('referral-toast');
+            if (existing) existing.remove();
+            const toast = document.createElement('div');
+            toast.id = 'referral-toast';
+            const bg   = type === 'success' ? 'var(--green)' : '#dc2626';
+            const icon = type === 'success' ? 'fa-circle-check' : 'fa-circle-xmark';
+            toast.style.cssText = `
+                position:fixed; bottom:88px; left:50%; transform:translateX(-50%) translateY(20px);
+                background:${bg}; color:#fff; padding:10px 18px; border-radius:12px;
+                font-size:13px; font-weight:600; display:flex; align-items:center; gap:8px;
+                box-shadow:0 4px 20px rgba(0,0,0,0.18); z-index:9999;
+                opacity:0; transition:opacity 0.25s ease, transform 0.25s ease;
+                white-space:nowrap; max-width:90vw;
+            `;
+            toast.innerHTML = `<i class="fa-solid ${icon}"></i><span>${msg}</span>`;
+            document.body.appendChild(toast);
+            requestAnimationFrame(() => {
+                toast.style.opacity = '1';
+                toast.style.transform = 'translateX(-50%) translateY(0)';
+            });
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(-50%) translateY(10px)';
+                setTimeout(() => toast.remove(), 300);
+            }, 2500);
+        }
+
         // ── Referral copy helpers ─────────────────────────────────────
         function copyReferralCode(code) {
             navigator.clipboard.writeText(code).then(() => {
                 const icon = document.getElementById('copy-icon');
                 if (icon) { icon.className = 'fa-solid fa-check text-sm'; setTimeout(() => icon.className = 'fa-solid fa-copy text-sm', 2000); }
+                showReferralToast('Referral code copied!');
             }).catch(() => {
                 const el = document.createElement('textarea');
                 el.value = code; document.body.appendChild(el); el.select(); document.execCommand('copy'); document.body.removeChild(el);
+                showReferralToast('Referral code copied!');
             });
         }
         function copyReferralLink(link) {
             navigator.clipboard.writeText(link).then(() => {
-                alert('Referral link copied!');
+                showReferralToast('Referral link copied!');
             }).catch(() => {
                 const el = document.createElement('textarea');
                 el.value = link; document.body.appendChild(el); el.select(); document.execCommand('copy'); document.body.removeChild(el);
-                alert('Referral link copied!');
+                showReferralToast('Referral link copied!');
             });
         }
 
