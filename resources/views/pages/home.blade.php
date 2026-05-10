@@ -67,16 +67,16 @@
             .tb-kicker {
                 margin: 0 0 8px 0;
                 color: var(--green-dark);
-                font-weight: 800;
+                font-weight: 500;
                 letter-spacing: .3px;
                 opacity: .9;
-                font-size: 14px;
+                font-size: 16px;
             }
 
             .tb-title {
                 margin: 0 0 10px 0;
                 color: var(--green-dark);
-                font-weight: 900;
+                font-weight: 700;
                 font-size: 42px;
                 line-height: 1.05;
                 letter-spacing: .2px;
@@ -84,9 +84,9 @@
 
             .tb-subtitle {
                 margin: 0 0 18px 0;
-                color: var(--muted);
-                font-weight: 600;
-                font-size: 16px;
+                color: #000;
+                font-weight: 400;
+                font-size: 18px;
                 line-height: 1.5;
                 max-width: 520px;
             }
@@ -107,7 +107,7 @@
                 text-decoration: none;
                 background: var(--green);
                 color: #fff;
-                font-weight: 900;
+                font-weight: 500;
                 border: 1px solid transparent;
                 transition: 200ms ease;
                 white-space: nowrap;
@@ -120,7 +120,7 @@
 
             .tb-link {
                 text-decoration: none;
-                font-weight: 900;
+                font-weight: 500;
                 color: var(--green-dark);
                 transition: 200ms ease;
                 padding: 10px 4px;
@@ -150,7 +150,7 @@
                 width: 100%;
                 height: 100%;
                 display: block;
-                object-fit: contain;
+                object-fit: cover;
                 border-radius: 18px;
             }
 
@@ -706,7 +706,7 @@
 
             .tb-abintro-kicker {
                 display: inline-block;
-                font-weight: 950;
+                font-weight: 500;
                 letter-spacing: 1px;
                 text-transform: uppercase;
                 font-size: 12px;
@@ -720,15 +720,15 @@
             .tb-abintro-left h2 {
                 margin: 0 0 10px 0;
                 font-size: clamp(28px, 3.2vw, 42px);
-                font-weight: 950;
+                font-weight:700;
                 color: #2a431c;
                 line-height: 1.12;
             }
 
             .tb-abintro-left p {
                 margin: 0 0 16px 0;
-                color: #424242;
-                font-weight: 700;
+                color: #000;
+                font-weight: 400;
                 line-height: 1.75;
                 max-width: 640px;
             }
@@ -740,7 +740,7 @@
                 gap: 10px;
                 padding: 11px 18px;
                 border-radius: 14px;
-                font-weight: 950;
+                font-weight: 500;
                 text-decoration: none;
                 background: #183f79;
                 color: #fff;
@@ -777,15 +777,15 @@
                 align-items: center;
                 gap: 8px;
                 color: #263d18;
-                font-weight: 950;
+                font-weight: 700;
             }
 
             .tb-abintro-mini-item span {
                 display: block;
                 margin-top: 4px;
-                color: #5c6b55;
-                font-weight: 750;
-                font-size: 13px;
+                color: #000;
+                font-weight: 400;
+                font-size: 16px;
             }
 
             .tb-abintro-right {
@@ -827,8 +827,8 @@
                 display: block;
                 margin-top: 3px;
                 color: #5c6b55;
-                font-weight: 750;
-                font-size: 13px;
+                font-weight: 500;
+                font-size: 16px;
             }
 
             @media(max-width:980px) {
@@ -987,14 +987,14 @@
                 margin: 0;
                 font-size: 44px;
                 color: var(--green-dark);
-                font-weight: 950;
+                font-weight: 700;
                 letter-spacing: .2px;
             }
 
             .tb-prod-title p {
                 margin: 8px 0 0 0;
-                color: var(--muted);
-                font-weight: 700;
+                color: #000;
+                font-weight: 400;
             }
 
             .tb-shopmore {
@@ -1132,7 +1132,7 @@
             .tb-name-price h3 {
                 margin: 0;
                 font-size: 16px;
-                font-weight: 800;
+                font-weight: 700;
                 color: var(--green-dark);
                 line-height: 1.25;
             }
@@ -1145,9 +1145,9 @@
 
             .tb-meta {
                 margin: 8px 0 10px;
-                color: var(--muted);
+                color: #000;
                 font-weight: 700;
-                font-size: 13px;
+                font-size: 15px;
             }
 
             .tb-rating {
@@ -1195,7 +1195,7 @@
                 border-radius: 12px;
                 background: #2a431c;
                 color: #fff;
-                font-weight: 950;
+                font-weight: 700;
                 letter-spacing: .6px;
                 cursor: pointer;
                 transition: 200ms ease;
@@ -1608,15 +1608,15 @@
             .tb-why-head h2 {
                 margin: 0;
                 font-size: 38px;
-                font-weight: 950;
+                font-weight: 700;
                 color: #2a431c;
                 letter-spacing: .2px;
             }
 
             .tb-why-head p {
                 margin: 8px 0 0 0;
-                color: var(--muted);
-                font-weight: 700;
+                color: #000;
+                font-weight: 400;
                 max-width: 560px;
             }
 
@@ -1702,8 +1702,8 @@
 
             .tb-why-card h3 {
                 margin: 12px 0 8px 0;
-                font-size: 16px;
-                font-weight: 950;
+                font-size: 18px;
+                font-weight: 700;
                 color: var(--green-dark);
                 position: relative;
                 z-index: 1;
@@ -1711,10 +1711,10 @@
 
             .tb-why-card p {
                 margin: 0;
-                color: #6d6d6d;
-                font-weight: 650;
+                color: #000;
+                font-weight: 400;
                 line-height: 1.55;
-                font-size: 14px;
+                font-size: 16px;
                 position: relative;
                 z-index: 1;
             }
@@ -1795,7 +1795,7 @@
 
             .tb-splitcoll-kicker {
                 display: inline-block;
-                font-weight: 950;
+                font-weight: 500;
                 letter-spacing: 1px;
                 text-transform: uppercase;
                 font-size: 12px;
@@ -1809,15 +1809,15 @@
             .tb-splitcoll-left h2 {
                 margin: 0 0 10px;
                 font-size: clamp(28px, 3.2vw, 42px);
-                font-weight: 950;
+                font-weight: 700;
                 color: #000000;
                 line-height: 1.12;
             }
 
             .tb-splitcoll-left p {
                 margin: 0 0 16px;
-                color: #424242;
-                font-weight: 700;
+                color: #000;
+                font-weight: 400;
                 line-height: 1.75;
                 max-width: 650px;
             }
@@ -1859,7 +1859,7 @@
             }
 
             .tb-splitcoll-point span {
-                font-weight: 750;
+                font-weight: 500;
 
                 line-height: 1.55;
                 font-size: 16px;
@@ -1901,7 +1901,7 @@
                 gap: 10px;
                 padding: 11px 18px;
                 border-radius: 14px;
-                font-weight: 950;
+                font-weight: 500;
                 text-decoration: none;
                 border: 1px solid rgba(0, 0, 0, 0.10);
                 box-shadow: 0 14px 34px rgba(0, 0, 0, 0.10);
@@ -1938,7 +1938,7 @@
                 border: 1px solid rgba(0, 0, 0, 0.10);
                 box-shadow: 0 26px 80px rgba(0, 0, 0, 0.14);
                 background: linear-gradient(180deg, #ffffff, #f7f9f4);
-                padding: 16px;
+                
                 overflow: hidden;
             }
 
@@ -2013,15 +2013,15 @@
             .tb-usps-head h2 {
                 margin: 0;
                 font-size: 38px;
-                font-weight: 950;
+                font-weight: 700;
                 color: #2a431c;
                 letter-spacing: .2px;
             }
 
             .tb-usps-head p {
                 margin: 8px 0 0 0;
-                color: var(--muted);
-                font-weight: 700;
+                color: #000;
+                font-weight: 400;
                 max-width: 720px;
             }
 
@@ -2076,18 +2076,18 @@
 
             .tb-usp-card h3 {
                 margin: 0;
-                font-size: 16px;
-                font-weight: 900;
+                font-size: 18px;
+                font-weight: 700;
                 color: var(--green-dark);
                 letter-spacing: .2px;
             }
 
             .tb-usp-card p {
                 margin: 8px 0 0 0;
-                color: var(--muted);
-                font-weight: 700;
+                color: #000;
+                font-weight: 400;
                 line-height: 1.5;
-                font-size: 14px;
+                font-size: 16px;
             }
 
             .tb-usp-card:hover {
@@ -2268,7 +2268,7 @@
         </section>
     @endif
     <!-- Testimonials Section -->
-    <section class="tb-testimonials" id="tbTestimonials">
+  <!--  <section class="tb-testimonials" id="tbTestimonials">
         <div class="container">
             <div class="tb-testi-head">
                 <h2>What Our Customers Say</h2>
@@ -2292,7 +2292,7 @@
                 @endforeach
             </div>
         </div>
-    </section>
+    </section>-->
     <!-- CTA/Pre-footer Section -->
     @if ($ctaSection)
         <section class="tb-prefooter-cta" id="tbPreFooterCta">
@@ -2428,7 +2428,7 @@
 
         .tb-ms-head h2 {
             font-size: clamp(34px, 4vw, 52px);
-            font-weight: 950;
+            font-weight: 700;
             color: #000000;
             margin: 0 0 6px 0;
             line-height: 1.08;
@@ -2437,7 +2437,7 @@
         .tb-ms-head p {
             margin-top: 10px;
             color: #424242;
-            font-weight: 700;
+            font-weight: 400;
         }
 
         .tb-ms-grid {
@@ -2588,14 +2588,14 @@
             background: rgba(255, 255, 255, .15);
             padding: 8px 12px;
             border-radius: 20px;
-            font-weight: 800;
+            font-weight: 500;
             font-size: 13px;
         }
 
         .tb-ms-cap h3 {
             margin-top: 10px;
             font-size: 28px;
-            font-weight: 900;
+            font-weight: 700;
         }
 
         .tb-ms-modal {
@@ -2675,14 +2675,14 @@
 
         .tb-testi-head h2 {
             font-size: clamp(32px, 4vw, 48px);
-            font-weight: 950;
+            font-weight: 700;
             color: #2a431c;
             margin-bottom: 6px;
         }
 
         .tb-testi-head p {
             color: #424242;
-            font-weight: 700;
+            font-weight: 400;
         }
 
         .tb-testi-grid {
@@ -2725,7 +2725,7 @@
         .tb-testi-text {
             font-size: 17px;
             line-height: 1.7;
-            font-weight: 600;
+            font-weight: 400;
             color: #333;
             margin-top: 26px;
         }
@@ -2804,7 +2804,7 @@
 
         .tb-pcta-kicker {
             display: inline-block;
-            font-weight: 900;
+            font-weight: 700;
             letter-spacing: 1px;
             text-transform: uppercase;
             font-size: 12px;
@@ -2818,15 +2818,15 @@
         .tb-pcta-left h2 {
             margin: 0 0 10px 0;
             font-size: clamp(28px, 3.2vw, 40px);
-            font-weight: 950;
+            font-weight: 700;
             color: #2a431c;
             line-height: 1.12;
         }
 
         .tb-pcta-left p {
             margin: 0 0 18px 0;
-            color: #424242;
-            font-weight: 650;
+            color: #000;
+            font-weight: 400;
             line-height: 1.65;
             max-width: 560px;
         }
@@ -2841,7 +2841,7 @@
             align-items: flex-start;
             gap: 10px;
             color: #2b2b2b;
-            font-weight: 700;
+            font-weight: 400;
         }
 
         .tb-dot {
@@ -2863,7 +2863,7 @@
 
         .tb-pcta-btn {
             text-decoration: none;
-            font-weight: 950;
+            font-weight: 500;
             border-radius: 14px;
             padding: 14px 18px;
             width: 240px;
@@ -2948,7 +2948,7 @@
 
         .tb-blog-kicker {
             display: inline-block;
-            font-weight: 950;
+            font-weight: 500;
             letter-spacing: 1px;
             text-transform: uppercase;
             font-size: 12px;
@@ -2962,14 +2962,14 @@
         .tb-blog-head h2 {
             margin: 0 0 6px;
             font-size: clamp(28px, 3.2vw, 42px);
-            font-weight: 950;
+            font-weight: 700;
             color: #2a431c;
         }
 
         .tb-blog-head p {
             margin: 0;
-            color: #424242;
-            font-weight: 700;
+            color: #000;
+            font-weight: 400;
             line-height: 1.65;
             max-width: 520px;
         }
@@ -2983,7 +2983,7 @@
             background: #183f79;
             color: #fff;
             text-decoration: none;
-            font-weight: 950;
+            font-weight: 500;
             border: 1px solid rgba(0, 0, 0, 0.10);
             box-shadow: 0 14px 34px rgba(0, 0, 0, 0.10);
             transition: .2s ease;
@@ -3062,7 +3062,7 @@
 
         .tb-blog-body h3 {
             margin: 0 0 8px;
-            font-weight: 950;
+            font-weight: 700;
             color: #263d18;
             font-size: 18px;
             line-height: 1.35;
@@ -3070,10 +3070,10 @@
 
         .tb-blog-body p {
             margin: 0 0 auto;
-            color: #5c6b55;
-            font-weight: 700;
+            color: #000;
+            font-weight: 400;
             line-height: 1.65;
-            font-size: 14px;
+            font-size: 16px;
         }
 
         .tb-blog-read {
@@ -3082,7 +3082,7 @@
             align-items: center;
             gap: 8px;
             text-decoration: none;
-            font-weight: 950;
+            font-weight: 500;
             color: #263d18;
             transition: .2s ease;
         }

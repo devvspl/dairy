@@ -61,7 +61,7 @@
         gap: 10px;
         padding: 8px 12px;
         border-radius: 999px;
-        font-weight: 900;
+        font-weight: 500;
         letter-spacing: .9px;
         text-transform: uppercase;
         font-size: 12px;
@@ -73,7 +73,7 @@
     .blog-hero-content h1 {
         margin: 14px 0 12px;
         font-size: clamp(28px, 4vw, 48px);
-        font-weight: 950;
+        font-weight: 700;
         line-height: 1.05;
         letter-spacing: -.8px;
     }
@@ -82,7 +82,7 @@
         margin: 0 auto 18px;
         max-width: 780px;
         color: rgba(255, 255, 255, .86);
-        font-weight: 650;
+        font-weight: 400;
         line-height: 1.8;
     }
 
@@ -157,7 +157,7 @@
 
     .post-title {
         font-size: 1.4rem;
-        font-weight: 800;
+        font-weight: 700;
         line-height: 1.3;
         margin: 0 0 12px 0;
         transition: color 0.3s ease;
@@ -171,12 +171,13 @@
     .post-excerpt {
         font-size: 0.95rem;
         line-height: 1.6;
-        color: var(--text-body);
+        color: #000;
         margin: 0;
         display: -webkit-box;
         -webkit-line-clamp: 3;
         -webkit-box-orient: vertical;
         overflow: hidden;
+        font-size:16px;
     }
 
     .read-link {

@@ -49,7 +49,7 @@
             gap: 10px;
             padding: 8px 12px;
             border-radius: 999px;
-            font-weight: 900;
+            font-weight: 700;
             letter-spacing: .9px;
             text-transform: uppercase;
             font-size: 12px;
@@ -87,7 +87,7 @@
         #cpgContactPage .cpg-sec-head h2 {
             margin: 12px 0 8px;
             font-size: clamp(26px, 3.2vw, 42px);
-            font-weight: 950;
+            font-weight: 700;
             letter-spacing: -.4px;
             color: var(--brand);
             line-height: 1.08;
@@ -95,8 +95,8 @@
 
         #cpgContactPage .cpg-sec-head p {
             margin: 0;
-            color: var(--muted);
-            font-weight: 650;
+            color: #000;
+            font-weight: 400;
             line-height: 1.75;
         }
 
@@ -107,7 +107,7 @@
             gap: 10px;
             padding: 14px 18px;
             border-radius: 16px;
-            font-weight: 900;
+            font-weight: 400;
             text-decoration: none;
             border: 1px solid var(--border);
             box-shadow: 0 14px 34px rgba(0, 0, 0, .08);
@@ -193,7 +193,7 @@
         #cpgContactPage .cpg-hero-content h1 {
             margin: 14px 0 12px;
             font-size: clamp(28px, 4vw, 35px);
-            font-weight: 950;
+            font-weight: 700;
             line-height: 1.05;
             letter-spacing: -.8px;
         }
@@ -202,7 +202,7 @@
             margin: 0 auto 18px;
             max-width: 760px;
             color: rgba(255, 255, 255, .86);
-            font-weight: 650;
+            font-weight: 400;
             line-height: 1.8;
         }
 
@@ -262,14 +262,14 @@
 
         #cpgContactPage .cpg-info-card h3 {
             margin: 0 0 6px;
-            font-weight: 950;
+            font-weight: 700;
             color: var(--brand);
         }
 
         #cpgContactPage .cpg-info-card p {
             margin: 0 0 10px;
-            color: var(--muted);
-            font-weight: 650;
+            color: #000;
+            font-weight: 400;
             line-height: 1.7;
         }
 
@@ -278,7 +278,7 @@
             align-items: center;
             gap: 8px;
             color: var(--brand);
-            font-weight: 850;
+            font-weight: 500;
             text-decoration: none;
         }
 
@@ -306,13 +306,13 @@
         #cpgContactPage .cpg-form h3 {
             margin: 8px 0 6px;
             color: var(--brand);
-            font-weight: 950;
+            font-weight: 700;
         }
 
         #cpgContactPage .cpg-form p {
             margin: 0 0 14px;
-            color: var(--muted);
-            font-weight: 650;
+            color: #000;
+            font-weight: 400;
             line-height: 1.7;
         }
 
@@ -390,12 +390,12 @@
         #cpgContactPage .cpg-map-top h3 {
             margin: 0;
             color: var(--brand);
-            font-weight: 950;
+            font-weight: 700;
         }
 
         #cpgContactPage .cpg-map-top p {
             margin: 6px 0 0;
-            color: var(--muted);
+            color: #000;
             font-weight: 650;
             line-height: 1.7;
         }
@@ -449,7 +449,7 @@
             border: 0;
             background: linear-gradient(180deg, #fff, #fbfcf8);
             cursor: pointer;
-            font-weight: 900;
+            font-weight: 700;
             color: var(--brand);
             display: flex;
             align-items: center;
@@ -478,8 +478,8 @@
         #cpgContactPage .cpg-faq-a {
             display: none;
             padding: 0 16px 16px;
-            color: var(--muted);
-            font-weight: 650;
+            color: #000;
+            font-weight: 400;
             line-height: 1.75;
             border-top: 1px solid rgba(0, 0, 0, .06);
         }

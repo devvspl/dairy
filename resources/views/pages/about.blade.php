@@ -1,4 +1,4 @@
-﻿@extends('layouts.public')
+@extends('layouts.public')
 @section('title', 'About Us')
 @section('meta_description', 'Learn more about our company')
 @section('content')
@@ -52,7 +52,7 @@
             gap: 10px;
             padding: 8px 12px;
             border-radius: 999px;
-            font-weight: 900;
+            font-weight: 500;
             letter-spacing: .9px;
             text-transform: uppercase;
             font-size: 12px;
@@ -64,7 +64,7 @@
         #abpgAboutPage .abpg-sec-head h2 {
             margin: 12px 0 8px;
             font-size: clamp(26px, 3.2vw, 42px);
-            font-weight: 950;
+            font-weight: 700;
             letter-spacing: -.4px;
             color: #00000;
             line-height: 1.08;
@@ -72,8 +72,8 @@
 
         #abpgAboutPage .abpg-sec-head p {
             margin: 0;
-            color: var(--muted);
-            font-weight: 650;
+            color: #000;
+            font-weight: 400;
             line-height: 1.75;
         }
 
@@ -84,7 +84,7 @@
             gap: 10px;
             padding: 14px 18px;
             border-radius: 16px;
-            font-weight: 900;
+            font-weight: 500;
             text-decoration: none;
             border: 1px solid var(--border);
             box-shadow: 0 14px 34px rgba(0, 0, 0, .08);
@@ -175,7 +175,7 @@
         #abpgAboutPage .abpg-hero-content h1 {
             margin: 14px 0 12px;
             font-size: clamp(28px, 4vw, 35px);
-            font-weight: 950;
+            font-weight: 700;
             line-height: 1.05;
             letter-spacing: -.8px;
         }
@@ -184,7 +184,7 @@
             margin: 0 auto 18px;
             max-width: 780px;
             color: rgba(255, 255, 255, .86);
-            font-weight: 650;
+            font-weight: 400;
             line-height: 1.8;
         }
 
@@ -213,7 +213,7 @@
             background: rgba(255, 255, 255, .10);
             border: 1px solid rgba(255, 255, 255, .16);
             color: rgba(255, 255, 255, .92);
-            font-weight: 800;
+            font-weight: 500;
             font-size: 13px;
             backdrop-filter: blur(6px);
         }
@@ -234,15 +234,15 @@
         #abpgAboutPage .abpg-ov-left h2 {
             margin: 12px 0 10px;
             font-size: clamp(26px, 3.2vw, 42px);
-            font-weight: 950;
+            font-weight: 700;
             color: #293879;
             line-height: 1.1;
         }
 
         #abpgAboutPage .abpg-ov-left p {
             margin: 0 0 16px;
-            color: var(--muted);
-            font-weight: 650;
+            color: #000;
+            font-weight: 400;
             line-height: 1.8;
         }
 
@@ -283,16 +283,16 @@
 
         #abpgAboutPage .abpg-check strong {
             display: block;
-            font-weight: 900;
+            font-weight: 600;
             margin-bottom: 2px;
         }
 
         #abpgAboutPage .abpg-check span {
             display: block;
-            color: var(--muted);
-            font-weight: 650;
+            color: #000;
+            font-weight: 400;
             line-height: 1.6;
-            font-size: 14px;
+            font-size: 16px;
         }
 
         #abpgAboutPage .abpg-ov-right {
@@ -333,7 +333,7 @@
         #abpgAboutPage .abpg-ov-mini span {
             display: block;
             margin-top: 2px;
-            color: var(--muted);
+            color: #000;
             font-weight: 750;
             font-size: 13px;
         }
@@ -406,14 +406,14 @@
 
         #abpgAboutPage .abpg-usp-card h3 {
             margin: 0 0 6px 0;
-            font-weight: 950;
+            font-weight: 700;
             color: #293879;
         }
 
         #abpgAboutPage .abpg-usp-card p {
             margin: 0;
-            color: var(--muted);
-            font-weight: 650;
+            color: #000;
+            font-weight: 400;
             line-height: 1.7;
         }
 
@@ -466,16 +466,16 @@
 
         #abpgAboutPage .abpg-counter-num {
             font-size: 30px;
-            font-weight: 950;
+            font-weight: 700;
             color: var(--brand);
             line-height: 1.05;
         }
 
         #abpgAboutPage .abpg-counter-txt {
             margin-top: 3px;
-            color: var(--muted);
-            font-weight: 750;
-            font-size: 13px;
+            color: #000;
+            font-weight: 400;
+            font-size: 16px;
         }
 
         /* WHY */
@@ -534,14 +534,14 @@
 
         #abpgAboutPage .abpg-why-row h3 {
             margin: 0 0 4px;
-            font-weight: 950;
+            font-weight:700;
             color: var(--brand);
         }
 
         #abpgAboutPage .abpg-why-row p {
             margin: 0;
-            color: var(--muted);
-            font-weight: 650;
+            color: #000;
+            font-weight: 400;
             line-height: 1.65;
         }
 
@@ -557,14 +557,14 @@
 
         #abpgAboutPage .abpg-why-sidebox h3 {
             margin: 12px 0 8px;
-            font-weight: 950;
+            font-weight: 700;
             color: var(--brand);
         }
 
         #abpgAboutPage .abpg-why-sidebox p {
             margin: 0 0 14px;
-            color: var(--muted);
-            font-weight: 650;
+            color: #000;
+            font-weight: 400;
             line-height: 1.75;
         }
 
@@ -617,7 +617,7 @@
         }
 
         #abpgAboutPage .abpg-team-info span {
-            color: var(--muted);
+            color: #000;
             font-weight: 750;
             font-size: 13px;
         }
@@ -671,7 +671,7 @@
             border: 0;
             background: linear-gradient(180deg, #ffffff, #fbfcf8);
             cursor: pointer;
-            font-weight: 900;
+            font-weight: 700;
             color: var(--brand);
             display: flex;
             align-items: center;
@@ -701,8 +701,8 @@
         #abpgAboutPage .abpg-faq-a {
             display: none;
             padding: 0 16px 16px;
-            color: var(--muted);
-            font-weight: 650;
+            color: #000;
+            font-weight: 400;
             line-height: 1.75;
             border-top: 1px solid rgba(0, 0, 0, .06);
            
@@ -753,7 +753,7 @@
 
         #abpgAboutPage .abpg-strap-left h2 {
             margin: 12px 0 6px;
-            font-weight: 950;
+            font-weight: 700;
             color: var(--brand);
             font-size: clamp(22px, 2.8vw, 34px);
             line-height: 1.12;
@@ -761,8 +761,8 @@
 
         #abpgAboutPage .abpg-strap-left p {
             margin: 0;
-            color: var(--muted);
-            font-weight: 650;
+            color: #000;
+            font-weight: 400;
             line-height: 1.75;
         }
 
@@ -792,7 +792,7 @@
             border: 1px solid rgba(0, 0, 0, .12);
             padding: 0 12px 0 40px;
             outline: none;
-            font-weight: 650;
+            font-weight: 500;
             background: #fff;
         }
 
@@ -1097,7 +1097,7 @@
 .nulac-card p {
     font-size: 16px;
     line-height: 1.6;
-    color: #4A554F;
+    color: #000;
     margin: 0;
 }
 
