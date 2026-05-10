@@ -63,7 +63,7 @@
         gap: 10px;
         padding: 8px 12px;
         border-radius: 999px;
-        font-weight: 900;
+        font-weight: 500;
         letter-spacing: .9px;
         text-transform: uppercase;
         font-size: 12px;
@@ -75,7 +75,7 @@
     .blog-detail-hero-content h1 {
         margin: 14px 0 12px;
         font-size: clamp(28px, 4vw, 42px);
-        font-weight: 950;
+        font-weight: 700;
         line-height: 1.05;
         letter-spacing: -.8px;
     }
@@ -84,7 +84,7 @@
         margin: 0 auto 18px;
         max-width: 780px;
         color: rgba(255, 255, 255, .86);
-        font-weight: 650;
+        font-weight: 400;
         line-height: 1.8;
         font-size: 1.1rem;
     }
@@ -106,7 +106,7 @@
         background: rgba(255, 255, 255, .10);
         border: 1px solid rgba(255, 255, 255, .16);
         color: rgba(255, 255, 255, .92);
-        font-weight: 800;
+        font-weight: 500;
         font-size: 13px;
         backdrop-filter: blur(6px);
     }
@@ -237,7 +237,7 @@
 
     .sidebar-card h3 {
         font-size: 1.3rem;
-        font-weight: 800;
+        font-weight: 700;
         color: var(--brand);
         margin: 0 0 20px 0;
     }

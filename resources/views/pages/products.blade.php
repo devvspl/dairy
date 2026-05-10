@@ -43,7 +43,7 @@
   gap:10px;
   padding:8px 12px;
   border-radius:999px;
-  font-weight:900;
+  font-weight:500;
   letter-spacing:.9px;
   text-transform:uppercase;
   font-size:12px;
@@ -59,7 +59,7 @@
   gap:10px;
   padding:12px 16px;
   border-radius:16px;
-  font-weight:900;
+  font-weight:500;
   text-decoration:none;
   border:1px solid var(--border);
   box-shadow:0 14px 34px rgba(0,0,0,.08);
@@ -97,7 +97,7 @@
   background:rgba(255,255,255,.10);
   border:1px solid rgba(255,255,255,.16);
   color:rgba(255,255,255,.92);
-  font-weight:850;
+  font-weight:500;
   font-size:13px;
   backdrop-filter: blur(6px);
 }
@@ -128,7 +128,7 @@
 #plpgProductPage .plpg-hero-inner h1{
   margin:14px 0 10px;
   font-size:clamp(28px,4vw,40px);
-  font-weight:950;
+  font-weight:700;
   line-height:1.05;
   letter-spacing:-.8px;
 }
@@ -136,7 +136,7 @@
   margin:0 auto 16px;
   max-width:820px;
   color:rgba(255,255,255,.86);
-  font-weight:650;
+  font-weight:400;
   line-height:1.8;
 }
 #plpgProductPage .plpg-hero-row{
@@ -168,7 +168,7 @@
   flex-wrap:wrap;
 }
 #plpgProductPage .plpg-breadcrumb{
-  color:var(--muted);
+  color:#000;
   font-weight:750;
   font-size:13px;
 }
@@ -245,7 +245,7 @@
   box-shadow:0 14px 34px rgba(0,0,0,.06);
 }
 #plpgProductPage .plpg-block-title{
-  font-weight:950;
+  font-weight:700;
   color:var(--brand);
   display:flex;
   align-items:center;
@@ -253,7 +253,7 @@
   gap:10px;
 }
 #plpgProductPage .plpg-block-title small{
-  color:var(--muted);
+  color:#000;
   font-weight:850;
 }
 #plpgProductPage .plpg-block-content{
@@ -285,7 +285,7 @@
   align-items:center;
   gap:10px;
   font-weight:750;
-  color:var(--muted);
+  color:#000;
   font-size:14px;
 }
 #plpgProductPage .plpg-opt input{
@@ -326,7 +326,7 @@
   flex-wrap:wrap;
 }
 #plpgProductPage .plpg-top-left strong{ color:var(--brand); font-weight:950; }
-#plpgProductPage .plpg-top-left span{ color:var(--muted); font-weight:750; font-size:13px; }
+#plpgProductPage .plpg-top-left span{ color:#000; font-weight:750; font-size:13px; }
 #plpgProductPage .plpg-sort{
   height:44px;
   border-radius:16px;
@@ -372,7 +372,7 @@
 #plpgProductPage .plpg-tag{
   padding:7px 10px;
   border-radius:999px;
-  font-weight:950;
+  font-weight:700;
   font-size:12px;
   border:1px solid rgba(0,0,0,.08);
   background:rgba(255,255,255,.92);
@@ -432,7 +432,7 @@
   gap:10px;
 }
 #plpgProductPage .plpg-title strong{
-  font-weight:950;
+  font-weight:700;
   color:var(--brand);
   line-height:1.2;
 }
@@ -458,10 +458,10 @@
   white-space:nowrap;
 }
 #plpgProductPage .plpg-desc{
-  color:var(--muted);
-  font-weight:650;
+  color:#000;
+  font-weight:400;
   line-height:1.65;
-  font-size:14px;
+  font-size:16px;
   margin-top:-2px;
 }
 #plpgProductPage .plpg-meta{
@@ -660,7 +660,7 @@
 }
 #plpgProductPage .plpg-modal-info p{
   margin:0;
-  color:var(--muted);
+  color:#000;
   font-weight:650;
   line-height:1.75;
 }
@@ -687,7 +687,7 @@
   flex:0 0 36px;
 }
 #plpgProductPage .plpg-feat strong{ display:block; font-weight:950; color:var(--brand); }
-#plpgProductPage .plpg-feat span{ display:block; color:var(--muted); font-weight:650; font-size:13px; margin-top:2px; }
+#plpgProductPage .plpg-feat span{ display:block; color:#000; font-weight:650; font-size:13px; margin-top:2px; }
 
 /* RESPONSIVE */
 @media (max-width:1100px){
@@ -739,7 +739,7 @@
       </div>
       <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
         <span class="plpg-kicker"><i class="fa-solid fa-leaf"></i> Fresh</span>
-        <span style="color:var(--muted); font-weight:800; font-size:13px;">Same-day dispatch (selected areas) • COD Available</span>
+        <span style="color:#000; font-weight:800; font-size:13px;">Same-day dispatch (selected areas) • COD Available</span>
       </div>
     </div>
   </section>
@@ -906,7 +906,7 @@
           </article>
           @empty
           <div style="grid-column: 1/-1; text-align:center; padding:40px;">
-            <p style="color:var(--muted); font-size:18px;">No products found. Try adjusting your filters.</p>
+            <p style="color:#000; font-size:18px;">No products found. Try adjusting your filters.</p>
           </div>
           @endforelse
 
@@ -1015,7 +1015,7 @@
           <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
             <div style="display:flex; flex-direction:column; gap:2px;">
               <strong style="color:var(--brand); font-weight:950; font-size:20px;" id="plpgModalName">Product Name</strong>
-              <span style="color:var(--muted); font-weight:750; font-size:13px;" id="plpgModalCat">Type</span>
+              <span style="color:#000; font-weight:750; font-size:13px;" id="plpgModalCat">Type</span>
             </div>
             <span class="plpg-rating" id="plpgModalRating"><i class="fa-solid fa-star"></i> 4.6</span>
           </div>
@@ -1175,7 +1175,7 @@
   // Render products from API response
   const renderProducts = (products)=>{
     if(!products || products.length === 0){
-      cardsWrap.innerHTML = '<div style="grid-column: 1/-1; text-align:center; padding:40px;"><p style="color:var(--muted); font-size:18px;">No products found. Try adjusting your filters.</p></div>';
+      cardsWrap.innerHTML = '<div style="grid-column: 1/-1; text-align:center; padding:40px;"><p style="color:#000; font-size:18px;">No products found. Try adjusting your filters.</p></div>';
       return;
     }
 
@@ -1279,7 +1279,7 @@
     window.history.pushState({}, '', newUrl);
 
     // Show loading state
-    cardsWrap.innerHTML = '<div style="grid-column: 1/-1; text-align:center; padding:40px;"><i class="fa-solid fa-spinner fa-spin" style="font-size:32px; color:var(--brand);"></i><p style="color:var(--muted); margin-top:16px;">Loading products...</p></div>';
+    cardsWrap.innerHTML = '<div style="grid-column: 1/-1; text-align:center; padding:40px;"><i class="fa-solid fa-spinner fa-spin" style="font-size:32px; color:var(--brand);"></i><p style="color:#000; margin-top:16px;">Loading products...</p></div>';
 
     try {
       const response = await fetch(`/api/filter-products?${params.toString()}`);
@@ -1289,7 +1289,7 @@
       countText.textContent = `Showing ${data.total} products`;
     } catch (error) {
       console.error('Filter error:', error);
-      cardsWrap.innerHTML = '<div style="grid-column: 1/-1; text-align:center; padding:40px;"><p style="color:var(--muted); font-size:18px;">Error loading products. Please try again.</p></div>';
+      cardsWrap.innerHTML = '<div style="grid-column: 1/-1; text-align:center; padding:40px;"><p style="color:#000; font-size:18px;">Error loading products. Please try again.</p></div>';
     } finally {
       isLoading = false;
     }
