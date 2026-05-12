@@ -339,6 +339,62 @@
                                     </div>
                                 </div>
 
+                                {{-- Current Location Display --}}
+                                <div>
+                                    <p class="text-xs font-bold mb-2" style="color:var(--text);"><i class="fa-solid fa-map-marker-alt mr-1.5" style="color:var(--green);"></i>Delivery Location</p>
+                                    <div class="rounded-xl border-2 p-3 mb-3" style="border-color:rgba(47,74,30,0.15); background:rgba(47,74,30,0.03);">
+                                        <div class="flex items-start justify-between gap-3">
+                                            <div class="flex-1">
+                                                @if($ws->location)
+                                                    <p class="text-sm font-bold" style="color:var(--text);">{{ $ws->location->name }}</p>
+                                                    @if($ws->location->area || $ws->location->city)
+                                                        <p class="text-xs mt-0.5" style="color:var(--muted);">{{ collect([$ws->location->area, $ws->location->city])->filter()->implode(', ') }}</p>
+                                                    @endif
+                                                    @if($ws->location->delivery_timing)
+                                                        <p class="text-[10px] mt-1 font-semibold" style="color:var(--green);"><i class="fa-solid fa-clock mr-1"></i>{{ $ws->location->delivery_timing }}</p>
+                                                    @endif
+                                                @else
+                                                    <p class="text-sm" style="color:var(--muted);">No location selected</p>
+                                                @endif
+                                            </div>
+                                            <button type="button" onclick="toggleLocationChange()"
+                                                class="px-3 py-1.5 rounded-lg text-[11px] font-bold transition-colors flex-shrink-0"
+                                                style="background:rgba(47,74,30,0.1);color:var(--green);border:1px solid rgba(47,74,30,0.2);">
+                                                <i class="fa-solid fa-edit mr-0.5"></i>Change
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {{-- Location Change Section (Hidden by default) --}}
+                                    <div id="location-change-section" class="hidden mb-3">
+                                        <div class="relative mb-2">
+                                            <input type="text" id="ws-location-search" placeholder="Search your society or area..."
+                                                class="w-full px-3 py-2.5 text-sm border-2 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                                style="border-color:var(--border);">
+                                            <i class="fa-solid fa-search absolute right-3 top-3 text-xs" style="color:var(--muted);"></i>
+                                        </div>
+                                        <select name="location_id" id="ws-location-select"
+                                            class="w-full px-3 py-2.5 text-sm border-2 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                            style="border-color:var(--border);">
+                                            <option value="">— Select your society / area —</option>
+                                            @php $wsLocations = \App\Models\Location::active()->ordered()->get(); @endphp
+                                            @foreach($wsLocations as $loc)
+                                            <option value="{{ $loc->id }}"
+                                                data-name="{{ strtolower($loc->name) }}"
+                                                data-area="{{ strtolower($loc->area ?? '') }}"
+                                                data-city="{{ strtolower($loc->city ?? '') }}"
+                                                data-timing="{{ $loc->delivery_timing ?? '' }}"
+                                                {{ $ws->location_id == $loc->id ? 'selected' : '' }}>
+                                                {{ $loc->name }}@if($loc->area || $loc->city) — {{ collect([$loc->area,$loc->city])->filter()->implode(', ') }}@endif
+                                            </option>
+                                            @endforeach
+                                        </select>
+                                        <div id="ws-timing-hint" class="hidden mt-2 px-3 py-2 rounded-lg text-xs" style="background:rgba(47,74,30,0.06);color:var(--green);">
+                                            <i class="fa-solid fa-clock mr-1"></i><span id="ws-timing-text"></span>
+                                        </div>
+                                    </div>
+                                </div>
+
                                 <div>
                                     <p class="text-xs font-bold mb-1.5" style="color:var(--text);"><i class="fa-solid fa-location-dot mr-1.5" style="color:var(--green);"></i>Delivery Address</p>
                                     <textarea name="delivery_address" rows="2"
@@ -2340,4 +2396,574 @@
         });
     </script>
 
+    <script>
+        // Tab switching
+        function switchTab(tab) {
+            // Hide all panels
+            document.querySelectorAll('.tab-panel').forEach(p => p.classList.add('hidden'));
+            // Show selected panel
+            document.getElementById('panel-' + tab).classList.remove('hidden');
+            
+            // Update tab buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.style.background = 'transparent';
+                btn.style.color = 'var(--muted)';
+                btn.style.borderBottom = '2px solid transparent';
+            });
+            
+            const activeBtn = document.getElementById('tab-' + tab);
+            activeBtn.style.background = 'rgba(47,74,30,0.05)';
+            activeBtn.style.color = 'var(--green)';
+            activeBtn.style.borderBottom = '2px solid var(--green)';
+        }
+
+        // Location change functionality
+        function toggleLocationChange() {
+            const section = document.getElementById('location-change-section');
+            section.classList.toggle('hidden');
+        }
+
+        // Location search functionality for wallet settings
+        document.addEventListener('DOMContentLoaded', function() {
+            const wsLocationSearch = document.getElementById('ws-location-search');
+            const wsLocationSelect = document.getElementById('ws-location-select');
+            const wsTimingHint = document.getElementById('ws-timing-hint');
+            const wsTimingText = document.getElementById('ws-timing-text');
+
+            if (wsLocationSearch && wsLocationSelect) {
+                wsLocationSearch.addEventListener('input', function() {
+                    const query = this.value.toLowerCase();
+                    const options = wsLocationSelect.querySelectorAll('option');
+                    
+                    options.forEach(option => {
+                        if (option.value === '') return;
+                        
+                        const name = option.dataset.name || '';
+                        const area = option.dataset.area || '';
+                        const city = option.dataset.city || '';
+                        
+                        const matches = name.includes(query) || area.includes(query) || city.includes(query);
+                        option.style.display = matches ? 'block' : 'none';
+                    });
+                });
+
+                wsLocationSelect.addEventListener('change', function() {
+                    const selectedOption = this.options[this.selectedIndex];
+                    const timing = selectedOption.dataset.timing;
+                    
+                    if (timing && wsTimingHint && wsTimingText) {
+                        wsTimingText.textContent = timing;
+                        wsTimingHint.classList.remove('hidden');
+                    } else if (wsTimingHint) {
+                        wsTimingHint.classList.add('hidden');
+                    }
+                });
+            }
+        });
+
+        // Initialize first tab
+        switchTab('wallet');
+
+        // Wallet settings form - milk type selection
+        document.addEventListener('DOMContentLoaded', function() {
+            const milkTabs = document.querySelectorAll('.ws-milk-tab');
+            const milkChecks = document.querySelectorAll('.ws-milk-check');
+            const qtyWraps = document.querySelectorAll('.ws-qty-wrap');
+            const qtyInputs = document.querySelectorAll('.ws-qty-input');
+            const qtyDisplays = document.querySelectorAll('.ws-qty-display');
+            const qtyMinuses = document.querySelectorAll('.ws-qty-minus');
+            const qtyPluses = document.querySelectorAll('.ws-qty-plus');
+            const settingsForm = document.getElementById('ws-settings-form');
+            const milkError = document.getElementById('ws-milk-error');
+
+            // Handle milk type selection
+            milkTabs.forEach((tab, index) => {
+                tab.addEventListener('click', function() {
+                    const checkbox = this.querySelector('.ws-milk-check');
+                    const checkBox = this.querySelector('.ws-check-box');
+                    const qtyWrap = this.querySelector('.ws-qty-wrap');
+                    const qtyInput = this.querySelector('.ws-qty-input');
+                    
+                    checkbox.checked = !checkbox.checked;
+                    
+                    if (checkbox.checked) {
+                        this.style.borderColor = 'var(--green)';
+                        this.style.background = 'rgba(47,74,30,0.05)';
+                        checkBox.style.borderColor = 'var(--green)';
+                        checkBox.style.background = 'var(--green)';
+                        checkBox.innerHTML = '<i class="fa-solid fa-check text-[9px] text-white"></i>';
+                        qtyWrap.classList.remove('invisible');
+                        qtyInput.disabled = false;
+                    } else {
+                        this.style.borderColor = 'var(--border)';
+                        this.style.background = '#fff';
+                        checkBox.style.borderColor = 'var(--border)';
+                        checkBox.style.background = '#fff';
+                        checkBox.innerHTML = '';
+                        qtyWrap.classList.add('invisible');
+                        qtyInput.disabled = true;
+                    }
+                });
+            });
+
+            // Handle quantity steppers
+            qtyMinuses.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const qtyDisplay = this.nextElementSibling;
+                    const qtyInput = this.parentElement.nextElementSibling;
+                    let qty = parseInt(qtyDisplay.textContent);
+                    if (qty > 1) {
+                        qty--;
+                        qtyDisplay.textContent = qty;
+                        qtyInput.value = qty;
+                    }
+                });
+            });
+
+            qtyPluses.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const qtyDisplay = this.previousElementSibling;
+                    const qtyInput = this.parentElement.nextElementSibling;
+                    let qty = parseInt(qtyDisplay.textContent);
+                    if (qty < 50) {
+                        qty++;
+                        qtyDisplay.textContent = qty;
+                        qtyInput.value = qty;
+                    }
+                });
+            });
+
+            // Form validation
+            if (settingsForm) {
+                settingsForm.addEventListener('submit', function(e) {
+                    const checkedMilk = document.querySelectorAll('.ws-milk-check:checked');
+                    if (checkedMilk.length === 0) {
+                        e.preventDefault();
+                        milkError.classList.remove('hidden');
+                        milkError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        return false;
+                    }
+                    milkError.classList.add('hidden');
+                });
+            }
+        });
+
+        // Delivery instructions toggle
+        function wsToggleOtherInstructions(select) {
+            const otherTextarea = document.getElementById('ws-other-instructions');
+            if (select.value === 'other') {
+                otherTextarea.classList.remove('hidden');
+                otherTextarea.focus();
+                otherTextarea.name = 'delivery_instructions';
+            } else {
+                otherTextarea.classList.add('hidden');
+                otherTextarea.name = '';
+                // Set the select value as the delivery_instructions
+                const hiddenInput = document.createElement('input');
+                hiddenInput.type = 'hidden';
+                hiddenInput.name = 'delivery_instructions';
+                hiddenInput.value = select.value;
+                select.parentElement.appendChild(hiddenInput);
+            }
+        }
+
+        // Wallet initialization functions
+        function wiGoStep(step) {
+            // Hide all steps
+            for (let i = 1; i <= 3; i++) {
+                document.getElementById('wi-step-' + i).classList.add('hidden');
+                document.getElementById('wi-dot-' + i).style.background = '#e5e7eb';
+                document.getElementById('wi-dot-' + i).style.color = '#9ca3af';
+                document.getElementById('wi-lbl-' + i).style.color = 'var(--muted)';
+            }
+            
+            // Show current step
+            document.getElementById('wi-step-' + step).classList.remove('hidden');
+            document.getElementById('wi-dot-' + step).style.background = 'var(--green)';
+            document.getElementById('wi-dot-' + step).style.color = '#fff';
+            document.getElementById('wi-lbl-' + step).style.color = 'var(--green)';
+            
+            // Update preview if going to step 3
+            if (step === 3) {
+                wiUpdateSummary();
+            }
+        }
+
+        function wiSetQty(qty) {
+            document.querySelectorAll('.wi-qty-btn').forEach(btn => {
+                btn.style.borderColor = 'var(--border)';
+                btn.style.color = 'var(--muted)';
+                btn.style.background = '#fff';
+            });
+            
+            event.target.style.borderColor = 'var(--green)';
+            event.target.style.color = 'var(--green)';
+            event.target.style.background = 'rgba(47,74,30,0.05)';
+            
+            document.getElementById('wi-qty-input').value = qty;
+            wiUpdatePreview();
+        }
+
+        function wiSetAmount(amount) {
+            document.querySelectorAll('.wi-amt-preset').forEach(btn => {
+                btn.style.borderColor = 'var(--border)';
+                btn.style.color = 'var(--muted)';
+                btn.style.background = '#fff';
+            });
+            
+            event.target.style.borderColor = 'var(--green)';
+            event.target.style.color = 'var(--green)';
+            event.target.style.background = 'rgba(47,74,30,0.05)';
+            
+            document.getElementById('wi-amount').value = amount;
+            wiUpdateDaysPreview();
+        }
+
+        function wiUpdatePreview() {
+            const selectedMilk = document.querySelector('.wi-milk-radio:checked');
+            const qty = document.getElementById('wi-qty-input').value;
+            
+            if (selectedMilk) {
+                const ppl = parseFloat(selectedMilk.dataset.ppl);
+                const daily = ppl * parseFloat(qty);
+                
+                document.getElementById('wi-ppl').textContent = '₹' + ppl.toFixed(2);
+                document.getElementById('wi-daily').textContent = '₹' + daily.toFixed(2);
+                document.getElementById('wi-preview').classList.remove('hidden');
+            }
+        }
+
+        function wiUpdateSummary() {
+            const selectedMilk = document.querySelector('.wi-milk-radio:checked');
+            const qty = document.getElementById('wi-qty-input').value;
+            
+            if (selectedMilk) {
+                const milkLabel = selectedMilk.closest('label').querySelector('p').textContent;
+                const ppl = parseFloat(selectedMilk.dataset.ppl);
+                const daily = ppl * parseFloat(qty);
+                
+                document.getElementById('wi-sum-milk').textContent = milkLabel;
+                document.getElementById('wi-sum-qty').textContent = qty + 'L';
+                document.getElementById('wi-sum-ppl').textContent = '₹' + ppl.toFixed(2);
+                document.getElementById('wi-sum-daily').textContent = '₹' + daily.toFixed(2);
+            }
+        }
+
+        function wiUpdateDaysPreview() {
+            const amount = parseFloat(document.getElementById('wi-amount').value);
+            const selectedMilk = document.querySelector('.wi-milk-radio:checked');
+            const qty = document.getElementById('wi-qty-input').value;
+            
+            if (selectedMilk && amount && qty) {
+                const ppl = parseFloat(selectedMilk.dataset.ppl);
+                const daily = ppl * parseFloat(qty);
+                const days = Math.floor(amount / daily);
+                
+                document.getElementById('wi-days-preview').textContent = '≈ ' + days + ' days of milk';
+                document.getElementById('wi-days-preview').classList.remove('hidden');
+            }
+        }
+
+        function wiSubmit() {
+            // Validate form before submit
+            const form = document.getElementById('walletInitForm');
+            if (form.checkValidity()) {
+                form.submit();
+            } else {
+                form.reportValidity();
+            }
+        }
+
+        // Initialize wallet form handlers
+        document.addEventListener('DOMContentLoaded', function() {
+            // Saved address selection for wallet initialization
+            document.querySelectorAll('.wi-saved-radio').forEach(radio => {
+                radio.addEventListener('change', function() {
+                    if (this.checked) {
+                        // Update form fields with saved address data
+                        const locationId = this.dataset.location;
+                        const flatNo = this.dataset.flat;
+                        const address = this.dataset.address;
+                        
+                        // Set location
+                        const locationSelect = document.getElementById('wi-location-select');
+                        if (locationSelect && locationId) {
+                            locationSelect.value = locationId;
+                            // Trigger change event to show timing hint
+                            locationSelect.dispatchEvent(new Event('change'));
+                        }
+                        
+                        // Set flat number
+                        const flatInput = document.getElementById('wi-flat-no');
+                        if (flatInput) {
+                            flatInput.value = flatNo || '';
+                        }
+                        
+                        // Set address
+                        const addressTextarea = document.getElementById('wi-address');
+                        if (addressTextarea) {
+                            addressTextarea.value = address || '';
+                        }
+                        
+                        // Style selected card
+                        document.querySelectorAll('.wi-saved-card').forEach(card => {
+                            card.style.borderColor = 'var(--border)';
+                            card.style.background = '#fff';
+                        });
+                        this.closest('.wi-saved-card').style.borderColor = 'var(--green)';
+                        this.closest('.wi-saved-card').style.background = 'rgba(47,74,30,0.05)';
+                    }
+                });
+            });
+
+            // Location search for wallet initialization
+            const wiLocationSearch = document.getElementById('wi-loc-search');
+            const wiLocationSelect = document.getElementById('wi-location-select');
+            const wiTimingHint = document.getElementById('wi-timing-hint');
+            const wiTimingText = document.getElementById('wi-timing-text');
+
+            if (wiLocationSearch && wiLocationSelect) {
+                wiLocationSearch.addEventListener('input', function() {
+                    const query = this.value.toLowerCase();
+                    const options = wiLocationSelect.querySelectorAll('option');
+                    
+                    options.forEach(option => {
+                        if (option.value === '') return;
+                        
+                        const name = option.dataset.name || '';
+                        const area = option.dataset.area || '';
+                        const city = option.dataset.city || '';
+                        
+                        const matches = name.includes(query) || area.includes(query) || city.includes(query);
+                        option.style.display = matches ? 'block' : 'none';
+                    });
+                });
+
+                wiLocationSelect.addEventListener('change', function() {
+                    const selectedOption = this.options[this.selectedIndex];
+                    const timing = selectedOption.dataset.timing;
+                    
+                    if (timing && wiTimingHint && wiTimingText) {
+                        wiTimingText.textContent = timing;
+                        wiTimingHint.classList.remove('hidden');
+                    } else if (wiTimingHint) {
+                        wiTimingHint.classList.add('hidden');
+                    }
+                    
+                    // Clear saved address selection when manually selecting location
+                    document.querySelectorAll('.wi-saved-radio').forEach(radio => {
+                        radio.checked = false;
+                    });
+                    document.querySelectorAll('.wi-saved-card').forEach(card => {
+                        card.style.borderColor = 'var(--border)';
+                        card.style.background = '#fff';
+                    });
+                });
+            }
+
+            // Clear saved address selection when manually typing address
+            const wiAddress = document.getElementById('wi-address');
+            const wiFlatNo = document.getElementById('wi-flat-no');
+            
+            [wiAddress, wiFlatNo].forEach(input => {
+                if (input) {
+                    input.addEventListener('input', function() {
+                        document.querySelectorAll('.wi-saved-radio').forEach(radio => {
+                            radio.checked = false;
+                        });
+                        document.querySelectorAll('.wi-saved-card').forEach(card => {
+                            card.style.borderColor = 'var(--border)';
+                            card.style.background = '#fff';
+                        });
+                    });
+                }
+            });
+
+            // Milk type selection
+            document.querySelectorAll('.wi-milk-radio').forEach(radio => {
+                radio.addEventListener('change', function() {
+                    document.querySelectorAll('.wi-milk-card').forEach(card => {
+                        card.style.borderColor = 'var(--border)';
+                        card.style.background = '#fff';
+                    });
+                    
+                    if (this.checked) {
+                        this.closest('.wi-milk-card').style.borderColor = 'var(--green)';
+                        this.closest('.wi-milk-card').style.background = 'rgba(47,74,30,0.05)';
+                        wiUpdatePreview();
+                    }
+                });
+            });
+
+            // Slot selection
+            document.querySelectorAll('.wi-slot-radio').forEach(radio => {
+                radio.addEventListener('change', function() {
+                    document.querySelectorAll('.wi-slot-card').forEach(card => {
+                        card.style.borderColor = 'var(--border)';
+                        card.style.background = '#fff';
+                        card.querySelector('i').style.color = 'var(--muted)';
+                    });
+                    
+                    if (this.checked) {
+                        this.closest('.wi-slot-card').style.borderColor = 'var(--green)';
+                        this.closest('.wi-slot-card').style.background = 'rgba(47,74,30,0.05)';
+                        this.closest('.wi-slot-card').querySelector('i').style.color = 'var(--green)';
+                    }
+                });
+            });
+
+            // Amount input
+            const amountInput = document.getElementById('wi-amount');
+            if (amountInput) {
+                amountInput.addEventListener('input', function() {
+                    // Clear preset selection
+                    document.querySelectorAll('.wi-amt-preset').forEach(btn => {
+                        btn.style.borderColor = 'var(--border)';
+                        btn.style.color = 'var(--muted)';
+                        btn.style.background = '#fff';
+                    });
+                    wiUpdateDaysPreview();
+                });
+            }
+
+            // Initialize first selections
+            const firstMilk = document.querySelector('.wi-milk-radio:checked');
+            if (firstMilk) {
+                firstMilk.closest('.wi-milk-card').style.borderColor = 'var(--green)';
+                firstMilk.closest('.wi-milk-card').style.background = 'rgba(47,74,30,0.05)';
+            }
+
+            const firstSlot = document.querySelector('.wi-slot-radio:checked');
+            if (firstSlot) {
+                firstSlot.closest('.wi-slot-card').style.borderColor = 'var(--green)';
+                firstSlot.closest('.wi-slot-card').style.background = 'rgba(47,74,30,0.05)';
+                firstSlot.closest('.wi-slot-card').querySelector('i').style.color = 'var(--green)';
+            }
+
+            // Set first qty button as selected
+            const firstQtyBtn = document.querySelector('.wi-qty-btn[data-qty="1"]');
+            if (firstQtyBtn) {
+                firstQtyBtn.style.borderColor = 'var(--green)';
+                firstQtyBtn.style.color = 'var(--green)';
+                firstQtyBtn.style.background = 'rgba(47,74,30,0.05)';
+                wiUpdatePreview();
+            }
+        });
+
+        // Referral functions
+        function copyReferralCode(code) {
+            navigator.clipboard.writeText(code).then(() => {
+                const icon = document.getElementById('copy-icon');
+                icon.className = 'fa-solid fa-check text-sm';
+                setTimeout(() => {
+                    icon.className = 'fa-solid fa-copy text-sm';
+                }, 2000);
+            });
+        }
+
+        function copyReferralLink(link) {
+            navigator.clipboard.writeText(link).then(() => {
+                event.target.innerHTML = '<i class="fa-solid fa-check text-sm"></i> Copied!';
+                setTimeout(() => {
+                    event.target.innerHTML = '<i class="fa-solid fa-link text-sm"></i> Copy Link';
+                }, 2000);
+            });
+        }
+
+        // Top-up modal functions
+        function openTopupModal(subscriptionId) {
+            // Implementation for top-up modal
+            console.log('Opening top-up modal for subscription:', subscriptionId);
+        }
+
+        // Calendar functions
+        let currentCalMonth = new Date().getMonth();
+        let currentCalYear = new Date().getFullYear();
+
+        function calPrev() {
+            currentCalMonth--;
+            if (currentCalMonth < 0) {
+                currentCalMonth = 11;
+                currentCalYear--;
+            }
+            renderCalendar();
+        }
+
+        function calNext() {
+            const now = new Date();
+            const maxMonth = now.getMonth() + 2; // Allow 2 months ahead
+            const maxYear = now.getFullYear();
+            
+            if (currentCalYear < maxYear || (currentCalYear === maxYear && currentCalMonth < maxMonth)) {
+                currentCalMonth++;
+                if (currentCalMonth > 11) {
+                    currentCalMonth = 0;
+                    currentCalYear++;
+                }
+                renderCalendar();
+            }
+        }
+
+        function renderCalendar() {
+            const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+                'July', 'August', 'September', 'October', 'November', 'December'];
+            
+            document.getElementById('cal-month-label').textContent = monthNames[currentCalMonth] + ' ' + currentCalYear;
+            
+            // Enable/disable next button
+            const now = new Date();
+            const maxMonth = now.getMonth() + 2;
+            const maxYear = now.getFullYear();
+            const nextBtn = document.getElementById('cal-next-btn');
+            
+            if (currentCalYear > maxYear || (currentCalYear === maxYear && currentCalMonth >= maxMonth)) {
+                nextBtn.style.opacity = '0.5';
+                nextBtn.style.pointerEvents = 'none';
+            } else {
+                nextBtn.style.opacity = '1';
+                nextBtn.style.pointerEvents = 'auto';
+            }
+            
+            // Render calendar grid (simplified version)
+            const grid = document.getElementById('cal-grid');
+            if (grid) {
+                grid.innerHTML = ''; // Clear existing content
+                
+                const firstDay = new Date(currentCalYear, currentCalMonth, 1).getDay();
+                const daysInMonth = new Date(currentCalYear, currentCalMonth + 1, 0).getDate();
+                
+                // Add empty cells for days before month starts
+                for (let i = 0; i < firstDay; i++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'aspect-square';
+                    grid.appendChild(cell);
+                }
+                
+                // Add days of the month
+                for (let day = 1; day <= daysInMonth; day++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'aspect-square flex items-center justify-center text-xs rounded cursor-pointer hover:bg-gray-100';
+                    cell.textContent = day;
+                    
+                    const cellDate = new Date(currentCalYear, currentCalMonth, day);
+                    const today = new Date();
+                    
+                    if (cellDate.toDateString() === today.toDateString()) {
+                        cell.style.background = 'var(--green)';
+                        cell.style.color = '#fff';
+                        cell.style.fontWeight = 'bold';
+                    } else {
+                        cell.style.color = 'var(--text)';
+                    }
+                    
+                    grid.appendChild(cell);
+                }
+            }
+        }
+
+        // Initialize calendar on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            renderCalendar();
+        });
+    </script>
 @endsection
