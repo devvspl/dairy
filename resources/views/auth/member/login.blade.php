@@ -7,13 +7,13 @@
 <div class="text-center mb-3 sm:mb-4">
     <div class="inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full" style="background-color: rgba(47, 74, 30, 0.1);">
         <i class="fa-solid fa-mobile-screen-button text-xs" style="color: var(--primary-green);"></i>
-        <span class="text-xs font-bold" style="color: var(--primary-green);">MEMBER LOGIN</span>
+        <span class="text-xs font-bold" style="color: var(--primary-green);">MEMBER ACCESS</span>
     </div>
 </div>
 
 <div class="text-center mb-4 sm:mb-6">
-    <h2 class="text-xl sm:text-2xl font-bold" style="color: var(--text-dark);">Welcome Back!</h2>
-    <p class="mt-1 text-xs" style="color: var(--text-muted);">Login with your mobile number</p>
+    <h2 class="text-xl sm:text-2xl font-bold" style="color: var(--text-dark);">Sign In to Your Account</h2>
+    <p class="mt-1 text-xs" style="color: var(--text-muted);">Enter your registered mobile number to continue</p>
 </div>
 
     <!-- Success/Error Messages -->
