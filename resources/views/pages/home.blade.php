@@ -460,7 +460,7 @@
         </style>
     @endpush
     <!---Banner start -->
-    <section class="tb-hero">
+    {{-- <section class="tb-hero">
         <div class="tb-hero-wrap">
             <div class="tb-slider" id="tbSlider" aria-label="Homepage banner slider">
                 <div class="tb-slides" id="tbSlides">
@@ -501,7 +501,7 @@
                 </div>
             </div>
         </div>
-    </section>
+    </section> --}}
     <!--- our features -->
     <!--<section class="tb-cats">-->
     <!--    <div class="container">-->
