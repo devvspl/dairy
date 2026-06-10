@@ -945,8 +945,13 @@
                         </div>
 
                         <div class="apw-pd-stock">
-                            <span class="apw-pd-pill">{{ ucfirst(str_replace('_', ' ', $product->stock_status)) }}</span>
+                            @php $inStock = $product->stock_status === 'available' && $product->stock_quantity !== 0; @endphp
+                            <span class="apw-pd-pill" style="{{ $inStock ? '' : 'background:#dc2626;color:#fff;border-color:#dc2626;' }}">
+                                {{ $inStock ? ucfirst(str_replace('_', ' ', $product->stock_status)) : 'Out of Stock' }}
+                            </span>
+                            @if($inStock)
                             <span>Delivery in 2–6 hours (area wise)</span>
+                            @endif
                         </div>
 
                         @if ($product->storage_temp || $product->shelf_life || $product->best_for)
@@ -1020,6 +1025,7 @@
                         @endif
 
                         <div class="apw-pd-ctaRow">
+                            @if($inStock)
                             <div class="apw-pd-qty" aria-label="Quantity selector">
                                 <button type="button" id="apwPdDecQty">−</button>
                                 <input type="text" id="apwPdQty" value="1" inputmode="numeric"
@@ -1027,6 +1033,12 @@
                                 <button type="button" id="apwPdIncQty">+</button>
                             </div>
                             <button class="apw-pd-btn primary" type="button" id="apwPdAddToCartBtn">Add to Cart</button>
+                            @else
+                            <button class="apw-pd-btn primary" type="button" disabled
+                                style="opacity:0.5;cursor:not-allowed;grid-column:1/-1;background:#9ca3af;border-color:#9ca3af;">
+                                <i class="fa-solid fa-circle-xmark mr-1"></i> Out of Stock
+                            </button>
+                            @endif
                         </div>
 
                         <div class="apw-pd-miniActions">

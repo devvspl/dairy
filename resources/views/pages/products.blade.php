@@ -379,6 +379,7 @@
 }
 #plpgProductPage .plpg-tag-hot{ border-color:rgba(241,204,36,.75); }
 #plpgProductPage .plpg-tag-new{ border-color:rgba(38,61,24,.25); }
+#plpgProductPage .plpg-tag-out{ border-color:rgba(220,38,38,.5); background:rgba(220,38,38,.92); color:#fff; }
 
 #plpgProductPage .plpg-media{
   height:220px;
@@ -874,7 +875,14 @@
               </span>
             </div>
             @endif
-            <div class="plpg-media">
+            @if($product->stock_status !== 'available' || $product->stock_quantity === 0)
+            <div class="plpg-badges" style="@if($product->badge) top:44px; @endif">
+              <span class="plpg-tag plpg-tag-out">
+                <i class="fa-solid fa-circle-xmark"></i> Out of Stock
+              </span>
+            </div>
+            @endif
+            <div class="plpg-media" @if($product->stock_status !== 'available' || $product->stock_quantity === 0) style="opacity:0.6" @endif>
               <img src="{{ asset($product->main_image) }}" alt="{{ $product->name }}">
               {{-- <button class="plpg-quick" type="button" data-quick="true"><i class="fa-solid fa-eye"></i> Quick View</button> --}}
             </div>
@@ -1188,13 +1196,22 @@
           </span>
         </div>
       ` : '';
+      const isOutOfStock = product.stock_status !== 'available' || product.stock_quantity === 0;
+      const outOfStockHtml = isOutOfStock ? `
+        <div class="plpg-badges" ${product.badge ? 'style="top:44px"' : ''}>
+          <span class="plpg-tag plpg-tag-out">
+            <i class="fa-solid fa-circle-xmark"></i> Out of Stock
+          </span>
+        </div>
+      ` : '';
 
       const mrpHtml = product.mrp ? `<span class="plpg-mrp">₹${Math.round(product.mrp)}</span>` : '';
 
       return `
         <article class="plpg-card" data-product='${JSON.stringify(product)}'>
           ${badgeHtml}
-          <div class="plpg-media">
+          ${outOfStockHtml}
+          <div class="plpg-media" style="${isOutOfStock ? 'opacity:0.6' : ''}">
             <img src="${product.image || ''}" alt="${product.name || 'Product'}">
           </div>
           <div class="plpg-info">

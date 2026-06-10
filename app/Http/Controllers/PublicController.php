@@ -258,6 +258,8 @@ class PublicController extends Controller
                 'badge' => $product->badge,
                 'badge_color' => $product->badge_color,
                 'rating' => $product->rating,
+                'stock_status' => $product->stock_status,
+                'stock_quantity' => $product->stock_quantity,
                 'category' => $product->category ? $product->category->title : null,
                 'category_slug' => $product->category ? $product->category->slug : null,
                 'category_id' => $product->category_id,
