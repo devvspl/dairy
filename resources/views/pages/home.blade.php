@@ -953,8 +953,17 @@
                                         </select>
                                     </div>
                                     <button class="tb-add add-to-cart-btn" type="button"
-                                        data-product-id="{{ $product->id }}">
-                                        {{ in_array($product->slug, ['1-litre-cow-milk', '1-litre-buffalo-milk']) ? 'Subscribe Now' : 'Add to Cart' }}
+                                        data-product-id="{{ $product->id }}"
+                                        @if($product->stock_status !== 'available' || $product->stock_quantity === 0)
+                                            disabled style="opacity:0.5;cursor:not-allowed;background:#9ca3af;"
+                                        @endif>
+                                        @if($product->stock_status !== 'available' || $product->stock_quantity === 0)
+                                            Out of Stock
+                                        @elseif(in_array($product->slug, ['1-litre-cow-milk', '1-litre-buffalo-milk']))
+                                            Subscribe Now
+                                        @else
+                                            Add to Cart
+                                        @endif
                                     </button>
                                 </div>
                             </article>
@@ -1479,6 +1488,7 @@
                             addToCartBtn.dataset.listenerAttached = 'true';
                             addToCartBtn.addEventListener('click', function(e) {
                                 e.stopPropagation();
+                                if (this.disabled) return;
                                 var parentCard = this.closest('article.tb-card');
                                 if (!parentCard) return;
 
