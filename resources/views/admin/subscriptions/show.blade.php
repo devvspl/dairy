@@ -416,11 +416,17 @@
                 @if($log->old_values || $log->new_values)
                 <div class="flex flex-wrap gap-x-4 gap-y-0.5 mt-1 text-[10px]" style="color:var(--muted);">
                     @foreach($log->new_values ?? [] as $k => $v)
+                    @php
+                        $vStr   = is_array($v)   ? json_encode($v)   : (string) $v;
+                        $oldStr = isset($log->old_values[$k])
+                            ? (is_array($log->old_values[$k]) ? json_encode($log->old_values[$k]) : (string) $log->old_values[$k])
+                            : null;
+                    @endphp
                     <span><span class="font-semibold">{{ ucfirst(str_replace('_',' ',$k)) }}:</span>
-                        @if(isset($log->old_values[$k]) && $log->old_values[$k] != $v)
-                            <span style="text-decoration:line-through;opacity:0.6;">{{ $log->old_values[$k] }}</span> →
+                        @if($oldStr !== null && $oldStr != $vStr)
+                            <span style="text-decoration:line-through;opacity:0.6;">{{ Str::limit($oldStr, 60) }}</span> →
                         @endif
-                        {{ $v }}</span>
+                        {{ Str::limit($vStr, 80) }}</span>
                     @endforeach
                 </div>
                 @endif
