@@ -198,7 +198,6 @@
                     <select name="stock_status" class="w-full px-3 py-2 border rounded-lg" style="border-color: var(--border);">
                         <option value="available" {{ old('stock_status', $product->stock_status) == 'available' ? 'selected' : '' }}>Available</option>
                         <option value="out_of_stock" {{ old('stock_status', $product->stock_status) == 'out_of_stock' ? 'selected' : '' }}>Out of Stock</option>
-                        <option value="limited" {{ old('stock_status', $product->stock_status) == 'limited' ? 'selected' : '' }}>Limited Stock</option>
                     </select>
                     @error('stock_status')<p class="text-red-600 text-sm mt-1">{{ $message }}</p>@enderror
                 </div>
