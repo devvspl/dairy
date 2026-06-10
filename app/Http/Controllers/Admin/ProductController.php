@@ -79,6 +79,9 @@ class ProductController extends Controller
         $validated['is_active'] = $request->has('is_active');
         $validated['is_featured'] = $request->has('is_featured');
 
+        // Ensure badge_color is never null (DB column has NOT NULL constraint)
+        $validated['badge_color'] = $validated['badge_color'] ?? '';
+
         // Handle multiple image uploads
         $uploadedImages = [];
         if ($request->hasFile('images')) {
@@ -163,6 +166,9 @@ class ProductController extends Controller
 
         $validated['is_active'] = $request->has('is_active');
         $validated['is_featured'] = $request->has('is_featured');
+
+        // Ensure badge_color is never null (DB column has NOT NULL constraint)
+        $validated['badge_color'] = $validated['badge_color'] ?? '';
 
         // Handle multiple image uploads
         $existingImages = $product->images ?? [];
