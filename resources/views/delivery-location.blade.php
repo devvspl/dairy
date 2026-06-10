@@ -145,8 +145,14 @@
                             <div class="text-xs" style="color: var(--muted);"><i class="fa-solid fa-phone mr-1"></i>{{ $customer->phone ?? 'N/A' }}</div>
                         </td>
                         <td class="px-4 py-3 text-sm max-w-[180px]" style="color: var(--muted);">
-                            {{ $sub->delivery_address ?? '—' }}
+                            <div id="addr-text-{{ $sub->id }}">{{ $sub->delivery_address ?? '—' }}</div>
                             @if($sub->delivery_instructions)<p class="text-[10px] mt-0.5 font-medium" style="color:#b46000;"><i class="fa-solid fa-comment-dots mr-0.5"></i>{{ $sub->delivery_instructions }}</p>@endif
+                            <button type="button"
+                                onclick="openAddressModal({{ $sub->id }}, '{{ addslashes($sub->delivery_address ?? '') }}', '{{ route('delivery.update-address', [$location, $sub]) }}')"
+                                class="mt-1 inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-md hover:opacity-80"
+                                style="background:rgba(47,74,30,0.08);color:var(--green);">
+                                <i class="fa-solid fa-pen text-[9px]"></i> Edit
+                            </button>
                         </td>
                         <td class="px-4 py-3">
                             <div class="text-sm font-medium" style="color: var(--text);">{{ $plan?->name ?? 'Milk Wallet' }}</div>
@@ -251,8 +257,14 @@
                             <div class="text-xs" style="color: var(--muted);"><i class="fa-solid fa-phone mr-1"></i>{{ $customer->phone ?? 'N/A' }}</div>
                         </td>
                         <td class="px-4 py-3 text-sm max-w-[180px]" style="color: var(--muted);">
-                            {{ $sub->delivery_address ?? '—' }}
+                            <div id="addr-text-{{ $sub->id }}">{{ $sub->delivery_address ?? '—' }}</div>
                             @if($sub->delivery_instructions)<p class="text-[10px] mt-0.5 font-medium" style="color:#b46000;"><i class="fa-solid fa-comment-dots mr-0.5"></i>{{ $sub->delivery_instructions }}</p>@endif
+                            <button type="button"
+                                onclick="openAddressModal({{ $sub->id }}, '{{ addslashes($sub->delivery_address ?? '') }}', '{{ route('delivery.update-address', [$location, $sub]) }}')"
+                                class="mt-1 inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-md hover:opacity-80"
+                                style="background:rgba(47,74,30,0.08);color:var(--green);">
+                                <i class="fa-solid fa-pen text-[9px]"></i> Edit
+                            </button>
                         </td>
                         <td class="px-4 py-3">
                             <div class="text-sm font-medium" style="color: var(--text);">{{ $plan?->name ?? 'Milk Wallet' }}</div>
@@ -326,6 +338,88 @@
     </div>
 
 </div>
+
+<!-- Address Edit Modal -->
+<div id="addressModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-start justify-center p-4 overflow-y-auto">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 mt-24 mx-auto">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-base font-bold" style="color: var(--text);">
+                <i class="fa-solid fa-location-dot mr-2" style="color:var(--green);"></i>Update Delivery Address
+            </h3>
+            <button type="button" onclick="closeAddressModal()" class="text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
+        </div>
+        <textarea id="addressInput" rows="3"
+            class="w-full px-3 py-2 border rounded-lg text-sm mb-4 resize-none" style="border-color: var(--border);"
+            placeholder="Enter correct delivery address..."></textarea>
+        <div class="flex gap-3">
+            <button type="button" onclick="closeAddressModal()"
+                class="flex-1 py-2 rounded-lg border font-semibold text-sm" style="border-color: var(--border); color: var(--text);">
+                Cancel
+            </button>
+            <button type="button" onclick="saveAddress()"
+                class="flex-1 py-2 rounded-lg font-semibold text-sm text-white" style="background-color: var(--green);">
+                <i class="fa-solid fa-floppy-disk mr-1"></i> Save
+            </button>
+        </div>
+        <p id="addressSaveMsg" class="hidden text-xs mt-3 text-center font-semibold" style="color:var(--green);"></p>
+    </div>
+</div>
+
+<script>
+let _addrSubId   = null;
+let _addrUrl     = null;
+
+function openAddressModal(subId, currentAddr, url) {
+    _addrSubId = subId;
+    _addrUrl   = url;
+    document.getElementById('addressInput').value = currentAddr;
+    document.getElementById('addressSaveMsg').classList.add('hidden');
+    const modal = document.getElementById('addressModal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+}
+
+function closeAddressModal() {
+    document.getElementById('addressModal').classList.add('hidden');
+    document.getElementById('addressModal').classList.remove('flex');
+}
+
+function saveAddress() {
+    const addr = document.getElementById('addressInput').value.trim();
+    if (!addr) { alert('Address cannot be empty.'); return; }
+
+    fetch(_addrUrl, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': CSRF_TOKEN,
+            'X-Requested-With': 'XMLHttpRequest',
+        },
+        body: JSON.stringify({ delivery_address: addr }),
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            // Update all address cells for this subscription on the page
+            document.querySelectorAll('#addr-text-' + _addrSubId).forEach(el => {
+                el.textContent = data.address;
+            });
+            const msg = document.getElementById('addressSaveMsg');
+            msg.textContent = '✓ Address updated successfully';
+            msg.classList.remove('hidden');
+            setTimeout(closeAddressModal, 1200);
+        } else {
+            alert('Failed to update address. Please try again.');
+        }
+    })
+    .catch(() => alert('Failed to update address. Please try again.'));
+}
+
+// Close modal on backdrop click
+document.getElementById('addressModal').addEventListener('click', function(e) {
+    if (e.target === this) closeAddressModal();
+});
+</script>
 
 <!-- Update Modal -->
 <div id="updateModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-start justify-center p-4 overflow-y-auto">

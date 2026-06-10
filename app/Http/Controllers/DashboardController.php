@@ -370,6 +370,26 @@ class DashboardController extends Controller
         return redirect()->back()->with('success', 'Delivery updated successfully.');
     }
 
+    /**
+     * Update delivery address on behalf of customer — accessible by delivery persons
+     */
+    public function deliveryUpdateAddress(Request $request, Location $location, \App\Models\UserSubscription $subscription)
+    {
+        $user = auth()->user();
+
+        if (!$user->locations->contains($location->id)) {
+            abort(403);
+        }
+
+        $validated = $request->validate([
+            'delivery_address' => 'required|string|max:500',
+        ]);
+
+        $subscription->update(['delivery_address' => $validated['delivery_address']]);
+
+        return response()->json(['success' => true, 'address' => $validated['delivery_address']]);
+    }
+
     public function admin()
     {
         // Visitor Statistics

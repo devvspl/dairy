@@ -86,6 +86,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/delivery/location/{location}/exports', [DashboardController::class, 'deliveryLocationExportList'])->name('delivery.location.exports.list');
     Route::delete('/delivery/exports/{export}', [DashboardController::class, 'deliveryLocationExportDelete'])->name('delivery.location.exports.delete');
     Route::post('/delivery/location/{location}/update/{delivery}', [DashboardController::class, 'deliveryUpdateStatus'])->name('delivery.update-status');
+    Route::post('/delivery/location/{location}/address/{subscription}', [DashboardController::class, 'deliveryUpdateAddress'])->name('delivery.update-address');
     // Auth Actions
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
     Route::post('/member/logout', [App\Http\Controllers\Auth\MemberAuthController::class, 'logout'])->name('member.logout');
