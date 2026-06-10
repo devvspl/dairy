@@ -200,6 +200,7 @@ Route::middleware('auth')->group(function () {
             Route::post('{subscription}/status', [App\Http\Controllers\Admin\UserSubscriptionController::class, 'updateStatus'])->name('update-status');
             Route::post('{subscription}/payment', [App\Http\Controllers\Admin\UserSubscriptionController::class, 'updatePaymentStatus'])->name('update-payment');
             Route::post('{subscription}/note', [App\Http\Controllers\Admin\UserSubscriptionController::class, 'addNote'])->name('add-note');
+            Route::post('{subscription}/address', [App\Http\Controllers\Admin\UserSubscriptionController::class, 'updateAddress'])->name('update-address');
             Route::get('{subscription}/deliveries', [App\Http\Controllers\Admin\DeliveryLogController::class, 'index'])->name('deliveries.index');
             Route::post('{subscription}/deliveries/generate', [App\Http\Controllers\Admin\DeliveryLogController::class, 'generateSchedule'])->name('deliveries.generate');
             Route::delete('{subscription}/deliveries/reset', [App\Http\Controllers\Admin\DeliveryLogController::class, 'resetSchedule'])->name('deliveries.reset');

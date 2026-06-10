@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class DeliveryAddress extends Model
 {
     protected $fillable = [
-        'user_id', 'location_id', 'label', 'flat_no', 'address', 'is_default',
+        'user_id', 'location_id', 'label', 'flat_no', 'tower', 'society', 'address', 'is_default',
     ];
 
     protected $casts = [
@@ -26,6 +26,12 @@ class DeliveryAddress extends Model
 
     public function getFullAddressAttribute(): string
     {
-        return $this->flat_no ? $this->flat_no . ', ' . $this->address : $this->address;
+        $parts = array_filter([
+            $this->flat_no,
+            $this->tower,
+            $this->society,
+            $this->address,
+        ]);
+        return implode(', ', $parts);
     }
 }

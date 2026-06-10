@@ -110,19 +110,22 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @forelse($deliveries as $i => $delivery)
+                    @php
+                        $pendingDeliveries   = $deliveries->filter(fn($d) => $d->status === 'pending');
+                        $completedDeliveries = $deliveries->filter(fn($d) => $d->status !== 'pending');
+                        $globalIndex = $deliveries->firstItem();
+                    @endphp
+
+                    @php $rowIndex = $globalIndex; @endphp
+                    @forelse($pendingDeliveries as $delivery)
                     @php
                         $sub        = $delivery->subscription;
                         $customer   = $sub->user;
                         $plan       = $sub->membershipPlan;
                         $milkItems  = $delivery->milk_items ?? [];
                         $wds        = $sub->deliverySettings;
-                        // Fallback to delivery settings milk_items if log doesn't have them
-                        if (empty($milkItems) && $wds) {
-                            $milkItems = $wds->getMilkItemsResolved();
-                        }
+                        if (empty($milkItems) && $wds) { $milkItems = $wds->getMilkItemsResolved(); }
                         $icons = ['cow'=>'🐄','buffalo'=>'🐃','toned'=>'💧','full_fat'=>'🥛'];
-                        // Daily cost for wallet check
                         $dailyCost = 0;
                         if (!empty($milkItems)) {
                             foreach ($milkItems as $mi) {
@@ -135,26 +138,18 @@
                             $dailyCost = round((float)$sub->price_per_litre * (float)$sub->quantity_per_day, 2);
                         }
                     @endphp
-                    <tr class="border-b hover:bg-gray-50" style="border-color: var(--border);">
-                        <td class="px-4 py-3 text-sm" style="color: var(--muted);">
-                            {{ $deliveries->firstItem() + $i }}
-                        </td>
+                    <tr class="border-b hover:bg-yellow-50" style="border-color: var(--border);">
+                        <td class="px-4 py-3 text-sm" style="color: var(--muted);">{{ $rowIndex++ }}</td>
                         <td class="px-4 py-3">
                             <div class="font-medium text-sm" style="color: var(--text);">{{ $customer->name }}</div>
-                            <div class="text-xs" style="color: var(--muted);">
-                                <i class="fa-solid fa-phone mr-1"></i>{{ $customer->phone ?? 'N/A' }}
-                            </div>
+                            <div class="text-xs" style="color: var(--muted);"><i class="fa-solid fa-phone mr-1"></i>{{ $customer->phone ?? 'N/A' }}</div>
                         </td>
                         <td class="px-4 py-3 text-sm max-w-[180px]" style="color: var(--muted);">
                             {{ $sub->delivery_address ?? '—' }}
-                            @if($sub->delivery_instructions)
-                            <p class="text-[10px] mt-0.5 font-medium" style="color:#b46000;"><i class="fa-solid fa-comment-dots mr-0.5"></i>{{ $sub->delivery_instructions }}</p>
-                            @endif
+                            @if($sub->delivery_instructions)<p class="text-[10px] mt-0.5 font-medium" style="color:#b46000;"><i class="fa-solid fa-comment-dots mr-0.5"></i>{{ $sub->delivery_instructions }}</p>@endif
                         </td>
                         <td class="px-4 py-3">
-                            <div class="text-sm font-medium" style="color: var(--text);">
-                                {{ $plan?->name ?? 'Milk Wallet' }}
-                            </div>
+                            <div class="text-sm font-medium" style="color: var(--text);">{{ $plan?->name ?? 'Milk Wallet' }}</div>
                             @if(!empty($milkItems))
                                 <div class="mt-1 space-y-0.5">
                                     @foreach($milkItems as $mi)
@@ -167,53 +162,23 @@
                                     @endforeach
                                 </div>
                             @elseif($sub->milk_type)
-                            <div class="text-xs mt-0.5" style="color: var(--muted);">
-                                {{ ucfirst(str_replace('_',' ',$sub->milk_type)) }}
-                                @if($sub->price_per_litre) · ₹{{ number_format($sub->price_per_litre,2) }}/L @endif
-                            </div>
+                            <div class="text-xs mt-0.5" style="color: var(--muted);">{{ ucfirst(str_replace('_',' ',$sub->milk_type)) }}@if($sub->price_per_litre) · ₹{{ number_format($sub->price_per_litre,2) }}/L @endif</div>
                             @endif
                             @php $slot = !empty($milkItems[0]['slot']) ? $milkItems[0]['slot'] : $sub->delivery_slot; @endphp
-                            @if($slot)
-                            <div class="text-xs mt-0.5" style="color: var(--muted);">
-                                {{ ucfirst($slot) }}
-                            </div>
-                            @endif
-                            @if($sub->delivery_status !== 'active')
-                            <span class="inline-block mt-1 px-1.5 py-0.5 text-[10px] rounded-full font-semibold
-                                {{ $sub->delivery_status === 'paused'  ? 'bg-yellow-100 text-yellow-700' : '' }}
-                                {{ $sub->delivery_status === 'stopped' ? 'bg-red-100 text-red-700'       : '' }}">
-                                <i class="fa-solid {{ $sub->delivery_status === 'paused' ? 'fa-pause' : 'fa-stop' }} mr-0.5"></i>
-                                {{ ucfirst($sub->delivery_status) }}
-                            </span>
-                            @endif
+                            @if($slot)<div class="text-xs mt-0.5" style="color: var(--muted);">{{ ucfirst($slot) }}</div>@endif
+                            @if($sub->delivery_status !== 'active')<span class="inline-block mt-1 px-1.5 py-0.5 text-[10px] rounded-full font-semibold {{ $sub->delivery_status === 'paused' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700' }}"><i class="fa-solid {{ $sub->delivery_status === 'paused' ? 'fa-pause' : 'fa-stop' }} mr-0.5"></i>{{ ucfirst($sub->delivery_status) }}</span>@endif
                         </td>
-                        <td class="px-4 py-3 text-sm font-semibold" style="color: var(--green);">
-                            {{ $delivery->quantity_delivered }} L
-                        </td>
+                        <td class="px-4 py-3 text-sm font-semibold" style="color: var(--green);">{{ $delivery->quantity_delivered }} L</td>
                         <td class="px-4 py-3">
                             @if($sub->wallet_balance !== null)
-                            <div class="text-sm font-semibold" style="color: {{ (float)$sub->wallet_balance <= 0 ? '#dc2626' : 'var(--green)' }};">
-                                ₹{{ number_format($sub->wallet_balance,2) }}
-                            </div>
+                            <div class="text-sm font-semibold" style="color: {{ (float)$sub->wallet_balance <= 0 ? '#dc2626' : 'var(--green)' }};">₹{{ number_format($sub->wallet_balance,2) }}</div>
                             <div class="text-[10px]" style="color: var(--muted);">of ₹{{ number_format($sub->wallet_total,2) }}</div>
-                            @if($dailyCost > 0)
-                            <div class="text-[10px]" style="color:var(--muted);">₹{{ number_format($dailyCost,2) }}/day</div>
-                            @endif
-                            @if($dailyCost > 0 && (float)$sub->wallet_balance < $dailyCost)
-                                <div class="text-[10px] font-semibold mt-0.5" style="color:#dc2626;"><i class="fa-solid fa-triangle-exclamation mr-0.5"></i>Insufficient</div>
-                            @endif
-                            @else
-                            <span style="color: var(--muted);">—</span>
-                            @endif
+                            @if($dailyCost > 0)<div class="text-[10px]" style="color:var(--muted);">₹{{ number_format($dailyCost,2) }}/day</div>@endif
+                            @if($dailyCost > 0 && (float)$sub->wallet_balance < $dailyCost)<div class="text-[10px] font-semibold mt-0.5" style="color:#dc2626;"><i class="fa-solid fa-triangle-exclamation mr-0.5"></i>Insufficient</div>@endif
+                            @else<span style="color: var(--muted);">—</span>@endif
                         </td>
                         <td class="px-4 py-3">
-                            <span class="px-2 py-1 text-xs rounded-full font-semibold
-                                {{ $delivery->status === 'delivered' ? 'bg-green-100 text-green-800'  : '' }}
-                                {{ $delivery->status === 'pending'   ? 'bg-yellow-100 text-yellow-800': '' }}
-                                {{ $delivery->status === 'skipped'   ? 'bg-gray-100 text-gray-800'    : '' }}
-                                {{ $delivery->status === 'failed'    ? 'bg-red-100 text-red-800'      : '' }}">
-                                {{ ucfirst($delivery->status) }}
-                            </span>
+                            <span class="px-2 py-1 text-xs rounded-full font-semibold bg-yellow-100 text-yellow-800">Pending</span>
                         </td>
                         <td class="px-4 py-3 text-sm" style="color: var(--muted);">
                             {{ $delivery->delivery_time ? \Carbon\Carbon::parse($delivery->delivery_time)->format('h:i A') : '—' }}
@@ -221,37 +186,136 @@
                         <td class="px-4 py-3">
                             @if(in_array($sub->delivery_status ?? 'active', ['paused', 'stopped']))
                                 <span class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold"
-                                    style="background: {{ ($sub->delivery_status === 'stopped') ? 'rgba(180,0,0,0.08)' : 'rgba(180,96,0,0.08)' }};
-                                           color: {{ ($sub->delivery_status === 'stopped') ? '#b40000' : '#b46000' }};">
-                                    <i class="fa-solid {{ ($sub->delivery_status === 'stopped') ? 'fa-stop' : 'fa-pause' }} text-[10px]"></i>
+                                    style="background: {{ $sub->delivery_status === 'stopped' ? 'rgba(180,0,0,0.08)' : 'rgba(180,96,0,0.08)' }}; color: {{ $sub->delivery_status === 'stopped' ? '#b40000' : '#b46000' }};">
+                                    <i class="fa-solid {{ $sub->delivery_status === 'stopped' ? 'fa-stop' : 'fa-pause' }} text-[10px]"></i>
                                     {{ ucfirst($sub->delivery_status) }} — no delivery
                                 </span>
-                            @elseif($delivery->status === 'pending' && $dailyCost > 0 && (float)$sub->wallet_balance < $dailyCost)
-                                <span class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold"
-                                    style="background:rgba(220,38,38,0.08); color:#dc2626;">
-                                    <i class="fa-solid fa-wallet text-[10px]"></i>
-                                    No balance
+                            @elseif($dailyCost > 0 && (float)$sub->wallet_balance < $dailyCost)
+                                <span class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold" style="background:rgba(220,38,38,0.08); color:#dc2626;">
+                                    <i class="fa-solid fa-wallet text-[10px]"></i> No balance
                                 </span>
                             @else
                                 <button onclick="openModal({{ $delivery->id }}, '{{ $delivery->status }}', '{{ $delivery->quantity_delivered }}', '{{ $delivery->delivery_time }}', '{{ addslashes($delivery->notes ?? '') }}', {{ json_encode($milkItems) }})"
                                         class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors hover:opacity-80"
                                         style="background: rgba(47,74,30,0.1); color: var(--green);">
-                                    <i class="fa-solid {{ $delivery->status === 'pending' ? 'fa-check' : 'fa-pen-to-square' }}"></i>
-                                    {{ $delivery->status === 'pending' ? 'Mark' : 'Edit' }}
+                                    <i class="fa-solid fa-check"></i> Mark
                                 </button>
                             @endif
                         </td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="8" class="px-4 py-12 text-center" style="color: var(--muted);">
-                            <i class="fa-solid fa-truck text-4xl mb-3 block" style="color: var(--muted);"></i>
-                            No deliveries for this date / filter.
+                        <td colspan="9" class="px-4 py-6 text-center text-sm" style="color: var(--muted);">
+                            <i class="fa-solid fa-circle-check mr-2" style="color:var(--green);"></i>All deliveries completed for today.
                         </td>
                     </tr>
                     @endforelse
+
+                    {{-- Completed section separator (collapsible) --}}
+                    @if($completedDeliveries->count() > 0)
+                    <tr id="completedToggleRow">
+                        <td colspan="9" class="px-4 py-2 cursor-pointer select-none" onclick="toggleCompleted()"
+                            style="background:rgba(47,74,30,0.04); border-top:2px solid rgba(47,74,30,0.15);">
+                            <div class="flex items-center gap-2 text-sm font-semibold" style="color:var(--green);">
+                                <i class="fa-solid fa-chevron-down text-xs" id="completedChevron"></i>
+                                <span>Completed / Skipped ({{ $completedDeliveries->count() }})</span>
+                                <span class="text-xs font-normal ml-1" style="color:var(--muted);">— click to toggle</span>
+                            </div>
+                        </td>
+                    </tr>
+                    @foreach($completedDeliveries as $delivery)
+                    @php
+                        $sub        = $delivery->subscription;
+                        $customer   = $sub->user;
+                        $plan       = $sub->membershipPlan;
+                        $milkItems  = $delivery->milk_items ?? [];
+                        $wds        = $sub->deliverySettings;
+                        if (empty($milkItems) && $wds) { $milkItems = $wds->getMilkItemsResolved(); }
+                        $icons = ['cow'=>'🐄','buffalo'=>'🐃','toned'=>'💧','full_fat'=>'🥛'];
+                        $dailyCost = 0;
+                        if (!empty($milkItems)) {
+                            foreach ($milkItems as $mi) {
+                                $ppl = (float)($mi['ppl'] ?? 0);
+                                if (!$ppl) { $mp2 = \App\Models\MilkPrice::forType($mi['milk_type'] ?? ''); $ppl = $mp2 ? (float)$mp2->price_per_litre : 0; }
+                                $dailyCost += $ppl * (float)($mi['qty'] ?? 1);
+                            }
+                            $dailyCost = round($dailyCost, 2);
+                        } elseif ($sub->price_per_litre && $sub->quantity_per_day) {
+                            $dailyCost = round((float)$sub->price_per_litre * (float)$sub->quantity_per_day, 2);
+                        }
+                    @endphp
+                    <tr class="completed-row border-b opacity-60 hover:opacity-100" style="border-color: var(--border);">
+                        <td class="px-4 py-3 text-sm" style="color: var(--muted);">{{ $rowIndex++ }}</td>
+                        <td class="px-4 py-3">
+                            <div class="font-medium text-sm" style="color: var(--text);">{{ $customer->name }}</div>
+                            <div class="text-xs" style="color: var(--muted);"><i class="fa-solid fa-phone mr-1"></i>{{ $customer->phone ?? 'N/A' }}</div>
+                        </td>
+                        <td class="px-4 py-3 text-sm max-w-[180px]" style="color: var(--muted);">
+                            {{ $sub->delivery_address ?? '—' }}
+                            @if($sub->delivery_instructions)<p class="text-[10px] mt-0.5 font-medium" style="color:#b46000;"><i class="fa-solid fa-comment-dots mr-0.5"></i>{{ $sub->delivery_instructions }}</p>@endif
+                        </td>
+                        <td class="px-4 py-3">
+                            <div class="text-sm font-medium" style="color: var(--text);">{{ $plan?->name ?? 'Milk Wallet' }}</div>
+                            @if(!empty($milkItems))
+                                <div class="mt-1 space-y-0.5">
+                                    @foreach($milkItems as $mi)
+                                    <div class="text-xs flex items-center gap-1" style="color:var(--muted);">
+                                        <span>{{ $icons[$mi['milk_type']] ?? '🥛' }}</span>
+                                        <span class="font-semibold" style="color:var(--text);">{{ $mi['qty'] }}L</span>
+                                        <span>{{ ucfirst(str_replace('_',' ',$mi['milk_type'])) }}</span>
+                                        @if(!empty($mi['ppl']))<span style="color:var(--green);">₹{{ number_format($mi['ppl'],2) }}/L</span>@endif
+                                    </div>
+                                    @endforeach
+                                </div>
+                            @elseif($sub->milk_type)
+                            <div class="text-xs mt-0.5" style="color: var(--muted);">{{ ucfirst(str_replace('_',' ',$sub->milk_type)) }}</div>
+                            @endif
+                        </td>
+                        <td class="px-4 py-3 text-sm font-semibold" style="color: var(--green);">{{ $delivery->quantity_delivered }} L</td>
+                        <td class="px-4 py-3">
+                            @if($sub->wallet_balance !== null)
+                            <div class="text-sm font-semibold" style="color: var(--green);">₹{{ number_format($sub->wallet_balance,2) }}</div>
+                            @else<span style="color: var(--muted);">—</span>@endif
+                        </td>
+                        <td class="px-4 py-3">
+                            <span class="px-2 py-1 text-xs rounded-full font-semibold
+                                {{ $delivery->status === 'delivered' ? 'bg-green-100 text-green-800' : '' }}
+                                {{ $delivery->status === 'skipped'   ? 'bg-gray-100 text-gray-800'   : '' }}
+                                {{ $delivery->status === 'failed'    ? 'bg-red-100 text-red-800'     : '' }}">
+                                {{ ucfirst($delivery->status) }}
+                            </span>
+                        </td>
+                        <td class="px-4 py-3 text-sm" style="color: var(--muted);">
+                            {{ $delivery->delivery_time ? \Carbon\Carbon::parse($delivery->delivery_time)->format('h:i A') : '—' }}
+                        </td>
+                        <td class="px-4 py-3">
+                            <button onclick="openModal({{ $delivery->id }}, '{{ $delivery->status }}', '{{ $delivery->quantity_delivered }}', '{{ $delivery->delivery_time }}', '{{ addslashes($delivery->notes ?? '') }}', {{ json_encode($milkItems) }})"
+                                    class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors hover:opacity-80"
+                                    style="background: rgba(47,74,30,0.1); color: var(--green);">
+                                <i class="fa-solid fa-pen-to-square"></i> Edit
+                            </button>
+                        </td>
+                    </tr>
+                    @endforeach
+                    @endif
+
                 </tbody>
             </table>
+            <script>
+                // Start collapsed
+                document.querySelectorAll('.completed-row').forEach(r => r.style.display = 'none');
+                document.getElementById('completedChevron')?.classList.replace('fa-chevron-down','fa-chevron-right');
+                let completedVisible = false;
+                function toggleCompleted() {
+                    completedVisible = !completedVisible;
+                    document.querySelectorAll('.completed-row').forEach(r => r.style.display = completedVisible ? '' : 'none');
+                    const chevron = document.getElementById('completedChevron');
+                    if (chevron) {
+                        chevron.classList.toggle('fa-chevron-down', completedVisible);
+                        chevron.classList.toggle('fa-chevron-right', !completedVisible);
+                    }
+                }
+            </script>
         </div>
 
         @if($deliveries->hasPages())

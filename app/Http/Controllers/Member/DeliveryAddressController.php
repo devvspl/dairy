@@ -13,7 +13,9 @@ class DeliveryAddressController extends Controller
         $data = $request->validate([
             'location_id' => 'nullable|exists:locations,id',
             'label'       => 'nullable|string|max:50',
-            'flat_no'     => 'nullable|string|max:100',
+            'flat_no'     => 'required|string|max:100',
+            'tower'       => 'required|string|max:100',
+            'society'     => 'required|string|max:100',
             'address'     => 'required|string|max:500',
             'is_default'  => 'nullable|boolean',
         ]);
@@ -46,7 +48,9 @@ class DeliveryAddressController extends Controller
         $data = $request->validate([
             'location_id' => 'nullable|exists:locations,id',
             'label'       => 'nullable|string|max:50',
-            'flat_no'     => 'nullable|string|max:100',
+            'flat_no'     => 'required|string|max:100',
+            'tower'       => 'required|string|max:100',
+            'society'     => 'required|string|max:100',
             'address'     => 'required|string|max:500',
             'is_default'  => 'nullable|boolean',
         ]);

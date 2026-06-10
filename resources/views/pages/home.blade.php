@@ -883,6 +883,9 @@
                                     @if ($product->badge)
                                         <span class="tb-badge {{ $product->badge_color }}">{{ $product->badge }}</span>
                                     @endif
+                                    @if($product->stock_status !== 'available' || $product->stock_quantity === 0)
+                                        <span class="tb-badge" style="background:#dc2626;">Out of Stock</span>
+                                    @endif
                                     <button class="tb-wish wishlist-btn" type="button" aria-label="Add to wishlist"
                                         data-product-id="{{ $product->id }}">
                                         <i class="fa-regular fa-heart"></i>

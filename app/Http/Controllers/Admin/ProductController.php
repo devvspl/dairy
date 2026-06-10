@@ -79,8 +79,10 @@ class ProductController extends Controller
         $validated['is_active'] = $request->has('is_active');
         $validated['is_featured'] = $request->has('is_featured');
 
-        // Ensure badge_color is never null (DB column has NOT NULL constraint)
+        // Ensure NOT NULL columns never receive null (DB has no default for these)
         $validated['badge_color'] = $validated['badge_color'] ?? '';
+        $validated['meta']        = $validated['meta'] ?? '';
+        $validated['image']       = $validated['image'] ?? '';
 
         // Handle multiple image uploads
         $uploadedImages = [];
@@ -104,13 +106,17 @@ class ProductController extends Controller
             }
         }
 
-        // Handle JSON fields
+        // Handle JSON fields — variants NOT NULL in DB, default to empty array
         $jsonFields = ['pack_sizes', 'delivery_slots', 'specifications', 'nutrition_info', 'storage_instructions', 'features', 'variants'];
         foreach ($jsonFields as $field) {
             if ($request->has($field)) {
                 $value = $request->input($field);
                 $validated[$field] = is_string($value) ? json_decode($value, true) : $value;
             }
+        }
+        // variants is NOT NULL in DB
+        if (empty($validated['variants'])) {
+            $validated['variants'] = [];
         }
 
         $product = Product::create($validated);
@@ -167,8 +173,10 @@ class ProductController extends Controller
         $validated['is_active'] = $request->has('is_active');
         $validated['is_featured'] = $request->has('is_featured');
 
-        // Ensure badge_color is never null (DB column has NOT NULL constraint)
+        // Ensure NOT NULL columns never receive null (DB has no default for these)
         $validated['badge_color'] = $validated['badge_color'] ?? '';
+        $validated['meta']        = $validated['meta'] ?? '';
+        $validated['image']       = $validated['image'] ?? '';
 
         // Handle multiple image uploads
         $existingImages = $product->images ?? [];
@@ -201,6 +209,10 @@ class ProductController extends Controller
                 $value = $request->input($field);
                 $validated[$field] = is_string($value) ? json_decode($value, true) : $value;
             }
+        }
+        // variants is NOT NULL in DB — keep existing if not submitted
+        if (empty($validated['variants'])) {
+            $validated['variants'] = $product->variants ?? [];
         }
 
         $product->update($validated);

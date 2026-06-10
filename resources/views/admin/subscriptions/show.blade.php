@@ -68,7 +68,17 @@
             <!-- Delivery Address -->
             <div class="bg-white rounded-lg shadow-sm p-6 border" style="border-color: var(--border);">
                 <h3 class="text-lg font-bold mb-4" style="color: var(--text);">Delivery Address</h3>
-                <p class="text-sm" style="color: var(--text);">{{ $subscription->delivery_address }}</p>
+                <p class="text-sm mb-4" style="color: var(--text);">{{ $subscription->delivery_address }}</p>
+                <form method="POST" action="{{ route('admin.subscriptions.update-address', $subscription) }}" class="space-y-2">
+                    @csrf
+                    <label class="block text-xs font-semibold mb-1" style="color: var(--muted);">Edit Address (admin override)</label>
+                    <textarea name="delivery_address" rows="3" required
+                              class="w-full px-3 py-2 border rounded-lg text-sm" style="border-color: var(--border);"
+                              placeholder="Enter corrected delivery address...">{{ $subscription->delivery_address }}</textarea>
+                    <button type="submit" class="px-4 py-2 rounded-lg font-semibold text-sm text-white" style="background-color: var(--green);">
+                        <i class="fa-solid fa-floppy-disk mr-1"></i> Save Address
+                    </button>
+                </form>
             </div>
 
             <!-- Location Details -->
@@ -291,7 +301,13 @@
             <!-- Status Management -->
             <div class="bg-white rounded-lg shadow-sm p-6 border" style="border-color: var(--border);">
                 <h3 class="text-lg font-bold mb-4" style="color: var(--text);">Status</h3>
-                
+
+                @if($subscription->status === 'active')
+                <div class="mb-4 p-3 rounded-lg text-sm font-semibold flex items-center gap-2" style="background:#dcfce7; color:#15803d;">
+                    <i class="fa-solid fa-circle-check"></i> Active Subscription
+                </div>
+                @endif
+
                 <form method="POST" action="{{ route('admin.subscriptions.update-status', $subscription) }}">
                     @csrf
                     <select name="status" class="w-full px-3 py-2 border rounded-lg mb-3" style="border-color: var(--border);">
@@ -305,6 +321,18 @@
                         Update Status
                     </button>
                 </form>
+
+                @if(!in_array($subscription->status, ['cancelled', 'expired']))
+                <form method="POST" action="{{ route('admin.subscriptions.update-status', $subscription) }}" class="mt-3"
+                      onsubmit="return confirm('Cancel this subscription? This will stop all future deliveries.')">
+                    @csrf
+                    <input type="hidden" name="status" value="cancelled">
+                    <button type="submit" class="w-full px-4 py-2 rounded-lg font-semibold border-2 text-sm"
+                            style="border-color:#dc2626; color:#dc2626; background:#fff;">
+                        <i class="fa-solid fa-ban mr-1"></i> Cancel Subscription
+                    </button>
+                </form>
+                @endif
             </div>
 
             <!-- Payment Management -->

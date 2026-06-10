@@ -164,6 +164,21 @@ class UserSubscriptionController extends Controller
     }
 
     /**
+     * Update delivery address on behalf of customer (admin only)
+     */
+    public function updateAddress(Request $request, UserSubscription $subscription)
+    {
+        $validated = $request->validate([
+            'delivery_address' => 'required|string|max:500',
+        ]);
+
+        $subscription->update(['delivery_address' => $validated['delivery_address']]);
+
+        return redirect()->route('admin.subscriptions.show', $subscription)
+            ->with('success', 'Delivery address updated successfully!');
+    }
+
+    /**
      * Add notes to subscription
      */
     public function addNote(Request $request, UserSubscription $subscription)

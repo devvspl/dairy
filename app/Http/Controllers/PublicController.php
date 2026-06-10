@@ -26,7 +26,7 @@ class PublicController extends Controller
     {
         $sliders = Slider::active()->get();
         $categories = Category::active()->get();
-        $products = Product::featured()->with('productVariants')->get();
+        $products = Product::active()->with('productVariants')->orderBy('is_featured', 'desc')->orderBy('order')->get();
         $testimonials = Testimonial::active()->get();
         $blogs = Blog::featured()->limit(3)->get();
         $whyChooseUs = WhyChooseUs::active()->get();
