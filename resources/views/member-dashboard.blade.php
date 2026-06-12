@@ -724,6 +724,11 @@
                                 style="background:var(--green);">
                                 Next: Delivery Address <i class="fa-solid fa-arrow-right ml-1"></i>
                             </button>
+                            <div id="wi-error-1" class="hidden mt-2 rounded-xl px-3 py-2.5 text-xs font-semibold flex items-center gap-2"
+                                style="background:#fef2f2;border:1px solid #fecaca;color:#dc2626;">
+                                <i class="fa-solid fa-triangle-exclamation flex-shrink-0"></i>
+                                <span id="wi-error-1-text"></span>
+                            </div>
                         </div>{{-- end wi-step-1 --}}
 
                         {{-- ── STEP 2: Address ── --}}
@@ -800,6 +805,11 @@
                                 <button type="button" onclick="wiGoStep(1)" class="flex-1 py-3 rounded-xl font-semibold border-2 text-sm hover:bg-gray-50" style="border-color:var(--border);color:var(--text);"><i class="fa-solid fa-arrow-left mr-1"></i>Back</button>
                                 <button type="button" onclick="wiGoStep(3)" class="flex-1 py-3 rounded-xl font-bold text-sm hover:shadow-lg" style="background:var(--green);color:#fff;">Next: Add Money <i class="fa-solid fa-arrow-right ml-1"></i></button>
                             </div>
+                            <div id="wi-error-2" class="hidden mt-2 rounded-xl px-3 py-2.5 text-xs font-semibold flex items-center gap-2"
+                                style="background:#fef2f2;border:1px solid #fecaca;color:#dc2626;">
+                                <i class="fa-solid fa-triangle-exclamation flex-shrink-0"></i>
+                                <span id="wi-error-2-text"></span>
+                            </div>
                         </div>{{-- end wi-step-2 --}}
 
                         {{-- ── STEP 3: Amount ── --}}
@@ -824,15 +834,22 @@
                                     @endforeach
                                 </div>
                                 <input type="number" name="amount" id="wi-amount" placeholder="Or enter custom amount"
-                                    min="1" max="500000" step="1" required
+                                    min="1" max="500000" step="1"
                                     class="w-full px-3 py-2.5 text-sm border-2 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent"
                                     style="border-color:var(--border);">
                                 <div id="wi-days-preview" class="hidden mt-2 text-xs font-semibold text-center" style="color:var(--green);"></div>
                             </div>
 
+                            {{-- Inline validation error --}}
+                            <div id="wi-submit-error" class="hidden rounded-xl px-3 py-2.5 text-xs font-semibold flex items-center gap-2"
+                                style="background:#fef2f2; border:1px solid #fecaca; color:#dc2626;">
+                                <i class="fa-solid fa-triangle-exclamation flex-shrink-0"></i>
+                                <span id="wi-submit-error-text"></span>
+                            </div>
+
                             <div class="flex gap-3">
                                 <button type="button" onclick="wiGoStep(2)" class="flex-1 py-3 rounded-xl font-semibold border-2 text-sm hover:bg-gray-50" style="border-color:var(--border);color:var(--text);"><i class="fa-solid fa-arrow-left mr-1"></i>Back</button>
-                                <button type="button" onclick="wiSubmit()"
+                                <button type="button" id="wi-pay-btn" onclick="wiSubmit()"
                                     class="flex-1 py-3 rounded-xl font-bold text-sm text-white hover:shadow-lg flex items-center justify-center gap-2"
                                     style="background:var(--green);">
                                     <i class="fa-solid fa-lock"></i> Pay & Activate
@@ -2212,14 +2229,45 @@
         });
 
         function wiSubmit() {
-            const amount = document.getElementById('wi-amount')?.value;
-            if (!amount || parseFloat(amount) < 1) { alert('Please enter a valid amount (min ₹1).'); return; }
+            const showError = (msg, goBack) => {
+                const errDiv  = document.getElementById('wi-submit-error');
+                const errText = document.getElementById('wi-submit-error-text');
+                if (errDiv && errText) {
+                    errText.textContent = msg;
+                    errDiv.classList.remove('hidden');
+                    setTimeout(() => errDiv.classList.add('hidden'), 5000);
+                } else {
+                    alert(msg);
+                }
+                if (goBack) wiGoStep(2);
+            };
+
+            // Validate location (step 2)
             const loc  = document.getElementById('wi-location-select')?.value;
-            if (!loc)  { wiGoStep(2); alert('Please select your delivery location.'); return; }
+            if (!loc)  { showError('Please select your delivery location.', true); return; }
+
+            // Validate address (step 2)
             const addr = document.getElementById('wi-address')?.value.trim();
-            if (!addr) { wiGoStep(2); alert('Please enter your delivery address.'); return; }
-            const btn = document.querySelector('[onclick="wiSubmit()"]');
-            if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Processing...'; }
+            if (!addr) { showError('Please enter your delivery address.', true); return; }
+
+            // Validate amount (step 3)
+            const amountEl = document.getElementById('wi-amount');
+            const amount   = amountEl?.value;
+            if (!amount || parseFloat(amount) < 1) {
+                if (amountEl) { amountEl.style.borderColor = '#dc2626'; amountEl.focus(); }
+                showError('Please enter a valid amount (minimum ₹1).', false);
+                return;
+            }
+            if (amountEl) amountEl.style.borderColor = '';
+
+            // Disable button & show spinner
+            const btn = document.getElementById('wi-pay-btn');
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processing…';
+                btn.style.opacity = '0.8';
+            }
+
             document.getElementById('walletInitForm').submit();
         }
 
@@ -2670,9 +2718,7 @@
             }
         }
 
-        function wiSubmit() {
-            // Duplicate stub — real validation is in the wiSubmit defined above
-        }
+        // wiSubmit — defined above, this stub prevents accidental override
 
         // Initialize wallet form handlers
         document.addEventListener('DOMContentLoaded', function() {
