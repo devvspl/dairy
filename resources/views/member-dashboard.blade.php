@@ -761,7 +761,7 @@
                                         style="border-color:var(--border);">
                                     <i class="fa-solid fa-search absolute right-3 top-3 text-xs" style="color:var(--muted);"></i>
                                 </div>
-                                <select name="location_id" id="wi-location-select" required
+                                <select name="location_id" id="wi-location-select"
                                     class="w-full px-3 py-2.5 text-sm border-2 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent"
                                     style="border-color:var(--border);">
                                     <option value="">— Select your society / area —</option>
