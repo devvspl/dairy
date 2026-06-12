@@ -219,7 +219,7 @@ class ProductController extends Controller
 
         $this->syncVariants($product, $request->input('variants_data'));
 
-        return redirect()->route('admin.products.index')->with('success', 'Product updated successfully!');
+        return redirect()->route('admin.products.edit', $product)->with('success', 'Product updated successfully!');
     }
 
     public function destroy(Product $product)
@@ -252,9 +252,9 @@ class ProductController extends Controller
         // Update product
         $product->update(['images' => $images]);
 
-        // If main image was removed, set first available image as main
+        // If main image was removed, set first available image as main, or empty string if no images left
         if ($product->image === $imageToRemove) {
-            $product->update(['image' => !empty($images) ? $images[0] : null]);
+            $product->update(['image' => !empty($images) ? $images[0] : '']);
         }
 
         return response()->json(['success' => true, 'images' => $images]);
