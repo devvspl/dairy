@@ -2149,65 +2149,6 @@
             }
         }
 
-        // Wizard step navigation
-        function wiGoStep(n) {
-            if (n === 2) {
-                // no validation needed for step 1 — milk/qty/slot all have defaults
-            }
-            if (n === 3) {
-                // Validate all required fields in step 2
-                const loc  = document.getElementById('wi-location-select')?.value;
-                const flat = document.getElementById('wi-flat-no')?.value.trim();
-                const addr = document.getElementById('wi-address')?.value.trim();
-                
-                // Validation with specific error messages
-                if (!loc) {
-                    alert('⚠️ Please select your delivery location (Society/Area).');
-                    document.getElementById('wi-location-select')?.focus();
-                    return;
-                }
-                
-                if (!flat) {
-                    alert('⚠️ Please enter your Flat/House/Door number.');
-                    document.getElementById('wi-flat-no')?.focus();
-                    return;
-                }
-                
-                if (!addr) {
-                    alert('⚠️ Please enter your full delivery address.');
-                    document.getElementById('wi-address')?.focus();
-                    return;
-                }
-                
-                // Prepend flat number to address if not already included
-                const addrEl = document.getElementById('wi-address');
-                if (flat && addrEl && !addrEl.value.includes(flat)) {
-                    addrEl.value = flat + ', ' + addrEl.value;
-                }
-                
-                // populate step 3 summary
-                const milkR = document.querySelector('.wi-milk-radio:checked');
-                const milkLabels = { cow:'Cow Milk (A2)', buffalo:'Buffalo Milk', toned:'Toned Milk', full_fat:'Full Fat Milk' };
-                const ppl = wiGetPpl();
-                document.getElementById('wi-sum-milk').textContent  = milkLabels[milkR?.value] || milkR?.value || '—';
-                document.getElementById('wi-sum-qty').textContent   = wiQty + 'L';
-                document.getElementById('wi-sum-ppl').textContent   = ppl ? '₹' + ppl.toFixed(2) + '/L' : '—';
-                document.getElementById('wi-sum-daily').textContent = ppl ? '₹' + (ppl * wiQty).toFixed(2) + '/day' : '—';
-            }
-            [1,2,3].forEach(i => {
-                const el = document.getElementById('wi-step-' + i);
-                if (el) el.classList.toggle('hidden', i !== n);
-                const dot = document.getElementById('wi-dot-' + i);
-                const lbl = document.getElementById('wi-lbl-' + i);
-                if (dot) {
-                    if (i < n)      { dot.style.background='var(--green)'; dot.style.color='#fff'; dot.innerHTML='<i class="fa-solid fa-check text-[9px]"></i>'; }
-                    else if (i===n) { dot.style.background='var(--green)'; dot.style.color='#fff'; dot.textContent=i; }
-                    else            { dot.style.background='#e5e7eb'; dot.style.color='#9ca3af'; dot.textContent=i; }
-                }
-                if (lbl) lbl.style.color = i <= n ? 'var(--green)' : 'var(--muted)';
-            });
-        }
-
         // milk card highlight + preview update
         document.querySelectorAll('.wi-milk-radio').forEach(r => {
             r.addEventListener('change', () => {
