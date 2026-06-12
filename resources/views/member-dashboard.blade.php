@@ -1087,131 +1087,7 @@
             }, 5000);
         }
 
-        // Wallet Initialization validation
-        function wiGoStep(step) {
-            console.log('wiGoStep called with step:', step);
-            
-            if (step === 2) {
-                // Moving from Step 1 to Step 2 - no validation needed
-                document.getElementById('wi-step-1').classList.add('hidden');
-                document.getElementById('wi-step-2').classList.remove('hidden');
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-                
-            } else if (step === 3) {
-                // Moving from Step 2 to Step 3 - validate address
-                const locationSelect = document.getElementById('wi-location-select');
-                const address = document.getElementById('wi-address');
-                
-                console.log('Location value:', locationSelect.value);
-                console.log('Address value:', address.value);
-                
-                // Validate location
-                if (!locationSelect.value || locationSelect.value.trim() === '') {
-                    showWiError('Please select your society or area.');
-                    return false;
-                }
-                
-                // Validate address
-                if (!address.value || address.value.trim() === '') {
-                    showWiError('Please enter your full delivery address.');
-                    return false;
-                }
-                
-                document.getElementById('wi-step-2').classList.add('hidden');
-                document.getElementById('wi-step-3').classList.remove('hidden');
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-                updateWiStep3Summary();
-                
-            } else if (step === 1) {
-                // Back to Step 1
-                document.getElementById('wi-step-2').classList.add('hidden');
-                document.getElementById('wi-step-1').classList.remove('hidden');
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-            }
-        }
-        
-        function wiSubmit() {
-            console.log('wiSubmit called');
-            
-            const locationSelect = document.getElementById('wi-location-select');
-            const address = document.getElementById('wi-address');
-            const amount = document.getElementById('wi-amount');
-            
-            console.log('Location:', locationSelect.value);
-            console.log('Address:', address.value);
-            console.log('Amount:', amount.value);
-            
-            // Validate location
-            if (!locationSelect.value || locationSelect.value.trim() === '') {
-                showWiError('Please select your society or area.');
-                return false;
-            }
-            
-            // Validate address
-            if (!address.value || address.value.trim() === '') {
-                showWiError('Please enter your full delivery address.');
-                return false;
-            }
-            
-            // Validate amount
-            const amountValue = parseInt(amount.value);
-            if (!amount.value || amountValue <= 0) {
-                showWiError('Please enter a valid amount (minimum ₹1).');
-                return false;
-            }
-            
-            if (amountValue > 500000) {
-                showWiError('Amount cannot exceed ₹500,000.');
-                return false;
-            }
-            
-            console.log('All validations passed, submitting form');
-            // Submit form
-            document.getElementById('walletInitForm').submit();
-            return false;
-        }
-        
-        function updateWiStep3Summary() {
-            const milkType = document.querySelector('input[name="milk_type"]:checked');
-            const qty = document.getElementById('wi-qty-input');
-            const ppl = milkType ? milkType.dataset.ppl : 0;
-            const daily = parseFloat(ppl) * parseInt(qty.value);
-            
-            document.getElementById('wi-sum-milk').textContent = milkType ? milkType.value.charAt(0).toUpperCase() + milkType.value.slice(1) : '—';
-            document.getElementById('wi-sum-qty').textContent = qty.value + 'L';
-            document.getElementById('wi-sum-ppl').textContent = '₹' + parseFloat(ppl).toFixed(2);
-            document.getElementById('wi-sum-daily').textContent = '₹' + daily.toFixed(2);
-        }
-        
-        function wiSetQty(qty) {
-            document.getElementById('wi-qty-input').value = qty;
-            document.querySelectorAll('.wi-qty-btn').forEach(btn => {
-                if (btn.dataset.qty == qty) {
-                    btn.style.borderColor = 'var(--green)';
-                    btn.style.color = 'var(--green)';
-                    btn.style.fontWeight = '600';
-                } else {
-                    btn.style.borderColor = 'var(--border)';
-                    btn.style.color = 'var(--muted)';
-                    btn.style.fontWeight = '500';
-                }
-            });
-        }
-        
-        function wiSetAmount(amt) {
-            document.getElementById('wi-amount').value = amt;
-            document.querySelectorAll('.wi-amt-preset').forEach(btn => {
-                if (btn.textContent.includes(amt.toString())) {
-                    btn.style.borderColor = 'var(--green)';
-                    btn.style.color = 'var(--green)';
-                    btn.style.fontWeight = '600';
-                } else {
-                    btn.style.borderColor = 'var(--border)';
-                    btn.style.color = 'var(--muted)';
-                    btn.style.fontWeight = '500';
-                }
-            });
-        }
+
     </script>
 
     {{-- Floating Support --}}
@@ -2602,26 +2478,6 @@
     </script>
 
     <script>
-        // Tab switching
-        function switchTab(tab) {
-            // Hide all panels
-            document.querySelectorAll('.tab-panel').forEach(p => p.classList.add('hidden'));
-            // Show selected panel
-            document.getElementById('panel-' + tab).classList.remove('hidden');
-            
-            // Update tab buttons
-            document.querySelectorAll('.tab-btn').forEach(btn => {
-                btn.style.background = 'transparent';
-                btn.style.color = 'var(--muted)';
-                btn.style.borderBottom = '2px solid transparent';
-            });
-            
-            const activeBtn = document.getElementById('tab-' + tab);
-            activeBtn.style.background = 'rgba(47,74,30,0.05)';
-            activeBtn.style.color = 'var(--green)';
-            activeBtn.style.borderBottom = '2px solid var(--green)';
-        }
-
         // Location change functionality
         function toggleLocationChange() {
             const section = document.getElementById('location-change-section');
@@ -2665,9 +2521,6 @@
                 });
             }
         });
-
-        // Initialize first tab
-        switchTab('wallet');
 
         // Wallet settings form - milk type selection
         document.addEventListener('DOMContentLoaded', function() {
@@ -2769,113 +2622,6 @@
                 hiddenInput.name = 'delivery_instructions';
                 hiddenInput.value = select.value;
                 select.parentElement.appendChild(hiddenInput);
-            }
-        }
-
-        // Wallet initialization functions
-        function wiGoStep(step) {
-            // Hide all steps
-            for (let i = 1; i <= 3; i++) {
-                document.getElementById('wi-step-' + i).classList.add('hidden');
-                document.getElementById('wi-dot-' + i).style.background = '#e5e7eb';
-                document.getElementById('wi-dot-' + i).style.color = '#9ca3af';
-                document.getElementById('wi-lbl-' + i).style.color = 'var(--muted)';
-            }
-            
-            // Show current step
-            document.getElementById('wi-step-' + step).classList.remove('hidden');
-            document.getElementById('wi-dot-' + step).style.background = 'var(--green)';
-            document.getElementById('wi-dot-' + step).style.color = '#fff';
-            document.getElementById('wi-lbl-' + step).style.color = 'var(--green)';
-            
-            // Update preview if going to step 3
-            if (step === 3) {
-                wiUpdateSummary();
-            }
-        }
-
-        function wiSetQty(qty) {
-            document.querySelectorAll('.wi-qty-btn').forEach(btn => {
-                btn.style.borderColor = 'var(--border)';
-                btn.style.color = 'var(--muted)';
-                btn.style.background = '#fff';
-            });
-            
-            event.target.style.borderColor = 'var(--green)';
-            event.target.style.color = 'var(--green)';
-            event.target.style.background = 'rgba(47,74,30,0.05)';
-            
-            document.getElementById('wi-qty-input').value = qty;
-            wiUpdatePreview();
-        }
-
-        function wiSetAmount(amount) {
-            document.querySelectorAll('.wi-amt-preset').forEach(btn => {
-                btn.style.borderColor = 'var(--border)';
-                btn.style.color = 'var(--muted)';
-                btn.style.background = '#fff';
-            });
-            
-            event.target.style.borderColor = 'var(--green)';
-            event.target.style.color = 'var(--green)';
-            event.target.style.background = 'rgba(47,74,30,0.05)';
-            
-            document.getElementById('wi-amount').value = amount;
-            wiUpdateDaysPreview();
-        }
-
-        function wiUpdatePreview() {
-            const selectedMilk = document.querySelector('.wi-milk-radio:checked');
-            const qty = document.getElementById('wi-qty-input').value;
-            
-            if (selectedMilk) {
-                const ppl = parseFloat(selectedMilk.dataset.ppl);
-                const daily = ppl * parseFloat(qty);
-                
-                document.getElementById('wi-ppl').textContent = '₹' + ppl.toFixed(2);
-                document.getElementById('wi-daily').textContent = '₹' + daily.toFixed(2);
-                document.getElementById('wi-preview').classList.remove('hidden');
-            }
-        }
-
-        function wiUpdateSummary() {
-            const selectedMilk = document.querySelector('.wi-milk-radio:checked');
-            const qty = document.getElementById('wi-qty-input').value;
-            
-            if (selectedMilk) {
-                const milkLabel = selectedMilk.closest('label').querySelector('p').textContent;
-                const ppl = parseFloat(selectedMilk.dataset.ppl);
-                const daily = ppl * parseFloat(qty);
-                
-                document.getElementById('wi-sum-milk').textContent = milkLabel;
-                document.getElementById('wi-sum-qty').textContent = qty + 'L';
-                document.getElementById('wi-sum-ppl').textContent = '₹' + ppl.toFixed(2);
-                document.getElementById('wi-sum-daily').textContent = '₹' + daily.toFixed(2);
-            }
-        }
-
-        function wiUpdateDaysPreview() {
-            const amount = parseFloat(document.getElementById('wi-amount').value);
-            const selectedMilk = document.querySelector('.wi-milk-radio:checked');
-            const qty = document.getElementById('wi-qty-input').value;
-            
-            if (selectedMilk && amount && qty) {
-                const ppl = parseFloat(selectedMilk.dataset.ppl);
-                const daily = ppl * parseFloat(qty);
-                const days = Math.floor(amount / daily);
-                
-                document.getElementById('wi-days-preview').textContent = '≈ ' + days + ' days of milk';
-                document.getElementById('wi-days-preview').classList.remove('hidden');
-            }
-        }
-
-        function wiSubmit() {
-            // Validate form before submit
-            const form = document.getElementById('walletInitForm');
-            if (form.checkValidity()) {
-                form.submit();
-            } else {
-                form.reportValidity();
             }
         }
 
@@ -2983,76 +2729,6 @@
                     });
                 }
             });
-
-            // Milk type selection
-            document.querySelectorAll('.wi-milk-radio').forEach(radio => {
-                radio.addEventListener('change', function() {
-                    document.querySelectorAll('.wi-milk-card').forEach(card => {
-                        card.style.borderColor = 'var(--border)';
-                        card.style.background = '#fff';
-                    });
-                    
-                    if (this.checked) {
-                        this.closest('.wi-milk-card').style.borderColor = 'var(--green)';
-                        this.closest('.wi-milk-card').style.background = 'rgba(47,74,30,0.05)';
-                        wiUpdatePreview();
-                    }
-                });
-            });
-
-            // Slot selection
-            document.querySelectorAll('.wi-slot-radio').forEach(radio => {
-                radio.addEventListener('change', function() {
-                    document.querySelectorAll('.wi-slot-card').forEach(card => {
-                        card.style.borderColor = 'var(--border)';
-                        card.style.background = '#fff';
-                        card.querySelector('i').style.color = 'var(--muted)';
-                    });
-                    
-                    if (this.checked) {
-                        this.closest('.wi-slot-card').style.borderColor = 'var(--green)';
-                        this.closest('.wi-slot-card').style.background = 'rgba(47,74,30,0.05)';
-                        this.closest('.wi-slot-card').querySelector('i').style.color = 'var(--green)';
-                    }
-                });
-            });
-
-            // Amount input
-            const amountInput = document.getElementById('wi-amount');
-            if (amountInput) {
-                amountInput.addEventListener('input', function() {
-                    // Clear preset selection
-                    document.querySelectorAll('.wi-amt-preset').forEach(btn => {
-                        btn.style.borderColor = 'var(--border)';
-                        btn.style.color = 'var(--muted)';
-                        btn.style.background = '#fff';
-                    });
-                    wiUpdateDaysPreview();
-                });
-            }
-
-            // Initialize first selections
-            const firstMilk = document.querySelector('.wi-milk-radio:checked');
-            if (firstMilk) {
-                firstMilk.closest('.wi-milk-card').style.borderColor = 'var(--green)';
-                firstMilk.closest('.wi-milk-card').style.background = 'rgba(47,74,30,0.05)';
-            }
-
-            const firstSlot = document.querySelector('.wi-slot-radio:checked');
-            if (firstSlot) {
-                firstSlot.closest('.wi-slot-card').style.borderColor = 'var(--green)';
-                firstSlot.closest('.wi-slot-card').style.background = 'rgba(47,74,30,0.05)';
-                firstSlot.closest('.wi-slot-card').querySelector('i').style.color = 'var(--green)';
-            }
-
-            // Set first qty button as selected
-            const firstQtyBtn = document.querySelector('.wi-qty-btn[data-qty="1"]');
-            if (firstQtyBtn) {
-                firstQtyBtn.style.borderColor = 'var(--green)';
-                firstQtyBtn.style.color = 'var(--green)';
-                firstQtyBtn.style.background = 'rgba(47,74,30,0.05)';
-                wiUpdatePreview();
-            }
         });
 
         // Referral functions
@@ -3113,7 +2789,10 @@
             const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
                 'July', 'August', 'September', 'October', 'November', 'December'];
             
-            document.getElementById('cal-month-label').textContent = monthNames[currentCalMonth] + ' ' + currentCalYear;
+            const monthLabel = document.getElementById('cal-month-label');
+            if (!monthLabel) return; // Exit early if calendar elements don't exist
+            
+            monthLabel.textContent = monthNames[currentCalMonth] + ' ' + currentCalYear;
             
             // Enable/disable next button
             const now = new Date();
@@ -3121,12 +2800,14 @@
             const maxYear = now.getFullYear();
             const nextBtn = document.getElementById('cal-next-btn');
             
-            if (currentCalYear > maxYear || (currentCalYear === maxYear && currentCalMonth >= maxMonth)) {
-                nextBtn.style.opacity = '0.5';
-                nextBtn.style.pointerEvents = 'none';
-            } else {
-                nextBtn.style.opacity = '1';
-                nextBtn.style.pointerEvents = 'auto';
+            if (nextBtn) {
+                if (currentCalYear > maxYear || (currentCalYear === maxYear && currentCalMonth >= maxMonth)) {
+                    nextBtn.style.opacity = '0.5';
+                    nextBtn.style.pointerEvents = 'none';
+                } else {
+                    nextBtn.style.opacity = '1';
+                    nextBtn.style.pointerEvents = 'auto';
+                }
             }
             
             // Render calendar grid (simplified version)
