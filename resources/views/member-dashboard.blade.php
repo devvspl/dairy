@@ -1053,65 +1053,122 @@
 
     {{-- Validation Script --}}
     <script>
+        // Show validation error message with visible UI element
+        function showWiError(message) {
+            // Remove any existing error messages
+            const existingError = document.getElementById('wi-error-message');
+            if (existingError) {
+                existingError.remove();
+            }
+            
+            // Create error element
+            const errorDiv = document.createElement('div');
+            errorDiv.id = 'wi-error-message';
+            errorDiv.className = 'fixed top-6 left-1/2 transform -translate-x-1/2 z-50 max-w-sm w-11/12';
+            errorDiv.innerHTML = `
+                <div class="rounded-xl px-4 py-3.5 shadow-lg flex items-start gap-3" style="background:#fee2e2;border:1px solid #fca5a5;">
+                    <i class="fa-solid fa-exclamation-circle flex-shrink-0 mt-0.5" style="color:#dc2626;font-size:18px;"></i>
+                    <div class="flex-1">
+                        <p class="text-sm font-semibold" style="color:#991b1b;">${message}</p>
+                    </div>
+                    <button onclick="document.getElementById('wi-error-message').remove()" class="flex-shrink-0 mt-0.5">
+                        <i class="fa-solid fa-times" style="color:#dc2626;"></i>
+                    </button>
+                </div>
+            `;
+            
+            document.body.appendChild(errorDiv);
+            
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                if (errorDiv.parentElement) {
+                    errorDiv.remove();
+                }
+            }, 5000);
+        }
+
         // Wallet Initialization validation
         function wiGoStep(step) {
-            const form = document.getElementById('walletInitForm');
+            console.log('wiGoStep called with step:', step);
             
             if (step === 2) {
-                // Validate Step 1 before moving to Step 2
-                const locationSelect = document.getElementById('wi-location-select');
-                const flatNo = document.getElementById('wi-flat-no');
-                const address = document.getElementById('wi-address');
-                
-                // Remove required attribute temporarily to prevent browser validation on hidden fields
-                locationSelect.removeAttribute('required');
-                
-                // Show all fields temporarily for validation
-                document.getElementById('wi-step-1').style.display = 'none';
-                document.getElementById('wi-step-2').style.display = 'block';
+                // Moving from Step 1 to Step 2 - no validation needed
+                document.getElementById('wi-step-1').classList.add('hidden');
+                document.getElementById('wi-step-2').classList.remove('hidden');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
                 
             } else if (step === 3) {
-                // Validate Step 2 before moving to Step 3
+                // Moving from Step 2 to Step 3 - validate address
                 const locationSelect = document.getElementById('wi-location-select');
                 const address = document.getElementById('wi-address');
                 
-                // Custom validation
-                if (!locationSelect.value || !address.value.trim()) {
-                    alert('Please fill in all address fields.');
-                    return;
+                console.log('Location value:', locationSelect.value);
+                console.log('Address value:', address.value);
+                
+                // Validate location
+                if (!locationSelect.value || locationSelect.value.trim() === '') {
+                    showWiError('Please select your society or area.');
+                    return false;
                 }
                 
-                document.getElementById('wi-step-2').style.display = 'none';
-                document.getElementById('wi-step-3').style.display = 'block';
+                // Validate address
+                if (!address.value || address.value.trim() === '') {
+                    showWiError('Please enter your full delivery address.');
+                    return false;
+                }
+                
+                document.getElementById('wi-step-2').classList.add('hidden');
+                document.getElementById('wi-step-3').classList.remove('hidden');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
                 updateWiStep3Summary();
                 
             } else if (step === 1) {
-                document.getElementById('wi-step-2').style.display = 'none';
-                document.getElementById('wi-step-1').style.display = 'block';
+                // Back to Step 1
+                document.getElementById('wi-step-2').classList.add('hidden');
+                document.getElementById('wi-step-1').classList.remove('hidden');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
             }
         }
         
         function wiSubmit() {
+            console.log('wiSubmit called');
+            
             const locationSelect = document.getElementById('wi-location-select');
             const address = document.getElementById('wi-address');
             const amount = document.getElementById('wi-amount');
             
-            // Validate all required fields
-            if (!locationSelect.value) {
-                alert('Please select a location.');
-                return;
-            }
-            if (!address.value.trim()) {
-                alert('Please enter your delivery address.');
-                return;
-            }
-            if (!amount.value || parseInt(amount.value) <= 0) {
-                alert('Please enter a valid amount.');
-                return;
+            console.log('Location:', locationSelect.value);
+            console.log('Address:', address.value);
+            console.log('Amount:', amount.value);
+            
+            // Validate location
+            if (!locationSelect.value || locationSelect.value.trim() === '') {
+                showWiError('Please select your society or area.');
+                return false;
             }
             
+            // Validate address
+            if (!address.value || address.value.trim() === '') {
+                showWiError('Please enter your full delivery address.');
+                return false;
+            }
+            
+            // Validate amount
+            const amountValue = parseInt(amount.value);
+            if (!amount.value || amountValue <= 0) {
+                showWiError('Please enter a valid amount (minimum ₹1).');
+                return false;
+            }
+            
+            if (amountValue > 500000) {
+                showWiError('Amount cannot exceed ₹500,000.');
+                return false;
+            }
+            
+            console.log('All validations passed, submitting form');
             // Submit form
             document.getElementById('walletInitForm').submit();
+            return false;
         }
         
         function updateWiStep3Summary() {
@@ -1120,7 +1177,7 @@
             const ppl = milkType ? milkType.dataset.ppl : 0;
             const daily = parseFloat(ppl) * parseInt(qty.value);
             
-            document.getElementById('wi-sum-milk').textContent = milkType ? milkType.value : '—';
+            document.getElementById('wi-sum-milk').textContent = milkType ? milkType.value.charAt(0).toUpperCase() + milkType.value.slice(1) : '—';
             document.getElementById('wi-sum-qty').textContent = qty.value + 'L';
             document.getElementById('wi-sum-ppl').textContent = '₹' + parseFloat(ppl).toFixed(2);
             document.getElementById('wi-sum-daily').textContent = '₹' + daily.toFixed(2);
@@ -1144,12 +1201,14 @@
         function wiSetAmount(amt) {
             document.getElementById('wi-amount').value = amt;
             document.querySelectorAll('.wi-amt-preset').forEach(btn => {
-                if (btn.textContent.includes(amt)) {
+                if (btn.textContent.includes(amt.toString())) {
                     btn.style.borderColor = 'var(--green)';
                     btn.style.color = 'var(--green)';
+                    btn.style.fontWeight = '600';
                 } else {
                     btn.style.borderColor = 'var(--border)';
                     btn.style.color = 'var(--muted)';
+                    btn.style.fontWeight = '500';
                 }
             });
         }
