@@ -790,7 +790,7 @@
 
                             <div>
                                 <label class="block text-xs font-semibold mb-1.5" style="color:var(--text);"><i class="fa-solid fa-location-dot mr-1" style="color:var(--green);"></i>Full Address</label>
-                                <textarea name="delivery_address" id="wi-address" rows="2" required
+                                <textarea name="delivery_address" id="wi-address" rows="2" 
                                     placeholder="Building, Street, Landmark, City"
                                     class="w-full px-3 py-2.5 text-sm border-2 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none"
                                     style="border-color:var(--border);"></textarea>
@@ -2013,15 +2013,36 @@
                 // no validation needed for step 1 — milk/qty/slot all have defaults
             }
             if (n === 3) {
+                // Validate all required fields in step 2
                 const loc  = document.getElementById('wi-location-select')?.value;
-                const addr = document.getElementById('wi-address')?.value.trim();
-                if (!loc)  { alert('Please select your delivery location.'); return; }
-                if (!addr) { alert('Please enter your delivery address.'); return; }
                 const flat = document.getElementById('wi-flat-no')?.value.trim();
+                const addr = document.getElementById('wi-address')?.value.trim();
+                
+                // Validation with specific error messages
+                if (!loc) {
+                    alert('⚠️ Please select your delivery location (Society/Area).');
+                    document.getElementById('wi-location-select')?.focus();
+                    return;
+                }
+                
+                if (!flat) {
+                    alert('⚠️ Please enter your Flat/House/Door number.');
+                    document.getElementById('wi-flat-no')?.focus();
+                    return;
+                }
+                
+                if (!addr) {
+                    alert('⚠️ Please enter your full delivery address.');
+                    document.getElementById('wi-address')?.focus();
+                    return;
+                }
+                
+                // Prepend flat number to address if not already included
                 const addrEl = document.getElementById('wi-address');
                 if (flat && addrEl && !addrEl.value.includes(flat)) {
                     addrEl.value = flat + ', ' + addrEl.value;
                 }
+                
                 // populate step 3 summary
                 const milkR = document.querySelector('.wi-milk-radio:checked');
                 const milkLabels = { cow:'Cow Milk (A2)', buffalo:'Buffalo Milk', toned:'Toned Milk', full_fat:'Full Fat Milk' };
@@ -2095,15 +2116,36 @@
                 // no validation needed for step 1 — milk/qty/slot all have defaults
             }
             if (n === 3) {
+                // Validate all required fields in step 2
                 const loc  = document.getElementById('wi-location-select')?.value;
-                const addr = document.getElementById('wi-address')?.value.trim();
-                if (!loc)  { alert('Please select your delivery location.'); return; }
-                if (!addr) { alert('Please enter your delivery address.'); return; }
                 const flat = document.getElementById('wi-flat-no')?.value.trim();
+                const addr = document.getElementById('wi-address')?.value.trim();
+                
+                // Validation with specific error messages
+                if (!loc) {
+                    alert('⚠️ Please select your delivery location (Society/Area).');
+                    document.getElementById('wi-location-select')?.focus();
+                    return;
+                }
+                
+                if (!flat) {
+                    alert('⚠️ Please enter your Flat/House/Door number.');
+                    document.getElementById('wi-flat-no')?.focus();
+                    return;
+                }
+                
+                if (!addr) {
+                    alert('⚠️ Please enter your full delivery address.');
+                    document.getElementById('wi-address')?.focus();
+                    return;
+                }
+                
+                // Prepend flat number to address if not already included
                 const addrEl = document.getElementById('wi-address');
                 if (flat && addrEl && !addrEl.value.includes(flat)) {
                     addrEl.value = flat + ', ' + addrEl.value;
                 }
+                
                 // populate step 3 summary
                 const milkR = document.querySelector('.wi-milk-radio:checked');
                 const milkLabels = { cow:'Cow Milk (A2)', buffalo:'Buffalo Milk', toned:'Toned Milk', full_fat:'Full Fat Milk' };
