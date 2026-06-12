@@ -801,9 +801,9 @@
                                     style="border-color:var(--border);"></textarea>
                             </div>
 
-                            <div class="flex gap-3">
-                                <button type="button" onclick="wiGoStep(1)" class="flex-1 py-3 rounded-xl font-semibold border-2 text-sm hover:bg-gray-50" style="border-color:var(--border);color:var(--text);"><i class="fa-solid fa-arrow-left mr-1"></i>Back</button>
-                                <button type="button" onclick="wiGoStep(3)" class="flex-1 py-3 rounded-xl font-bold text-sm hover:shadow-lg" style="background:var(--green);color:#fff;">Next: Add Money <i class="fa-solid fa-arrow-right ml-1"></i></button>
+                         <div class="flex gap-3">
+                                <button type="button" onclick="wiGoStep(1)" ...>Back</button>
+                                <button type="button" onclick="wiGoStep(3)" ...>Next: Add Money</button>
                             </div>
                             <div id="wi-error-2" class="hidden mt-2 rounded-xl px-3 py-2.5 text-xs font-semibold flex items-center gap-2"
                                 style="background:#fef2f2;border:1px solid #fecaca;color:#dc2626;">
@@ -2025,42 +2025,68 @@
         }
 
         // Wizard step navigation
-        function wiGoStep(n) {
-            if (n === 2) {
-                // no validation needed for step 1 — milk/qty/slot all have defaults
-            }
-            if (n === 3) {
-                const loc  = document.getElementById('wi-location-select')?.value;
-                const addr = document.getElementById('wi-address')?.value.trim();
-                if (!loc)  { alert('Please select your delivery location.'); return; }
-                if (!addr) { alert('Please enter your delivery address.'); return; }
-                const flat = document.getElementById('wi-flat-no')?.value.trim();
-                const addrEl = document.getElementById('wi-address');
-                if (flat && addrEl && !addrEl.value.includes(flat)) {
-                    addrEl.value = flat + ', ' + addrEl.value;
-                }
-                // populate step 3 summary
-                const milkR = document.querySelector('.wi-milk-radio:checked');
-                const milkLabels = { cow:'Cow Milk (A2)', buffalo:'Buffalo Milk', toned:'Toned Milk', full_fat:'Full Fat Milk' };
-                const ppl = wiGetPpl();
-                document.getElementById('wi-sum-milk').textContent  = milkLabels[milkR?.value] || milkR?.value || '—';
-                document.getElementById('wi-sum-qty').textContent   = wiQty + 'L';
-                document.getElementById('wi-sum-ppl').textContent   = ppl ? '₹' + ppl.toFixed(2) + '/L' : '—';
-                document.getElementById('wi-sum-daily').textContent = ppl ? '₹' + (ppl * wiQty).toFixed(2) + '/day' : '—';
-            }
-            [1,2,3].forEach(i => {
-                const el = document.getElementById('wi-step-' + i);
-                if (el) el.classList.toggle('hidden', i !== n);
-                const dot = document.getElementById('wi-dot-' + i);
-                const lbl = document.getElementById('wi-lbl-' + i);
-                if (dot) {
-                    if (i < n)      { dot.style.background='var(--green)'; dot.style.color='#fff'; dot.innerHTML='<i class="fa-solid fa-check text-[9px]"></i>'; }
-                    else if (i===n) { dot.style.background='var(--green)'; dot.style.color='#fff'; dot.textContent=i; }
-                    else            { dot.style.background='#e5e7eb'; dot.style.color='#9ca3af'; dot.textContent=i; }
-                }
-                if (lbl) lbl.style.color = i <= n ? 'var(--green)' : 'var(--muted)';
-            });
+       function wiGoStep(n) {
+    // Step 1 → 2 validation
+    if (n === 2) {
+        const startDate = document.getElementById('wi-start-date')?.value;
+        if (!startDate) {
+            const el = document.getElementById('wi-error-1');
+            const tx = document.getElementById('wi-error-1-text');
+            if (el && tx) { tx.textContent = 'Please select a start date.'; el.classList.remove('hidden'); }
+            return;
         }
+        document.getElementById('wi-error-1')?.classList.add('hidden');
+    }
+
+    // Step 2 → 3 validation
+    if (n === 3) {
+        const loc  = document.getElementById('wi-location-select')?.value;
+        const addr = document.getElementById('wi-address')?.value.trim();
+        if (!loc) {
+            const el = document.getElementById('wi-error-2');
+            const tx = document.getElementById('wi-error-2-text');
+            if (el && tx) { tx.textContent = 'Please select your delivery location.'; el.classList.remove('hidden'); }
+            return;
+        }
+        if (!addr) {
+            const el = document.getElementById('wi-error-2');
+            const tx = document.getElementById('wi-error-2-text');
+            if (el && tx) { tx.textContent = 'Please enter your delivery address.'; el.classList.remove('hidden'); }
+            return;
+        }
+        document.getElementById('wi-error-2')?.classList.add('hidden');
+
+        // Prepend flat no if not already in address
+        const flat   = document.getElementById('wi-flat-no')?.value.trim();
+        const addrEl = document.getElementById('wi-address');
+        if (flat && addrEl && !addrEl.value.includes(flat)) {
+            addrEl.value = flat + ', ' + addrEl.value;
+        }
+
+        // Populate step 3 summary
+        const milkR      = document.querySelector('.wi-milk-radio:checked');
+        const milkLabels = { cow:'Cow Milk (A2)', buffalo:'Buffalo Milk', toned:'Toned Milk', full_fat:'Full Fat Milk' };
+        const ppl        = wiGetPpl();
+        document.getElementById('wi-sum-milk').textContent  = milkLabels[milkR?.value] || milkR?.value || '—';
+        document.getElementById('wi-sum-qty').textContent   = wiQty + 'L';
+        document.getElementById('wi-sum-ppl').textContent   = ppl ? '₹' + ppl.toFixed(2) + '/L' : '—';
+        document.getElementById('wi-sum-daily').textContent = ppl ? '₹' + (ppl * wiQty).toFixed(2) + '/day' : '—';
+    }
+
+    // Show/hide steps and update dots
+    [1, 2, 3].forEach(i => {
+        const el  = document.getElementById('wi-step-' + i);
+        const dot = document.getElementById('wi-dot-' + i);
+        const lbl = document.getElementById('wi-lbl-' + i);
+        if (el)  el.classList.toggle('hidden', i !== n);
+        if (dot) {
+            if (i < n)      { dot.style.background = 'var(--green)'; dot.style.color = '#fff'; dot.innerHTML = '<i class="fa-solid fa-check text-[9px]"></i>'; }
+            else if (i === n) { dot.style.background = 'var(--green)'; dot.style.color = '#fff'; dot.textContent = i; }
+            else              { dot.style.background = '#e5e7eb'; dot.style.color = '#9ca3af'; dot.textContent = i; }
+        }
+        if (lbl) lbl.style.color = i <= n ? 'var(--green)' : 'var(--muted)';
+    });
+}
 
         // Check cutoff time and show warning
         function wiCheckCutoff() {
@@ -2228,48 +2254,46 @@
             }
         });
 
-        function wiSubmit() {
-            const showError = (msg, goBack) => {
-                const errDiv  = document.getElementById('wi-submit-error');
-                const errText = document.getElementById('wi-submit-error-text');
-                if (errDiv && errText) {
-                    errText.textContent = msg;
-                    errDiv.classList.remove('hidden');
-                    setTimeout(() => errDiv.classList.add('hidden'), 5000);
-                } else {
-                    alert(msg);
-                }
-                if (goBack) wiGoStep(2);
-            };
+   function wiSubmit() {
+    const errDiv  = document.getElementById('wi-submit-error');
+    const errText = document.getElementById('wi-submit-error-text');
 
-            // Validate location (step 2)
-            const loc  = document.getElementById('wi-location-select')?.value;
-            if (!loc)  { showError('Please select your delivery location.', true); return; }
-
-            // Validate address (step 2)
-            const addr = document.getElementById('wi-address')?.value.trim();
-            if (!addr) { showError('Please enter your delivery address.', true); return; }
-
-            // Validate amount (step 3)
-            const amountEl = document.getElementById('wi-amount');
-            const amount   = amountEl?.value;
-            if (!amount || parseFloat(amount) < 1) {
-                if (amountEl) { amountEl.style.borderColor = '#dc2626'; amountEl.focus(); }
-                showError('Please enter a valid amount (minimum ₹1).', false);
-                return;
-            }
-            if (amountEl) amountEl.style.borderColor = '';
-
-            // Disable button & show spinner
-            const btn = document.getElementById('wi-pay-btn');
-            if (btn) {
-                btn.disabled = true;
-                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processing…';
-                btn.style.opacity = '0.8';
-            }
-
-            document.getElementById('walletInitForm').submit();
+    const showErr = (msg) => {
+        if (errDiv && errText) {
+            errText.textContent = msg;
+            errDiv.classList.remove('hidden');
+            setTimeout(() => errDiv.classList.add('hidden'), 5000);
+        } else {
+            alert(msg);
         }
+    };
+
+    // Re-validate location & address
+    const loc  = document.getElementById('wi-location-select')?.value;
+    const addr = document.getElementById('wi-address')?.value.trim();
+    if (!loc)  { showErr('Please select your delivery location.'); wiGoStep(2); return; }
+    if (!addr) { showErr('Please enter your delivery address.');   wiGoStep(2); return; }
+
+    // Validate amount
+    const amountEl = document.getElementById('wi-amount');
+    const amount   = parseFloat(amountEl?.value);
+    if (!amount || amount < 1) {
+        if (amountEl) { amountEl.style.borderColor = '#dc2626'; amountEl.focus(); }
+        showErr('Please enter a valid amount (minimum ₹1).');
+        return;
+    }
+    if (amountEl) amountEl.style.borderColor = '';
+
+    // Disable button & submit
+    const btn = document.getElementById('wi-pay-btn');
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processing…';
+        btn.style.opacity = '0.8';
+    }
+
+    document.getElementById('walletInitForm').submit();
+}
 
         if (document.getElementById('wi-qty-input')) wiSetQty(1);
 
