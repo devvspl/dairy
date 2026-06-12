@@ -761,7 +761,7 @@
                                         style="border-color:var(--border);">
                                     <i class="fa-solid fa-search absolute right-3 top-3 text-xs" style="color:var(--muted);"></i>
                                 </div>
-                                <select name="location_id" id="wi-location-select" required
+                                <select name="location_id" id="wi-location-select"
                                     class="w-full px-3 py-2.5 text-sm border-2 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent"
                                     style="border-color:var(--border);">
                                     <option value="">— Select your society / area —</option>
@@ -790,7 +790,7 @@
 
                             <div>
                                 <label class="block text-xs font-semibold mb-1.5" style="color:var(--text);"><i class="fa-solid fa-location-dot mr-1" style="color:var(--green);"></i>Full Address</label>
-                                <textarea name="delivery_address" id="wi-address" rows="2" required
+                                <textarea name="delivery_address" id="wi-address" rows="2"
                                     placeholder="Building, Street, Landmark, City"
                                     class="w-full px-3 py-2.5 text-sm border-2 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none"
                                     style="border-color:var(--border);"></textarea>
@@ -2214,6 +2214,12 @@
         function wiSubmit() {
             const amount = document.getElementById('wi-amount')?.value;
             if (!amount || parseFloat(amount) < 1) { alert('Please enter a valid amount (min ₹1).'); return; }
+            const loc  = document.getElementById('wi-location-select')?.value;
+            if (!loc)  { wiGoStep(2); alert('Please select your delivery location.'); return; }
+            const addr = document.getElementById('wi-address')?.value.trim();
+            if (!addr) { wiGoStep(2); alert('Please enter your delivery address.'); return; }
+            const btn = document.querySelector('[onclick="wiSubmit()"]');
+            if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Processing...'; }
             document.getElementById('walletInitForm').submit();
         }
 
@@ -2665,13 +2671,7 @@
         }
 
         function wiSubmit() {
-            // Validate form before submit
-            const form = document.getElementById('walletInitForm');
-            if (form.checkValidity()) {
-                form.submit();
-            } else {
-                form.reportValidity();
-            }
+            // Duplicate stub — real validation is in the wiSubmit defined above
         }
 
         // Initialize wallet form handlers
@@ -2903,8 +2903,11 @@
         function renderCalendar() {
             const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
                 'July', 'August', 'September', 'October', 'November', 'December'];
-            
-            document.getElementById('cal-month-label').textContent = monthNames[currentCalMonth] + ' ' + currentCalYear;
+
+            const label = document.getElementById('cal-month-label');
+            if (!label) return; // Calendar not present on this page
+
+            label.textContent = monthNames[currentCalMonth] + ' ' + currentCalYear;
             
             // Enable/disable next button
             const now = new Date();
