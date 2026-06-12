@@ -1943,7 +1943,7 @@
                         min="1" max="50000" step="1" required
                         class="w-full px-3 py-2.5 text-sm border-2 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent"
                         style="border-color: var(--border);">
-                    <p class="text-[10px] mt-1" style="color: var(--muted);">Min ₹50 · Max ₹50,000</p>
+                    {{-- <p class="text-[10px] mt-1" style="color: var(--muted);">Min ₹50 · Max ₹50,000</p> --}}
                 </div>
                 <button type="submit" class="w-full py-3 rounded-xl font-bold text-sm text-white transition-all hover:shadow-lg"
                     style="background: var(--green);">
