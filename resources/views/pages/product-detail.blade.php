@@ -910,10 +910,19 @@
                     <div class="apw-pd-titleRow">
                         <div>
                             <h1 class="apw-pd-h1">{{ $product->name }}</h1>
-                            <p class="apw-pd-sub">{{ $product->meta }} @if ($product->sku)
-                                    • SKU: <b>#{{ $product->sku }}</b>
-                                @endif
-                            </p>
+                            @if ($product->short_description)
+                                <p class="apw-pd-sub">{{ $product->short_description }} @if ($product->sku)
+                                        • SKU: <b>#{{ $product->sku }}</b>
+                                    @endif
+                                </p>
+                            @elseif ($product->meta)
+                                <p class="apw-pd-sub">{{ $product->meta }} @if ($product->sku)
+                                        • SKU: <b>#{{ $product->sku }}</b>
+                                    @endif
+                                </p>
+                            @elseif ($product->sku)
+                                <p class="apw-pd-sub">SKU: <b>#{{ $product->sku }}</b></p>
+                            @endif
                         </div>
                         @if ($product->badge)
                             <div class="apw-pd-badge accent"><span class="apw-pd-dot"></span> {{ $product->badge }}</div>
@@ -950,7 +959,7 @@
                                 {{ $inStock ? ucfirst(str_replace('_', ' ', $product->stock_status)) : 'Out of Stock' }}
                             </span>
                             @if($inStock)
-                            <span>Delivery in 2–6 hours (area wise)</span>
+                            <span>Subscribe before 11:00 PM for next-day delivery</span>
                             @endif
                         </div>
 
@@ -1082,6 +1091,9 @@
 
                     <div>
                         <div class="apw-pd-panel is-active" id="apwPdPanelDesc">
+                            @if ($product->short_description)
+                                <p class="apw-pd-p" style="font-weight:600; color:#1f2a1a;">{{ $product->short_description }}</p>
+                            @endif
                             @if ($product->description)
                                 <p class="apw-pd-p">{{ $product->description }}</p>
                             @endif

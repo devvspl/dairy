@@ -235,7 +235,7 @@
                     {{-- Completed section separator (collapsible) --}}
                     @if($completedDeliveries->count() > 0)
                     <tr id="completedToggleRow">
-                        <td colspan="9" class="px-4 py-2 cursor-pointer select-none" onclick="toggleCompleted()"
+                        <td colspan="10" class="px-4 py-2 cursor-pointer select-none" onclick="toggleCompleted()"
                             style="background:rgba(47,74,30,0.04); border-top:2px solid rgba(47,74,30,0.15);">
                             <div class="flex items-center gap-2 text-sm font-semibold" style="color:var(--green);">
                                 <i class="fa-solid fa-chevron-down text-xs" id="completedChevron"></i>
