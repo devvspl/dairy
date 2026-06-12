@@ -149,6 +149,11 @@ class DashboardController extends Controller
             $query->where('status', $request->status);
         }
 
+        // Filter by bottle_picked status
+        if ($request->filled('bottle_picked')) {
+            $query->where('bottle_picked', $request->bottle_picked === 'yes');
+        }
+
         if ($search) {
             $query->whereHas('subscription.user', fn($q) => $q
                 ->where('name', 'like', "%{$search}%")
@@ -257,6 +262,7 @@ class DashboardController extends Controller
 
         $validated = $request->validate([
             'status'             => 'required|in:pending,delivered,skipped,failed',
+            'bottle_picked'      => 'nullable|boolean',
             'quantity_delivered' => 'nullable|numeric|min:0',
             'delivery_time'      => 'nullable|string',
             'notes'              => 'nullable|string|max:500',
@@ -296,6 +302,7 @@ class DashboardController extends Controller
 
         $delivery->update([
             'status'             => $newStatus,
+            'bottle_picked'      => $validated['bottle_picked'] ?? $delivery->bottle_picked,
             'quantity_delivered' => $newQty,
             'delivery_time'      => $deliveryTime,
             'notes'              => $notes,

@@ -65,6 +65,11 @@
                 <option value="skipped"   {{ request('status') === 'skipped'   ? 'selected' : '' }}>Skipped</option>
                 <option value="failed"    {{ request('status') === 'failed'    ? 'selected' : '' }}>Failed</option>
             </select>
+            <select name="bottle_picked" class="px-3 py-2 border rounded-lg text-sm" style="border-color: var(--border);">
+                <option value="">Bottle: All</option>
+                <option value="yes" {{ request('bottle_picked') === 'yes' ? 'selected' : '' }}>Picked</option>
+                <option value="no"  {{ request('bottle_picked') === 'no'  ? 'selected' : '' }}>Not Picked</option>
+            </select>
             <input type="text" name="search" value="{{ request('search') }}"
                    placeholder="Search name / phone..."
                    class="px-3 py-2 border rounded-lg text-sm min-w-[180px]" style="border-color: var(--border);">
@@ -105,6 +110,7 @@
                         <th class="px-4 py-3 text-left text-sm font-semibold" style="color: var(--text);">Qty</th>
                         <th class="px-4 py-3 text-left text-sm font-semibold" style="color: var(--text);">Wallet</th>
                         <th class="px-4 py-3 text-left text-sm font-semibold" style="color: var(--text);">Status</th>
+                        <th class="px-4 py-3 text-left text-sm font-semibold" style="color: var(--text);">Bottle</th>
                         <th class="px-4 py-3 text-left text-sm font-semibold" style="color: var(--text);">Time</th>
                         <th class="px-4 py-3 text-left text-sm font-semibold" style="color: var(--text);">Action</th>
                     </tr>
@@ -186,6 +192,15 @@
                         <td class="px-4 py-3">
                             <span class="px-2 py-1 text-xs rounded-full font-semibold bg-yellow-100 text-yellow-800">Pending</span>
                         </td>
+                        <td class="px-4 py-3">
+                            @if($delivery->bottle_picked)
+                                <span class="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-full font-semibold bg-blue-100 text-blue-800">
+                                    <i class="fa-solid fa-check-circle"></i> Yes
+                                </span>
+                            @else
+                                <span class="text-xs" style="color: var(--muted);">—</span>
+                            @endif
+                        </td>
                         <td class="px-4 py-3 text-sm" style="color: var(--muted);">
                             {{ $delivery->delivery_time ? \Carbon\Carbon::parse($delivery->delivery_time)->format('h:i A') : '—' }}
                         </td>
@@ -201,7 +216,7 @@
                                     <i class="fa-solid fa-wallet text-[10px]"></i> No balance
                                 </span>
                             @else
-                                <button onclick="openModal({{ $delivery->id }}, '{{ $delivery->status }}', '{{ $delivery->quantity_delivered }}', '{{ $delivery->delivery_time }}', '{{ addslashes($delivery->notes ?? '') }}', {{ json_encode($milkItems) }})"
+                                <button onclick="openModal({{ $delivery->id }}, '{{ $delivery->status }}', '{{ $delivery->quantity_delivered }}', '{{ $delivery->delivery_time }}', '{{ addslashes($delivery->notes ?? '') }}', {{ json_encode($milkItems) }}, {{ $delivery->bottle_picked ? 'true' : 'false' }})"
                                         class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors hover:opacity-80"
                                         style="background: rgba(47,74,30,0.1); color: var(--green);">
                                     <i class="fa-solid fa-check"></i> Mark
@@ -297,11 +312,20 @@
                                 {{ ucfirst($delivery->status) }}
                             </span>
                         </td>
+                        <td class="px-4 py-3">
+                            @if($delivery->bottle_picked)
+                                <span class="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-full font-semibold bg-blue-100 text-blue-800">
+                                    <i class="fa-solid fa-check-circle"></i> Yes
+                                </span>
+                            @else
+                                <span class="text-xs" style="color: var(--muted);">—</span>
+                            @endif
+                        </td>
                         <td class="px-4 py-3 text-sm" style="color: var(--muted);">
                             {{ $delivery->delivery_time ? \Carbon\Carbon::parse($delivery->delivery_time)->format('h:i A') : '—' }}
                         </td>
                         <td class="px-4 py-3">
-                            <button onclick="openModal({{ $delivery->id }}, '{{ $delivery->status }}', '{{ $delivery->quantity_delivered }}', '{{ $delivery->delivery_time }}', '{{ addslashes($delivery->notes ?? '') }}', {{ json_encode($milkItems) }})"
+                            <button onclick="openModal({{ $delivery->id }}, '{{ $delivery->status }}', '{{ $delivery->quantity_delivered }}', '{{ $delivery->delivery_time }}', '{{ addslashes($delivery->notes ?? '') }}', {{ json_encode($milkItems) }}, {{ $delivery->bottle_picked ? 'true' : 'false' }})"
                                     class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors hover:opacity-80"
                                     style="background: rgba(47,74,30,0.1); color: var(--green);">
                                 <i class="fa-solid fa-pen-to-square"></i> Edit
@@ -460,6 +484,12 @@ document.getElementById('addressModal').addEventListener('click', function(e) {
                     <label class="block text-sm font-medium mb-1" style="color: var(--text);">Delivery Time</label>
                     <input type="time" name="delivery_time" id="timeInput"
                            class="w-full px-3 py-2 border rounded-lg" style="border-color: var(--border);">
+                </div>
+                <div>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" name="bottle_picked" id="bottlePickedInput" value="1" class="rounded w-4 h-4">
+                        <span class="text-sm font-medium" style="color: var(--text);">Bottle Picked Up</span>
+                    </label>
                 </div>
                 <div>
                     <label class="block text-sm font-medium mb-1" style="color: var(--text);">Notes</label>
@@ -674,8 +704,9 @@ function recalcTotalQty() {
     document.getElementById('qtyInput').value = total;
 }
 
-function openModal(id, status, qty, time, notes, milkItems) {
+function openModal(id, status, qty, time, notes, milkItems, bottlePicked) {
     document.getElementById('statusSelect').value = status;
+    document.getElementById('bottlePickedInput').checked = (bottlePicked === true || bottlePicked === 'true');
 
     const now = new Date();
     const currentTime = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');

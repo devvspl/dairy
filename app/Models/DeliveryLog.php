@@ -13,6 +13,7 @@ class DeliveryLog extends Model
         'quantity_delivered',
         'milk_items',
         'status',
+        'bottle_picked',
         'delivery_time',
         'notes',
         'marked_by',
@@ -23,6 +24,7 @@ class DeliveryLog extends Model
         'delivery_date'     => 'date',
         'quantity_delivered'=> 'decimal:2',
         'milk_items'        => 'array',
+        'bottle_picked'     => 'boolean',
         'marked_at'         => 'datetime',
     ];
 

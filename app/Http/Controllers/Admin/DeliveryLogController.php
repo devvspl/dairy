@@ -48,6 +48,7 @@ class DeliveryLogController extends Controller
     {
         $validated = $request->validate([
             'status'             => 'required|in:pending,delivered,skipped,failed',
+            'bottle_picked'      => 'nullable|boolean',
             'delivery_time'      => 'nullable|date_format:H:i',
             'quantity_delivered' => 'nullable|numeric|min:0|max:100',
             'notes'              => 'nullable|string|max:500',
@@ -61,6 +62,7 @@ class DeliveryLogController extends Controller
 
         $delivery->update([
             'status'             => $newStatus,
+            'bottle_picked'      => $validated['bottle_picked'] ?? $delivery->bottle_picked,
             'delivery_time'      => $validated['delivery_time'] ?? $delivery->delivery_time,
             'quantity_delivered' => $newQty,
             'notes'              => $validated['notes'] ?? $delivery->notes,
@@ -280,6 +282,11 @@ class DeliveryLogController extends Controller
         }
         if ($status) {
             $query->where('status', $status);
+        }
+        
+        // Filter by bottle_picked status
+        if ($request->filled('bottle_picked')) {
+            $query->where('bottle_picked', $request->bottle_picked === 'yes');
         }
         if ($search) {
             $query->whereHas('subscription.user', fn($q) => $q
