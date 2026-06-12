@@ -375,7 +375,7 @@
                                         </div>
                                         <select name="location_id" id="ws-location-select"
                                             class="w-full px-3 py-2.5 text-sm border-2 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                                            style="border-color:var(--border);">
+                                            style="border-color:var(--border);" data-validate="location">
                                             <option value="">— Select your society / area —</option>
                                             @php $wsLocations = \App\Models\Location::active()->ordered()->get(); @endphp
                                             @foreach($wsLocations as $loc)
@@ -763,7 +763,7 @@
                                 </div>
                                 <select name="location_id" id="wi-location-select"
                                     class="w-full px-3 py-2.5 text-sm border-2 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                                    style="border-color:var(--border);">
+                                    style="border-color:var(--border);" data-validate="location">
                                     <option value="">— Select your society / area —</option>
                                     @php $wiLocations = \App\Models\Location::active()->ordered()->get(); @endphp
                                     @foreach($wiLocations as $loc)
@@ -1050,6 +1050,110 @@
 
         </div>{{-- end tab container --}}
     </div>{{-- end space-y --}}
+
+    {{-- Validation Script --}}
+    <script>
+        // Wallet Initialization validation
+        function wiGoStep(step) {
+            const form = document.getElementById('walletInitForm');
+            
+            if (step === 2) {
+                // Validate Step 1 before moving to Step 2
+                const locationSelect = document.getElementById('wi-location-select');
+                const flatNo = document.getElementById('wi-flat-no');
+                const address = document.getElementById('wi-address');
+                
+                // Remove required attribute temporarily to prevent browser validation on hidden fields
+                locationSelect.removeAttribute('required');
+                
+                // Show all fields temporarily for validation
+                document.getElementById('wi-step-1').style.display = 'none';
+                document.getElementById('wi-step-2').style.display = 'block';
+                
+            } else if (step === 3) {
+                // Validate Step 2 before moving to Step 3
+                const locationSelect = document.getElementById('wi-location-select');
+                const address = document.getElementById('wi-address');
+                
+                // Custom validation
+                if (!locationSelect.value || !address.value.trim()) {
+                    alert('Please fill in all address fields.');
+                    return;
+                }
+                
+                document.getElementById('wi-step-2').style.display = 'none';
+                document.getElementById('wi-step-3').style.display = 'block';
+                updateWiStep3Summary();
+                
+            } else if (step === 1) {
+                document.getElementById('wi-step-2').style.display = 'none';
+                document.getElementById('wi-step-1').style.display = 'block';
+            }
+        }
+        
+        function wiSubmit() {
+            const locationSelect = document.getElementById('wi-location-select');
+            const address = document.getElementById('wi-address');
+            const amount = document.getElementById('wi-amount');
+            
+            // Validate all required fields
+            if (!locationSelect.value) {
+                alert('Please select a location.');
+                return;
+            }
+            if (!address.value.trim()) {
+                alert('Please enter your delivery address.');
+                return;
+            }
+            if (!amount.value || parseInt(amount.value) <= 0) {
+                alert('Please enter a valid amount.');
+                return;
+            }
+            
+            // Submit form
+            document.getElementById('walletInitForm').submit();
+        }
+        
+        function updateWiStep3Summary() {
+            const milkType = document.querySelector('input[name="milk_type"]:checked');
+            const qty = document.getElementById('wi-qty-input');
+            const ppl = milkType ? milkType.dataset.ppl : 0;
+            const daily = parseFloat(ppl) * parseInt(qty.value);
+            
+            document.getElementById('wi-sum-milk').textContent = milkType ? milkType.value : '—';
+            document.getElementById('wi-sum-qty').textContent = qty.value + 'L';
+            document.getElementById('wi-sum-ppl').textContent = '₹' + parseFloat(ppl).toFixed(2);
+            document.getElementById('wi-sum-daily').textContent = '₹' + daily.toFixed(2);
+        }
+        
+        function wiSetQty(qty) {
+            document.getElementById('wi-qty-input').value = qty;
+            document.querySelectorAll('.wi-qty-btn').forEach(btn => {
+                if (btn.dataset.qty == qty) {
+                    btn.style.borderColor = 'var(--green)';
+                    btn.style.color = 'var(--green)';
+                    btn.style.fontWeight = '600';
+                } else {
+                    btn.style.borderColor = 'var(--border)';
+                    btn.style.color = 'var(--muted)';
+                    btn.style.fontWeight = '500';
+                }
+            });
+        }
+        
+        function wiSetAmount(amt) {
+            document.getElementById('wi-amount').value = amt;
+            document.querySelectorAll('.wi-amt-preset').forEach(btn => {
+                if (btn.textContent.includes(amt)) {
+                    btn.style.borderColor = 'var(--green)';
+                    btn.style.color = 'var(--green)';
+                } else {
+                    btn.style.borderColor = 'var(--border)';
+                    btn.style.color = 'var(--muted)';
+                }
+            });
+        }
+    </script>
 
     {{-- Floating Support --}}
     <a href="{{ route('member.support-tickets.index') }}"
