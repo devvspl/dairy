@@ -2870,11 +2870,7 @@
             });
         }
 
-        // Top-up modal functions
-        function openTopupModal(subscriptionId) {
-            // Implementation for top-up modal
-            console.log('Opening top-up modal for subscription:', subscriptionId);
-        }
+        // Top-up modal functions — real implementation is defined earlier in the script block
 
         // Calendar functions
         let currentCalMonth = new Date().getMonth();
