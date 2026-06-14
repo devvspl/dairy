@@ -2249,54 +2249,92 @@
         @endphp
         const WS_PRICES = @json($wsPricesData);
 
-        // Toggle milk tab on/off
-        document.querySelectorAll('.ws-milk-check').forEach(function(chk) {
-            chk.closest('label').addEventListener('click', function(e) {
-                // don't toggle if clicking the stepper buttons
-                if (e.target.closest('.ws-qty-wrap')) return;
+        // Initialize wallet settings form handlers on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const settingsForm = document.getElementById('ws-settings-form');
+            const milkError = document.getElementById('ws-milk-error');
 
-                const tab  = chk.closest('.ws-milk-tab');
-                const box  = tab.querySelector('.ws-check-box');
+            // Toggle milk tab on/off
+            document.querySelectorAll('.ws-milk-tab').forEach(function(tab) {
+                const chk = tab.querySelector('.ws-milk-check');
+                const box = tab.querySelector('.ws-check-box');
                 const wrap = tab.querySelector('.ws-qty-wrap');
-                const isNowChecked = !chk.checked;
+                const input = tab.querySelector('.ws-qty-input');
+                const minus = tab.querySelector('.ws-qty-minus');
+                const plus = tab.querySelector('.ws-qty-plus');
+                const display = tab.querySelector('.ws-qty-display');
 
-                chk.checked = isNowChecked;
-
-                if (isNowChecked) {
-                    tab.style.borderColor    = 'var(--green)';
-                    this.style.background    = 'rgba(47,74,30,0.05)';
-                    box.style.borderColor    = 'var(--green)';
-                    box.style.background     = 'var(--green)';
-                    box.innerHTML            = '<i class="fa-solid fa-check text-[9px] text-white"></i>';
-                    wrap.classList.remove('invisible');
-                    tab.querySelectorAll('input[name*="milk_items"]').forEach(i => i.disabled = false);
-                } else {
-                    tab.style.borderColor    = 'var(--border)';
-                    this.style.background    = '#fff';
-                    box.style.borderColor    = 'var(--border)';
-                    box.style.background     = '#fff';
-                    box.innerHTML            = '';
-                    wrap.classList.add('invisible');
+                // Disable inputs for unchecked tabs on page load
+                if (!chk.checked) {
                     tab.querySelectorAll('input[name*="milk_items"]').forEach(i => i.disabled = true);
+                }
+
+                // Handle tab click (but not stepper clicks)
+                tab.addEventListener('click', function(e) {
+                    if (e.target.closest('.ws-qty-wrap')) return; // Don't toggle if clicking stepper
+
+                    const isNowChecked = !chk.checked;
+                    chk.checked = isNowChecked;
+
+                    if (isNowChecked) {
+                        tab.style.borderColor = 'var(--green)';
+                        tab.style.background = 'rgba(47,74,30,0.05)';
+                        box.style.borderColor = 'var(--green)';
+                        box.style.background = 'var(--green)';
+                        box.innerHTML = '<i class="fa-solid fa-check text-[9px] text-white"></i>';
+                        wrap.classList.remove('invisible');
+                        tab.querySelectorAll('input[name*="milk_items"]').forEach(i => i.disabled = false);
+                    } else {
+                        tab.style.borderColor = 'var(--border)';
+                        tab.style.background = '#fff';
+                        box.style.borderColor = 'var(--border)';
+                        box.style.background = '#fff';
+                        box.innerHTML = '';
+                        wrap.classList.add('invisible');
+                        tab.querySelectorAll('input[name*="milk_items"]').forEach(i => i.disabled = true);
+                    }
+                });
+
+                // Qty stepper handlers
+                if (minus && plus && display && input) {
+                    minus.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        let val = parseInt(input.value) || 1;
+                        if (val > 1) {
+                            val--;
+                            input.value = val;
+                            display.textContent = val;
+                        }
+                    });
+
+                    plus.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        let val = parseInt(input.value) || 1;
+                        if (val < 50) {
+                            val++;
+                            input.value = val;
+                            display.textContent = val;
+                        }
+                    });
                 }
             });
 
-            // Disable inputs for unchecked tabs on page load
-            if (!chk.checked) {
-                chk.closest('.ws-milk-tab').querySelectorAll('input[name*="milk_items"]').forEach(i => i.disabled = true);
+            // Form validation
+            if (settingsForm) {
+                settingsForm.addEventListener('submit', function(e) {
+                    const checkedMilk = document.querySelectorAll('.ws-milk-check:checked');
+                    if (checkedMilk.length === 0) {
+                        e.preventDefault();
+                        milkError.classList.remove('hidden');
+                        milkError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        return false;
+                    }
+                    milkError.classList.add('hidden');
+                });
             }
         });
-
-        // Qty stepper (+/-)
-        document.querySelectorAll('.ws-milk-tab').forEach(function(tab) {
-            const minus   = tab.querySelector('.ws-qty-minus');
-            const plus    = tab.querySelector('.ws-qty-plus');
-            const display = tab.querySelector('.ws-qty-display');
-            const input   = tab.querySelector('.ws-qty-input');
-            if (!minus || !plus || !display || !input) return;
-
-            minus.addEventListener('click', function(e) {
-                e.preventDefault();
                 let val = parseInt(input.value) || 1;
                 if (val > 1) { val--; input.value = val; display.textContent = val; }
             });
@@ -2323,19 +2361,6 @@
                 const icon = this.querySelector('i.fas');
                 if (icon) icon.style.color = 'var(--green)';
             });
-        });
-
-        // Ensure at least one milk type is selected on submit
-        document.getElementById('ws-settings-form')?.addEventListener('submit', function(e) {
-            const anyChecked = Array.from(document.querySelectorAll('.ws-milk-check')).some(c => c.checked);
-            const errEl = document.getElementById('ws-milk-error');
-            if (!anyChecked) {
-                e.preventDefault();
-                errEl.classList.remove('hidden');
-                errEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            } else {
-                errEl.classList.add('hidden');
-            }
         });
 
         // ── Settings panel interactive radio cards ────────────────────
@@ -2459,90 +2484,6 @@
                     } else if (wsTimingHint) {
                         wsTimingHint.classList.add('hidden');
                     }
-                });
-            }
-        });
-
-        // Wallet settings form - milk type selection
-        document.addEventListener('DOMContentLoaded', function() {
-            const milkTabs = document.querySelectorAll('.ws-milk-tab');
-            const milkChecks = document.querySelectorAll('.ws-milk-check');
-            const qtyWraps = document.querySelectorAll('.ws-qty-wrap');
-            const qtyInputs = document.querySelectorAll('.ws-qty-input');
-            const qtyDisplays = document.querySelectorAll('.ws-qty-display');
-            const qtyMinuses = document.querySelectorAll('.ws-qty-minus');
-            const qtyPluses = document.querySelectorAll('.ws-qty-plus');
-            const settingsForm = document.getElementById('ws-settings-form');
-            const milkError = document.getElementById('ws-milk-error');
-
-            // Handle milk type selection
-            milkTabs.forEach((tab, index) => {
-                tab.addEventListener('click', function() {
-                    const checkbox = this.querySelector('.ws-milk-check');
-                    const checkBox = this.querySelector('.ws-check-box');
-                    const qtyWrap = this.querySelector('.ws-qty-wrap');
-                    const qtyInput = this.querySelector('.ws-qty-input');
-                    
-                    checkbox.checked = !checkbox.checked;
-                    
-                    if (checkbox.checked) {
-                        this.style.borderColor = 'var(--green)';
-                        this.style.background = 'rgba(47,74,30,0.05)';
-                        checkBox.style.borderColor = 'var(--green)';
-                        checkBox.style.background = 'var(--green)';
-                        checkBox.innerHTML = '<i class="fa-solid fa-check text-[9px] text-white"></i>';
-                        qtyWrap.classList.remove('invisible');
-                        qtyInput.disabled = false;
-                    } else {
-                        this.style.borderColor = 'var(--border)';
-                        this.style.background = '#fff';
-                        checkBox.style.borderColor = 'var(--border)';
-                        checkBox.style.background = '#fff';
-                        checkBox.innerHTML = '';
-                        qtyWrap.classList.add('invisible');
-                        qtyInput.disabled = true;
-                    }
-                });
-            });
-
-            // Handle quantity steppers
-            qtyMinuses.forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const qtyDisplay = this.nextElementSibling;
-                    const qtyInput = this.parentElement.nextElementSibling;
-                    let qty = parseInt(qtyDisplay.textContent);
-                    if (qty > 1) {
-                        qty--;
-                        qtyDisplay.textContent = qty;
-                        qtyInput.value = qty;
-                    }
-                });
-            });
-
-            qtyPluses.forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const qtyDisplay = this.previousElementSibling;
-                    const qtyInput = this.parentElement.nextElementSibling;
-                    let qty = parseInt(qtyDisplay.textContent);
-                    if (qty < 50) {
-                        qty++;
-                        qtyDisplay.textContent = qty;
-                        qtyInput.value = qty;
-                    }
-                });
-            });
-
-            // Form validation
-            if (settingsForm) {
-                settingsForm.addEventListener('submit', function(e) {
-                    const checkedMilk = document.querySelectorAll('.ws-milk-check:checked');
-                    if (checkedMilk.length === 0) {
-                        e.preventDefault();
-                        milkError.classList.remove('hidden');
-                        milkError.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        return false;
-                    }
-                    milkError.classList.add('hidden');
                 });
             }
         });
@@ -2690,12 +2631,6 @@
                     event.target.innerHTML = '<i class="fa-solid fa-link text-sm"></i> Copy Link';
                 }, 2000);
             });
-        }
-
-        // Top-up modal functions
-        function openTopupModal(subscriptionId) {
-            // Implementation for top-up modal
-            console.log('Opening top-up modal for subscription:', subscriptionId);
         }
 
         // Calendar functions
