@@ -2335,15 +2335,6 @@
                 });
             }
         });
-                let val = parseInt(input.value) || 1;
-                if (val > 1) { val--; input.value = val; display.textContent = val; }
-            });
-            plus.addEventListener('click', function(e) {
-                e.preventDefault();
-                let val = parseInt(input.value) || 1;
-                if (val < 20) { val++; input.value = val; display.textContent = val; }
-            });
-        });
 
         // Shared slot cards (delivery_slot radio)
         document.querySelectorAll('[name="delivery_slot"]').forEach(function(radio) {
