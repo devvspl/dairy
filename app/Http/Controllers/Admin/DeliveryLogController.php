@@ -70,6 +70,48 @@ class DeliveryLogController extends Controller
         $newQty       = (float) ($validated['quantity_delivered'] ?? $oldQty);
         $subscription = $delivery->subscription;
 
+        // ── Wallet validation for on-demand subscriptions ─────────────
+        if ($subscription && $subscription->isOnDemand() && $subscription->price_per_litre > 0) {
+            $dateStr   = $delivery->delivery_date->toDateString();
+            $dailyCost = round($newQty * (float) $subscription->price_per_litre, 2);
+
+            // Calculate cost difference for quantity changes
+            $oldCost = round($oldQty * (float) $subscription->price_per_litre, 2);
+            $costDiff = $dailyCost - $oldCost;
+
+            // Check if marking as delivered
+            if ($newStatus === 'delivered' && $oldStatus !== 'delivered') {
+                // Check wallet balance before debiting
+                if ((float) $subscription->wallet_balance < $dailyCost) {
+                    return redirect()->back()->with(
+                        'error',
+                        "❌ Cannot mark as delivered — Insufficient wallet balance.\n\n" .
+                        "Required: ₹" . number_format($dailyCost, 2) . " ({$newQty}L × ₹" . number_format($subscription->price_per_litre, 2) . "/L)\n" .
+                        "Available: ₹" . number_format($subscription->wallet_balance, 2) . "\n" .
+                        "Shortage: ₹" . number_format($dailyCost - $subscription->wallet_balance, 2) . "\n\n" .
+                        "💡 Ask member to top up wallet before marking as delivered."
+                    );
+                }
+            }
+
+            // Check if increasing quantity on already delivered item
+            elseif ($newStatus === 'delivered' && $oldStatus === 'delivered' && $newQty > $oldQty) {
+                $extraCost = round(($newQty - $oldQty) * (float) $subscription->price_per_litre, 2);
+                if ((float) $subscription->wallet_balance < $extraCost) {
+                    return redirect()->back()->with(
+                        'error',
+                        "❌ Cannot increase quantity — Insufficient wallet balance.\n\n" .
+                        "Extra quantity: " . ($newQty - $oldQty) . "L\n" .
+                        "Extra cost: ₹" . number_format($extraCost, 2) . "\n" .
+                        "Available balance: ₹" . number_format($subscription->wallet_balance, 2) . "\n" .
+                        "Shortage: ₹" . number_format($extraCost - $subscription->wallet_balance, 2) . "\n\n" .
+                        "💡 Ask member to top up wallet first."
+                    );
+                }
+            }
+        }
+
+        // Update delivery record
         $delivery->update([
             'status'             => $newStatus,
             'bottle_picked'      => $validated['bottle_picked'] ?? $delivery->bottle_picked,
@@ -86,44 +128,36 @@ class DeliveryLogController extends Controller
             $dailyCost = round($newQty * (float) $subscription->price_per_litre, 2);
 
             if ($newStatus === 'delivered' && $oldStatus !== 'delivered') {
-                if ((float) $subscription->wallet_balance < $dailyCost) {
-                    return redirect()->back()->with(
-                        'error',
-                        "Cannot mark as delivered — wallet balance ₹" . number_format($subscription->wallet_balance, 2) .
-                        " is less than delivery cost ₹" . number_format($dailyCost, 2) . ". Member must top up first."
-                    );
-                }
+                // Debit wallet for new delivery
                 $subscription->debitWallet($newQty, $dateStr, auth()->id(), $delivery->id);
 
             } elseif ($newStatus === 'delivered' && $oldStatus === 'delivered' && $newQty !== $oldQty) {
+                // Handle quantity change on delivered item
                 $diff = $newQty - $oldQty;
                 if ($diff > 0) {
-                    $extraCost = round($diff * (float) $subscription->price_per_litre, 2);
-                    if ((float) $subscription->wallet_balance < $extraCost) {
-                        return redirect()->back()->with(
-                            'error',
-                            "Cannot increase quantity — wallet balance ₹" . number_format($subscription->wallet_balance, 2) .
-                            " is less than extra cost ₹" . number_format($extraCost, 2) . "."
-                        );
-                    }
+                    // Additional quantity - debit
                     $subscription->debitWallet($diff, $dateStr, auth()->id(), $delivery->id);
                 } else {
+                    // Reduced quantity - credit back
                     $creditAmt = round(abs($diff) * (float) $subscription->price_per_litre, 2);
-                    $subscription->creditWallet($creditAmt, "Qty adjusted on {$dateStr} (admin)", true, $delivery->id);
+                    $subscription->creditWallet($creditAmt, "Qty reduced from {$oldQty}L to {$newQty}L on {$dateStr} (admin)", true, $delivery->id);
                 }
 
             } elseif ($oldStatus === 'delivered' && $newStatus !== 'delivered') {
+                // Reverting delivered item - credit back full amount
                 $creditAmt = round($oldQty * (float) $subscription->price_per_litre, 2);
                 if ($creditAmt > 0) {
-                    $subscription->creditWallet($creditAmt, "Delivery reversed on {$dateStr} (admin)", true, $delivery->id);
+                    $subscription->creditWallet($creditAmt, "Delivery reversed from '{$oldStatus}' to '{$newStatus}' on {$dateStr} (admin)", true, $delivery->id);
                 }
             }
 
             $subscription->refresh();
+            
+            // Auto-generate new deliveries if balance allows
             \App\Models\DeliveryLog::autoGenerate($subscription);
         }
 
-        return redirect()->back()->with('success', 'Delivery status updated successfully!');
+        return redirect()->back()->with('success', '✅ Delivery status updated successfully!');
     }
 
     /**

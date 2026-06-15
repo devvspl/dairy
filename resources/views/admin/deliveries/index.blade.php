@@ -520,6 +520,7 @@ function renderReconciliation(data) {
     const bankMatch = Math.abs(totalBankPayments - totalCredits) < 0.01;
     
     let suggestions = [];
+    let fixes = [];
     
     if (!isBalanced) {
         suggestions.push({
@@ -527,7 +528,13 @@ function renderReconciliation(data) {
             icon: 'fa-exclamation-triangle',
             title: 'Balance Mismatch',
             message: `Current balance (₹${currentBalance.toFixed(2)}) doesn't match expected balance (₹${expectedBalance.toFixed(2)}). Difference: ₹${Math.abs(difference).toFixed(2)}`,
-            action: 'Review all wallet transactions and check for manual adjustments or missing entries.'
+            action: 'Click "Sync Balance" to recalculate balance from transactions.'
+        });
+        fixes.push({
+            type: 'sync_balance',
+            label: 'Sync Balance',
+            icon: 'fa-sync',
+            description: 'Recalculate balance from all wallet transactions'
         });
     }
     
@@ -539,9 +546,17 @@ function renderReconciliation(data) {
             title: 'Bank Payment Mismatch',
             message: `Bank payments (₹${totalBankPayments.toFixed(2)}) don't match wallet credits (₹${totalCredits.toFixed(2)}). Difference: ₹${Math.abs(bankDiff).toFixed(2)}`,
             action: bankDiff > 0 
-                ? 'Some bank payments may not have been credited to wallet. Check failed or pending payments.'
-                : 'Wallet has more credits than bank payments. Check for manual credits or refunds.'
+                ? 'Click "Sync Bank to Wallet" to credit missing payments to wallet.'
+                : 'Wallet has more credits than bank payments. Manual review needed.'
         });
+        if (bankDiff > 0) {
+            fixes.push({
+                type: 'sync_bank_to_wallet',
+                label: 'Sync Bank to Wallet',
+                icon: 'fa-building-columns',
+                description: 'Credit missing bank payments to wallet'
+            });
+        }
     }
     
     if (totalDebits > totalCredits) {
@@ -550,7 +565,13 @@ function renderReconciliation(data) {
             icon: 'fa-triangle-exclamation',
             title: 'Negative Balance Allowed',
             message: `Total debits (₹${totalDebits.toFixed(2)}) exceed total credits (₹${totalCredits.toFixed(2)})`,
-            action: 'System allowed negative balance. This should not happen. Review wallet debit logic and add validation.'
+            action: 'This should not happen. Click "Fix Negative Balance" to correct.'
+        });
+        fixes.push({
+            type: 'prevent_negative',
+            label: 'Fix Negative Balance',
+            icon: 'fa-plus',
+            description: 'Add credit to bring balance to zero'
         });
     }
     
@@ -600,6 +621,30 @@ function renderReconciliation(data) {
                 </div>
             </div>
             
+            <!-- Quick Fixes -->
+            ${fixes.length > 0 ? `
+            <div class="bg-blue-50 rounded-xl p-4 border-2 border-blue-200">
+                <h4 class="font-bold text-sm mb-3 text-blue-700">
+                    <i class="fa-solid fa-wrench mr-2"></i>Quick Fixes Available
+                </h4>
+                <div class="grid grid-cols-1 md:grid-cols-${fixes.length > 1 ? '2' : '1'} gap-2">
+                    ${fixes.map(fix => `
+                        <button onclick="applyFix('${fix.type}')" 
+                                class="flex items-center gap-3 p-3 rounded-lg border-2 border-blue-300 bg-white hover:bg-blue-50 transition-all">
+                            <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+                                <i class="fa-solid ${fix.icon} text-blue-600"></i>
+                            </div>
+                            <div class="text-left flex-1">
+                                <p class="font-bold text-sm text-blue-700">${fix.label}</p>
+                                <p class="text-xs text-blue-600">${fix.description}</p>
+                            </div>
+                            <i class="fa-solid fa-chevron-right text-blue-400"></i>
+                        </button>
+                    `).join('')}
+                </div>
+            </div>
+            ` : ''}
+            
             <!-- Suggestions -->
             <div class="space-y-3">
                 <h4 class="font-bold text-sm" style="color: var(--text);">
@@ -635,6 +680,45 @@ function renderReconciliation(data) {
     `;
     
     container.innerHTML = html;
+}
+
+function applyFix(fixType) {
+    if (!confirm('Are you sure you want to apply this fix? This will modify the wallet balance and transactions.')) {
+        return;
+    }
+    
+    const btn = event.target.closest('button');
+    const originalHTML = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i>Applying fix...';
+    
+    fetch('/admin/subscriptions/{{ $subscription->id }}/fix-reconciliation', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({ fix_type: fixType })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('✅ ' + data.message);
+            // Reload payment history to show updated data
+            loadPaymentHistory();
+            // Reload page to update wallet balance display
+            window.location.reload();
+        } else {
+            alert('❌ Error: ' + data.message);
+            btn.disabled = false;
+            btn.innerHTML = originalHTML;
+        }
+    })
+    .catch(error => {
+        alert('❌ An error occurred while applying the fix');
+        btn.disabled = false;
+        btn.innerHTML = originalHTML;
+    });
 }
 
 function showError(message) {

@@ -199,6 +199,7 @@ Route::middleware('auth')->group(function () {
             Route::delete('exports/{export}', [App\Http\Controllers\Admin\UserSubscriptionController::class, 'exportDelete'])->name('exports.delete');
             Route::get('{subscription}', [App\Http\Controllers\Admin\UserSubscriptionController::class, 'show'])->name('show');
             Route::get('{subscription}/payment-history', [App\Http\Controllers\Admin\UserSubscriptionController::class, 'paymentHistory'])->name('payment-history');
+            Route::post('{subscription}/fix-reconciliation', [App\Http\Controllers\Admin\UserSubscriptionController::class, 'fixReconciliation'])->name('fix-reconciliation');
             Route::post('{subscription}/status', [App\Http\Controllers\Admin\UserSubscriptionController::class, 'updateStatus'])->name('update-status');
             Route::post('{subscription}/payment', [App\Http\Controllers\Admin\UserSubscriptionController::class, 'updatePaymentStatus'])->name('update-payment');
             Route::post('{subscription}/note', [App\Http\Controllers\Admin\UserSubscriptionController::class, 'addNote'])->name('add-note');

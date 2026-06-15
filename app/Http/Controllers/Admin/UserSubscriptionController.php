@@ -283,4 +283,138 @@ class UserSubscriptionController extends Controller
             ],
         ]);
     }
+
+    /**
+     * Fix reconciliation issues (AJAX)
+     */
+    public function fixReconciliation(Request $request, UserSubscription $subscription)
+    {
+        $fixType = $request->input('fix_type');
+        
+        DB::beginTransaction();
+        try {
+            $result = ['success' => false, 'message' => 'Unknown fix type'];
+            
+            switch ($fixType) {
+                case 'sync_balance':
+                    // Recalculate balance from transactions
+                    $totalCredits = $subscription->walletTransactions()->where('type', 'credit')->sum('amount');
+                    $totalDebits = $subscription->walletTransactions()->where('type', 'debit')->sum('amount');
+                    $calculatedBalance = $totalCredits - $totalDebits;
+                    
+                    $oldBalance = $subscription->wallet_balance;
+                    $subscription->update(['wallet_balance' => $calculatedBalance]);
+                    
+                    \App\Models\SubscriptionChangeLog::record(
+                        $subscription->id,
+                        auth()->id(),
+                        'balance_reconciliation',
+                        ['old_balance' => $oldBalance],
+                        ['new_balance' => $calculatedBalance],
+                        "Balance synced from transactions (admin fix)"
+                    );
+                    
+                    $result = [
+                        'success' => true,
+                        'message' => "Balance synchronized successfully. Updated from ₹{$oldBalance} to ₹{$calculatedBalance}",
+                        'old_balance' => (float) $oldBalance,
+                        'new_balance' => (float) $calculatedBalance,
+                    ];
+                    break;
+                    
+                case 'sync_bank_to_wallet':
+                    // Find successful bank payments not yet credited to wallet
+                    $bankTotal = \App\Models\Order::where('user_id', $subscription->user_id)
+                        ->where(function($q) use ($subscription) {
+                            $q->where('user_subscription_id', $subscription->id)
+                              ->orWhere(function($q2) use ($subscription) {
+                                  $q2->where('order_type', 'wallet_topup')
+                                     ->whereNull('user_subscription_id')
+                                     ->whereJsonContains('wallet_meta->location_id', (string)$subscription->location_id);
+                              });
+                        })
+                        ->where('order_type', 'wallet_topup')
+                        ->where('status', 'success')
+                        ->sum('amount');
+                    
+                    $walletCredits = $subscription->walletTransactions()->where('type', 'credit')->sum('amount');
+                    $difference = $bankTotal - $walletCredits;
+                    
+                    if (abs($difference) > 0.01) {
+                        // Add adjustment transaction
+                        \App\Models\MilkWalletTransaction::create([
+                            'user_id' => $subscription->user_id,
+                            'user_subscription_id' => $subscription->id,
+                            'type' => $difference > 0 ? 'credit' : 'debit',
+                            'amount' => abs($difference),
+                            'balance_after' => $subscription->wallet_balance + $difference,
+                            'description' => "Reconciliation adjustment: Bank payments sync (admin fix)",
+                            'transaction_date' => now()->toDateString(),
+                        ]);
+                        
+                        $subscription->update([
+                            'wallet_balance' => $subscription->wallet_balance + $difference,
+                            'wallet_total' => $subscription->wallet_total + ($difference > 0 ? $difference : 0),
+                        ]);
+                        
+                        $result = [
+                            'success' => true,
+                            'message' => "Adjustment of ₹" . number_format(abs($difference), 2) . " applied to match bank payments",
+                            'adjustment' => (float) $difference,
+                        ];
+                    } else {
+                        $result = [
+                            'success' => true,
+                            'message' => "No adjustment needed. Bank payments and wallet credits are already synchronized.",
+                        ];
+                    }
+                    break;
+                    
+                case 'prevent_negative':
+                    // Check if balance is negative and fix
+                    if ($subscription->wallet_balance < 0) {
+                        $negativeAmount = abs($subscription->wallet_balance);
+                        
+                        // Add credit to bring balance to zero
+                        \App\Models\MilkWalletTransaction::create([
+                            'user_id' => $subscription->user_id,
+                            'user_subscription_id' => $subscription->id,
+                            'type' => 'credit',
+                            'amount' => $negativeAmount,
+                            'balance_after' => 0,
+                            'description' => "Negative balance correction (admin fix)",
+                            'transaction_date' => now()->toDateString(),
+                        ]);
+                        
+                        $subscription->update([
+                            'wallet_balance' => 0,
+                            'wallet_total' => $subscription->wallet_total + $negativeAmount,
+                        ]);
+                        
+                        $result = [
+                            'success' => true,
+                            'message' => "Negative balance of ₹{$negativeAmount} corrected. Balance is now ₹0.",
+                            'correction' => (float) $negativeAmount,
+                        ];
+                    } else {
+                        $result = [
+                            'success' => true,
+                            'message' => "Balance is positive. No correction needed.",
+                        ];
+                    }
+                    break;
+            }
+            
+            DB::commit();
+            return response()->json($result);
+            
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Reconciliation Fix Error', ['error' => $e->getMessage(), 'subscription_id' => $subscription->id]);
+            return response()->json([
+                'success' => false,
+                'message' => 'An error occurred while fixing reconciliation: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
 }
