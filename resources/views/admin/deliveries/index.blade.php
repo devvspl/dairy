@@ -202,13 +202,19 @@
                                         style="background: rgba(47,74,30,0.1); color: var(--green);">
                                     <i class="fa-solid fa-pen-to-square"></i> Update
                                 </button>
+                                <button onclick="openHistoryModal({{ $delivery->id }})"
+                                        title="View History"
+                                        class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors hover:opacity-80"
+                                        style="background: rgba(59,130,246,0.1); color: #2563eb;">
+                                    <i class="fa-solid fa-history"></i> History
+                                </button>
                                 @if($delivery->status === 'pending')
                                 <form method="POST" action="{{ route('admin.deliveries.forward', $delivery) }}"
                                       onsubmit="return confirm('Forward this delivery to the next day?')" class="inline">
                                     @csrf
                                     <button type="submit" title="Forward to next day"
                                             class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors hover:opacity-80"
-                                            style="background: rgba(59,130,246,0.1); color: #2563eb;">
+                                            style="background: rgba(251,146,60,0.1); color: #ea580c;">
                                         <i class="fa-solid fa-forward-step"></i> Forward
                                     </button>
                                 </form>
@@ -284,6 +290,38 @@
     </div>
 </div>
 
+<!-- Delivery History Modal -->
+<div id="historyModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[85vh] flex flex-col">
+        <div class="flex items-center justify-between p-6 border-b" style="border-color: var(--border);">
+            <div>
+                <h3 class="text-xl font-bold" style="color: var(--text);">
+                    <i class="fa-solid fa-history mr-2" style="color: #2563eb;"></i>Delivery History
+                </h3>
+                <p class="text-sm mt-1" style="color: var(--muted);">Track all changes and updates to this delivery</p>
+            </div>
+            <button onclick="closeHistoryModal()" class="w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-100">
+                <i class="fa-solid fa-times text-sm" style="color: var(--muted);"></i>
+            </button>
+        </div>
+        
+        <div class="flex-1 overflow-y-auto p-6">
+            <div id="historyContent" class="space-y-4">
+                <div class="text-center py-8">
+                    <i class="fa-solid fa-spinner fa-spin text-2xl text-blue-600"></i>
+                    <p class="text-sm mt-2" style="color: var(--muted);">Loading history...</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="p-4 border-t text-center" style="border-color: var(--border);">
+            <button onclick="closeHistoryModal()" class="px-6 py-2 rounded-lg font-semibold border" style="border-color: var(--border); color: var(--text);">
+                Close
+            </button>
+        </div>
+    </div>
+</div>
+
 <script>
 function openUpdateModal(id, status, quantity, time) {
     document.getElementById('statusSelect').value = status;
@@ -300,6 +338,152 @@ function closeUpdateModal() {
     const modal = document.getElementById('updateModal');
     modal.classList.add('hidden');
     modal.classList.remove('flex');
+}
+
+// History Modal Functions
+function openHistoryModal(deliveryId) {
+    const modal = document.getElementById('historyModal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    
+    // Load delivery history
+    loadDeliveryHistory(deliveryId);
+}
+
+function closeHistoryModal() {
+    const modal = document.getElementById('historyModal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+}
+
+function loadDeliveryHistory(deliveryId) {
+    const content = document.getElementById('historyContent');
+    content.innerHTML = `
+        <div class="text-center py-8">
+            <i class="fa-solid fa-spinner fa-spin text-2xl text-blue-600"></i>
+            <p class="text-sm mt-2" style="color: var(--muted);">Loading history...</p>
+        </div>
+    `;
+    
+    fetch(`/admin/deliveries/${deliveryId}/history`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                renderDeliveryHistory(data.history);
+            } else {
+                content.innerHTML = `
+                    <div class="text-center py-8 text-red-600">
+                        <i class="fa-solid fa-exclamation-triangle text-2xl"></i>
+                        <p class="text-sm mt-2">Failed to load delivery history</p>
+                    </div>
+                `;
+            }
+        })
+        .catch(error => {
+            content.innerHTML = `
+                <div class="text-center py-8 text-red-600">
+                    <i class="fa-solid fa-wifi text-2xl"></i>
+                    <p class="text-sm mt-2">Network error. Please try again.</p>
+                </div>
+            `;
+        });
+}
+
+function renderDeliveryHistory(history) {
+    const content = document.getElementById('historyContent');
+    
+    if (history.length === 0) {
+        content.innerHTML = `
+            <div class="text-center py-8" style="color: var(--muted);">
+                <i class="fa-solid fa-clock text-3xl mb-3"></i>
+                <p class="text-lg font-semibold mb-2">No History Yet</p>
+                <p class="text-sm">This delivery hasn't been modified since creation.</p>
+            </div>
+        `;
+        return;
+    }
+    
+    let html = `
+        <div class="mb-4">
+            <div class="flex items-center gap-2 text-sm" style="color: var(--muted);">
+                <i class="fa-solid fa-list"></i>
+                <span>${history.length} change${history.length !== 1 ? 's' : ''} recorded</span>
+            </div>
+        </div>
+        <div class="space-y-4">
+    `;
+    
+    history.forEach((record, index) => {
+        const isFirst = index === 0;
+        const actionIcons = {
+            'status_change': { icon: 'fa-exchange-alt', color: 'text-blue-600', bg: 'bg-blue-50' },
+            'quantity_change': { icon: 'fa-balance-scale', color: 'text-purple-600', bg: 'bg-purple-50' },
+            'person_change': { icon: 'fa-user-edit', color: 'text-green-600', bg: 'bg-green-50' },
+            'time_change': { icon: 'fa-clock', color: 'text-orange-600', bg: 'bg-orange-50' },
+            'note_added': { icon: 'fa-plus-circle', color: 'text-indigo-600', bg: 'bg-indigo-50' },
+            'note_updated': { icon: 'fa-edit', color: 'text-indigo-600', bg: 'bg-indigo-50' },
+            'bottle_status_change': { icon: 'fa-wine-bottle', color: 'text-teal-600', bg: 'bg-teal-50' },
+            'delivery_created': { icon: 'fa-plus', color: 'text-green-600', bg: 'bg-green-50' },
+            'delivery_forwarded': { icon: 'fa-forward', color: 'text-yellow-600', bg: 'bg-yellow-50' },
+        };
+        
+        const actionStyle = actionIcons[record.action_type] || { icon: 'fa-edit', color: 'text-gray-600', bg: 'bg-gray-50' };
+        
+        html += `
+            <div class="relative ${isFirst ? 'ring-2 ring-blue-200' : ''}">
+                <div class="flex gap-4 p-4 rounded-xl border bg-white hover:shadow-md transition-shadow" style="border-color: var(--border);">
+                    <div class="flex-shrink-0">
+                        <div class="w-12 h-12 rounded-full ${actionStyle.bg} flex items-center justify-center">
+                            <i class="fa-solid ${actionStyle.icon} ${actionStyle.color}"></i>
+                        </div>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-start justify-between gap-2 mb-2">
+                            <div class="flex-1">
+                                <h4 class="font-semibold text-sm" style="color: var(--text);">${record.description}</h4>
+                                <p class="text-xs" style="color: var(--muted);">
+                                    by ${record.changed_by} • ${record.changed_at_human}
+                                </p>
+                            </div>
+                            ${isFirst ? '<span class="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-700 font-semibold">Latest</span>' : ''}
+                        </div>
+                        
+                        ${record.changes.length > 0 ? `
+                        <div class="bg-gray-50 rounded-lg p-3 mt-2">
+                            <p class="text-xs font-semibold mb-2" style="color: var(--muted);">CHANGES MADE:</p>
+                            <div class="space-y-1">
+                                ${record.changes.map(change => `
+                                    <div class="flex items-center gap-2 text-xs">
+                                        <span class="font-medium" style="color: var(--text);">${change.label}:</span>
+                                        <span class="px-1 py-0.5 bg-red-100 text-red-700 rounded">${change.old || 'None'}</span>
+                                        <i class="fa-solid fa-arrow-right text-gray-400"></i>
+                                        <span class="px-1 py-0.5 bg-green-100 text-green-700 rounded">${change.new || 'None'}</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                        ` : ''}
+                        
+                        <div class="flex items-center gap-4 mt-3 text-xs" style="color: var(--muted);">
+                            <div class="flex items-center gap-1">
+                                <i class="fa-solid fa-calendar"></i>
+                                <span>${record.changed_at}</span>
+                            </div>
+                            ${record.ip_address ? `
+                                <div class="flex items-center gap-1">
+                                    <i class="fa-solid fa-globe"></i>
+                                    <span class="font-mono">${record.ip_address}</span>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    html += '</div>';
+    content.innerHTML = html;
 }
 
 // Payment History Modal

@@ -220,6 +220,7 @@ Route::middleware('auth')->group(function () {
             Route::delete('exports/{export}', [App\Http\Controllers\Admin\DeliveryLogController::class, 'exportDelete'])->name('exports.delete');
             Route::post('bulk-update', [App\Http\Controllers\Admin\DeliveryLogController::class, 'bulkUpdateToday'])->name('bulk-update');
             Route::post('{delivery}/status', [App\Http\Controllers\Admin\DeliveryLogController::class, 'updateStatus'])->name('update-status');
+            Route::get('{delivery}/history', [App\Http\Controllers\Admin\DeliveryLogController::class, 'getHistory'])->name('history');
             Route::post('{delivery}/forward', [App\Http\Controllers\Admin\DeliveryLogController::class, 'forwardToNextDay'])->name('forward');
         });
         // Contact Inquiries

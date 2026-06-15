@@ -38,6 +38,16 @@ class DeliveryLog extends Model
         return $this->belongsTo(User::class, 'marked_by');
     }
 
+    public function history()
+    {
+        return $this->hasMany(DeliveryHistory::class);
+    }
+
+    public function latestHistory()
+    {
+        return $this->hasOne(DeliveryHistory::class)->latest('changed_at');
+    }
+
     public function scopePending($query)   { return $query->where('status', 'pending'); }
     public function scopeDelivered($query) { return $query->where('status', 'delivered'); }
     public function scopeForDate($query, $date) { return $query->whereDate('delivery_date', $date); }

@@ -6,6 +6,7 @@ use App\Exports\AllLocationsDeliveriesExport;
 use App\Exports\TodayDeliveriesExport;
 use App\Http\Controllers\Controller;
 use App\Models\DeliveryLog;
+use App\Models\DeliveryHistory;
 use App\Models\ExportLog;
 use App\Models\MilkWalletTransaction;
 use App\Models\UserSubscription;
@@ -63,6 +64,17 @@ class DeliveryLogController extends Controller
             'quantity_delivered' => 'nullable|numeric|min:0|max:100',
             'notes'              => 'nullable|string|max:500',
         ]);
+
+        // Capture old values for history tracking
+        $oldValues = [
+            'status' => $delivery->status,
+            'quantity_delivered' => (float) $delivery->quantity_delivered,
+            'delivery_time' => $delivery->delivery_time,
+            'notes' => $delivery->notes,
+            'bottle_picked' => $delivery->bottle_picked,
+            'marked_by' => $delivery->marked_by,
+            'marked_by_name' => $delivery->markedBy?->name ?? 'System',
+        ];
 
         $oldStatus    = $delivery->status;
         $newStatus    = $validated['status'];
@@ -122,6 +134,20 @@ class DeliveryLogController extends Controller
             'marked_at'          => now(),
         ]);
 
+        // Capture new values for history tracking
+        $newValues = [
+            'status' => $newStatus,
+            'quantity_delivered' => $newQty,
+            'delivery_time' => $validated['delivery_time'] ?? $delivery->delivery_time,
+            'notes' => $validated['notes'] ?? $delivery->notes,
+            'bottle_picked' => $validated['bottle_picked'] ?? $delivery->bottle_picked,
+            'marked_by' => auth()->id(),
+            'marked_by_name' => auth()->user()->name,
+        ];
+
+        // Record history for each type of change
+        $this->recordDeliveryChanges($delivery->id, $oldValues, $newValues);
+
         // ── Wallet debit/credit logic ─────────────────────────────────
         if ($subscription && $subscription->isOnDemand() && $subscription->price_per_litre > 0) {
             $dateStr   = $delivery->delivery_date->toDateString();
@@ -158,6 +184,102 @@ class DeliveryLogController extends Controller
         }
 
         return redirect()->back()->with('success', '✅ Delivery status updated successfully!');
+    }
+
+    /**
+     * Get delivery history (AJAX)
+     */
+    public function getHistory(DeliveryLog $delivery)
+    {
+        $history = $delivery->history()
+            ->with('changedBy:id,name')
+            ->orderBy('changed_at', 'desc')
+            ->get()
+            ->map(function ($record) {
+                return [
+                    'id' => $record->id,
+                    'action_type' => $record->action_type,
+                    'description' => $record->description,
+                    'changes' => $record->getFormattedChanges(),
+                    'changed_by' => $record->changedBy ? $record->changedBy->name : 'System',
+                    'changed_at' => $record->changed_at->format('M j, Y g:i A'),
+                    'changed_at_human' => $record->changed_at->diffForHumans(),
+                    'ip_address' => $record->ip_address,
+                ];
+            });
+
+        return response()->json([
+            'success' => true,
+            'history' => $history,
+            'total' => $history->count(),
+        ]);
+    }
+
+    /**
+     * Record delivery changes in history
+     */
+    private function recordDeliveryChanges(int $deliveryLogId, array $oldValues, array $newValues)
+    {
+        // Status change
+        if ($oldValues['status'] !== $newValues['status']) {
+            \App\Models\DeliveryHistory::record(
+                $deliveryLogId,
+                'status_change',
+                ['status' => $oldValues['status']],
+                ['status' => $newValues['status']]
+            );
+        }
+
+        // Quantity change
+        if ($oldValues['quantity_delivered'] !== $newValues['quantity_delivered']) {
+            \App\Models\DeliveryHistory::record(
+                $deliveryLogId,
+                'quantity_change',
+                ['quantity_delivered' => $oldValues['quantity_delivered']],
+                ['quantity_delivered' => $newValues['quantity_delivered']]
+            );
+        }
+
+        // Person change
+        if ($oldValues['marked_by'] !== $newValues['marked_by']) {
+            \App\Models\DeliveryHistory::record(
+                $deliveryLogId,
+                'person_change',
+                ['marked_by' => $oldValues['marked_by'], 'marked_by_name' => $oldValues['marked_by_name']],
+                ['marked_by' => $newValues['marked_by'], 'marked_by_name' => $newValues['marked_by_name']]
+            );
+        }
+
+        // Time change
+        if ($oldValues['delivery_time'] !== $newValues['delivery_time']) {
+            \App\Models\DeliveryHistory::record(
+                $deliveryLogId,
+                'time_change',
+                ['delivery_time' => $oldValues['delivery_time']],
+                ['delivery_time' => $newValues['delivery_time']]
+            );
+        }
+
+        // Bottle status change
+        if ($oldValues['bottle_picked'] !== $newValues['bottle_picked']) {
+            \App\Models\DeliveryHistory::record(
+                $deliveryLogId,
+                'bottle_status_change',
+                ['bottle_picked' => $oldValues['bottle_picked']],
+                ['bottle_picked' => $newValues['bottle_picked']]
+            );
+        }
+
+        // Note changes
+        if ($oldValues['notes'] !== $newValues['notes']) {
+            $actionType = empty($oldValues['notes']) ? 'note_added' : 'note_updated';
+            \App\Models\DeliveryHistory::record(
+                $deliveryLogId,
+                $actionType,
+                ['notes' => $oldValues['notes']],
+                ['notes' => $newValues['notes']]
+            );
+        }
     }
 
     /**
