@@ -434,9 +434,26 @@ class UserSubscriptionController extends Controller
                             'transaction_date' => now()->toDateString(),
                         ]);
                         
+                        $oldBalance = $subscription->wallet_balance;
+                        $newBalance = $subscription->wallet_balance - $excessAmount;
+                        
                         $subscription->update([
-                            'wallet_balance' => $subscription->wallet_balance - $excessAmount,
+                            'wallet_balance' => $newBalance,
                         ]);
+                        
+                        \App\Models\SubscriptionChangeLog::record(
+                            $subscription->id,
+                            auth()->id(),
+                            'excess_credits_removal',
+                            [
+                                'old_balance' => $oldBalance,
+                                'excess_amount' => $excessAmount,
+                                'bank_total' => $bankTotal,
+                                'wallet_credits' => $walletCredits
+                            ],
+                            ['new_balance' => $newBalance],
+                            "Removed excess credits (₹{$excessAmount}) not backed by bank payments (admin fix)"
+                        );
                         
                         $result = [
                             'success' => true,
