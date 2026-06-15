@@ -547,7 +547,7 @@ function renderReconciliation(data) {
             message: `Bank payments (₹${totalBankPayments.toFixed(2)}) don't match wallet credits (₹${totalCredits.toFixed(2)}). Difference: ₹${Math.abs(bankDiff).toFixed(2)}`,
             action: bankDiff > 0 
                 ? 'Click "Sync Bank to Wallet" to credit missing payments to wallet.'
-                : 'Wallet has more credits than bank payments. Manual review needed.'
+                : 'Click "Remove Excess Credits" to remove extra wallet credits not backed by bank payments.'
         });
         if (bankDiff > 0) {
             fixes.push({
@@ -555,6 +555,13 @@ function renderReconciliation(data) {
                 label: 'Sync Bank to Wallet',
                 icon: 'fa-building-columns',
                 description: 'Credit missing bank payments to wallet'
+            });
+        } else if (bankDiff < 0) {
+            fixes.push({
+                type: 'remove_excess_credits',
+                label: 'Remove Excess Credits',
+                icon: 'fa-minus-circle',
+                description: 'Remove wallet credits not backed by bank payments'
             });
         }
     }

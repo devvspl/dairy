@@ -403,6 +403,53 @@ class UserSubscriptionController extends Controller
                         ];
                     }
                     break;
+                    
+                case 'remove_excess_credits':
+                    // Remove wallet credits that exceed bank payments
+                    $bankTotal = \App\Models\Order::where('user_id', $subscription->user_id)
+                        ->where(function($q) use ($subscription) {
+                            $q->where('user_subscription_id', $subscription->id)
+                              ->orWhere(function($q2) use ($subscription) {
+                                  $q2->where('order_type', 'wallet_topup')
+                                     ->whereNull('user_subscription_id')
+                                     ->whereJsonContains('wallet_meta->location_id', (string)$subscription->location_id);
+                              });
+                        })
+                        ->where('order_type', 'wallet_topup')
+                        ->where('status', 'success')
+                        ->sum('amount');
+                    
+                    $walletCredits = $subscription->walletTransactions()->where('type', 'credit')->sum('amount');
+                    $excessAmount = $walletCredits - $bankTotal;
+                    
+                    if ($excessAmount > 0.01) {
+                        // Add debit transaction to remove excess credits
+                        \App\Models\MilkWalletTransaction::create([
+                            'user_id' => $subscription->user_id,
+                            'user_subscription_id' => $subscription->id,
+                            'type' => 'debit',
+                            'amount' => $excessAmount,
+                            'balance_after' => $subscription->wallet_balance - $excessAmount,
+                            'description' => "Reconciliation adjustment: Remove excess credits not backed by bank payments (admin fix)",
+                            'transaction_date' => now()->toDateString(),
+                        ]);
+                        
+                        $subscription->update([
+                            'wallet_balance' => $subscription->wallet_balance - $excessAmount,
+                        ]);
+                        
+                        $result = [
+                            'success' => true,
+                            'message' => "Removed excess credits of ₹" . number_format($excessAmount, 2) . " to match bank payments",
+                            'adjustment' => -(float) $excessAmount,
+                        ];
+                    } else {
+                        $result = [
+                            'success' => true,
+                            'message' => "No excess credits found. Wallet credits match or are less than bank payments.",
+                        ];
+                    }
+                    break;
             }
             
             DB::commit();
