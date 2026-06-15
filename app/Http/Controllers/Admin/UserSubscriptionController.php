@@ -197,4 +197,33 @@ class UserSubscriptionController extends Controller
         return redirect()->route('admin.subscriptions.show', $subscription)
             ->with('success', 'Note added successfully!');
     }
+
+    /**
+     * Get payment history for a subscription (AJAX)
+     */
+    public function paymentHistory(UserSubscription $subscription)
+    {
+        $transactions = $subscription->walletTransactions()
+            ->orderBy('transaction_date', 'desc')
+            ->orderBy('created_at', 'desc')
+            ->limit(50)
+            ->get()
+            ->map(function($txn) {
+                return [
+                    'id'            => $txn->id,
+                    'type'          => $txn->type,
+                    'amount'        => (float) $txn->amount,
+                    'litres'        => $txn->litres ? (float) $txn->litres : null,
+                    'balance_after' => (float) $txn->balance_after,
+                    'description'   => $txn->description,
+                    'date'          => $txn->transaction_date->format('M d, Y'),
+                    'time'          => $txn->created_at->format('h:i A'),
+                ];
+            });
+
+        return response()->json([
+            'success'      => true,
+            'transactions' => $transactions,
+        ]);
+    }
 }

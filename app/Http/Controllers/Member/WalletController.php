@@ -65,23 +65,52 @@ class WalletController extends Controller
     public function initiate(Request $request)
     {
         $request->validate([
-            'amount'           => 'required|numeric|min:1|max:500000',
-            'milk_type'        => 'required|string|max:50',
-            'quantity_per_day' => 'required|numeric|min:0.5|max:20',
-            'delivery_slot'    => 'required|in:morning,afternoon,evening',
-            'location_id'      => 'required|exists:locations,id',
-            'delivery_address' => 'required|string|max:500',
-            'start_date'       => 'required|date|after_or_equal:today',
+            'amount'                     => 'required|numeric|min:1|max:500000',
+            'milk_items'                 => 'required|array|min:1',
+            'milk_items.*.milk_type'     => 'required|string|max:50',
+            'milk_items.*.qty'           => 'required|numeric|min:0.5|max:50',
+            'milk_items.*.ppl'           => 'nullable|numeric|min:0',
+            'delivery_slot'              => 'required|in:morning,afternoon,evening',
+            'location_id'                => 'required|exists:locations,id',
+            'delivery_address'           => 'required|string|max:500',
+            'start_date'                 => 'required|date|after_or_equal:today',
         ]);
 
-        $user          = auth()->user();
-        $amount        = (float) $request->amount;
-        $milkPriceRow  = \App\Models\MilkPrice::forType($request->milk_type);
-        $pricePerLitre = $milkPriceRow ? (float) $milkPriceRow->price_per_litre : null;
+        $user   = auth()->user();
+        $amount = (float) $request->amount;
 
-        // Cutoff time validation
+        // Enrich milk_items: apply shared slot + refresh price from DB
+        $enrichedItems = [];
+        $sharedSlot    = $request->delivery_slot ?? 'morning';
+        $totalQty      = 0;
+        
+        foreach ($request->milk_items as $item) {
+            if (empty($item['milk_type'])) continue;
+            
+            $mp  = \App\Models\MilkPrice::forType($item['milk_type']);
+            $qty = (float) ($item['qty'] ?? 1);
+            $ppl = $mp ? (float) $mp->price_per_litre : (float) ($item['ppl'] ?? 0);
+            
+            $enrichedItems[] = [
+                'milk_type' => $item['milk_type'],
+                'qty'       => $qty,
+                'slot'      => $sharedSlot,
+                'ppl'       => $ppl,
+            ];
+            
+            $totalQty += $qty;
+        }
+
+        if (empty($enrichedItems)) {
+            return redirect()->route('member.dashboard')->with('error', 'Please select at least one milk type.');
+        }
+
+        // Cutoff time validation - check against the first milk type
         $startDate = \Carbon\Carbon::parse($request->start_date);
-        $startDate = CutoffHelper::adjustDate($startDate, $request->milk_type);
+        $startDate = CutoffHelper::adjustDate($startDate, $enrichedItems[0]['milk_type']);
+
+        // For backward compatibility, use first item as primary milk
+        $primaryMilk = $enrichedItems[0];
 
         DB::beginTransaction();
         try {
@@ -93,13 +122,15 @@ class WalletController extends Controller
                 'status'         => 'pending',
                 'payment_method' => 'phonepe',
                 'wallet_meta'    => [
-                    'milk_type'        => $request->milk_type,
-                    'quantity_per_day' => $request->quantity_per_day,
+                    'milk_items'       => $enrichedItems,
                     'delivery_slot'    => $request->delivery_slot,
                     'location_id'      => $request->location_id,
                     'delivery_address' => $request->delivery_address,
                     'start_date'       => $startDate->format('Y-m-d'),
-                    'price_per_litre'  => $pricePerLitre,
+                    // Legacy fields for backward compatibility
+                    'milk_type'        => $primaryMilk['milk_type'],
+                    'quantity_per_day' => $totalQty,
+                    'price_per_litre'  => $primaryMilk['ppl'],
                 ],
             ]);
 
@@ -117,7 +148,7 @@ class WalletController extends Controller
             return redirect()->route('member.dashboard')->with('error', $paymentResponse['message'] ?? 'Payment initiation failed.');
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Wallet Init Error', ['error' => $e->getMessage()]);
+            Log::error('Wallet Init Error', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
             return redirect()->route('member.dashboard')->with('error', 'An error occurred.');
         }
     }

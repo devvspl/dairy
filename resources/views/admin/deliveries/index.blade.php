@@ -18,7 +18,7 @@
     <!-- Subscription Info -->
     <div class="bg-white rounded-lg shadow-sm p-4 border" style="border-color: var(--border);">
         <div class="flex items-center justify-between flex-wrap gap-3">
-            <div>
+            <div class="flex-1">
                 <h3 class="font-bold text-lg" style="color: var(--text);">{{ $subscription->user->name }}</h3>
                 <p class="text-sm" style="color: var(--muted);">
                     {{ $subscription->membershipPlan?->name ?? 'Milk Wallet' }} —
@@ -29,11 +29,44 @@
                     <span class="px-2 py-0.5 text-xs rounded-full font-semibold bg-blue-100 text-blue-800">🛒 On-Demand / Wallet</span>
                     <span class="text-sm" style="color: var(--muted);">Qty/day: <strong style="color:var(--text);">{{ $subscription->quantity_per_day }} L</strong></span>
                     <span class="text-sm" style="color: var(--muted);">Rate: <strong style="color:var(--text);">₹{{ number_format($subscription->price_per_litre, 2) }}/L</strong></span>
-                    <span class="text-sm" style="color: var(--muted);">Wallet: <strong style="color:var(--green);">₹{{ number_format($subscription->wallet_balance, 2) }}</strong> / ₹{{ number_format($subscription->wallet_total, 2) }}</span>
                 </div>
                 @endif
             </div>
-        <div class="flex items-center gap-2 flex-wrap">
+            
+            {{-- Wallet Balance Card --}}
+            @if(!$subscription->membership_plan_id || $subscription->membershipPlan?->isOnDemand())
+            <div class="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-4 border-2 min-w-[200px]" style="border-color: var(--green);">
+                <p class="text-xs font-semibold mb-1" style="color: var(--green);">
+                    <i class="fa-solid fa-wallet mr-1"></i>Wallet Balance
+                </p>
+                <p class="text-2xl font-bold mb-1" style="color: var(--green);">₹{{ number_format($subscription->wallet_balance, 2) }}</p>
+                <p class="text-xs mb-2" style="color: var(--muted);">Total: ₹{{ number_format($subscription->wallet_total, 2) }}</p>
+                
+                @if($walletStats)
+                <div class="flex items-center gap-3 text-xs mb-2 pb-2 border-t pt-2" style="border-color: rgba(47,74,30,0.2);">
+                    <div>
+                        <p style="color: var(--muted);">Credits</p>
+                        <p class="font-bold text-green-700">₹{{ number_format($walletStats['total_credits'], 2) }}</p>
+                    </div>
+                    <div>
+                        <p style="color: var(--muted);">Debits</p>
+                        <p class="font-bold text-red-600">₹{{ number_format($walletStats['total_debits'], 2) }}</p>
+                    </div>
+                    <div>
+                        <p style="color: var(--muted);">Txns</p>
+                        <p class="font-bold" style="color: var(--text);">{{ $walletStats['transaction_count'] }}</p>
+                    </div>
+                </div>
+                @endif
+                
+                <button onclick="openPaymentHistory()" class="text-xs font-semibold hover:underline" style="color: var(--green);">
+                    <i class="fa-solid fa-history mr-1"></i>View Payment History
+                </button>
+            </div>
+            @endif
+        </div>
+        
+        <div class="flex items-center gap-2 flex-wrap mt-4">
             <form method="POST" action="{{ route('admin.subscriptions.deliveries.generate', $subscription) }}">
                 @csrf
                 <button type="submit" class="px-4 py-2 rounded-lg font-semibold" style="background-color: var(--green); color: #fff;">
@@ -48,7 +81,6 @@
                     <i class="fa-solid fa-rotate-left mr-2"></i>Reset
                 </button>
             </form>
-        </div>
         </div>
     </div>
 
@@ -130,11 +162,20 @@
                         <td class="px-4 py-3 text-sm" style="color: var(--muted);">{{ $delivery->delivery_date->format('l') }}</td>
                         <td class="px-4 py-3 text-sm font-semibold" style="color: var(--green);">{{ $delivery->quantity_delivered }} L</td>
                         @if($isWallet)
-                        <td class="px-4 py-3 text-sm font-semibold text-red-600">
+                        <td class="px-4 py-3">
                             @if($delivery->status === 'delivered')
-                                ₹{{ number_format($delivery->quantity_delivered * $subscription->price_per_litre, 2) }}
+                                @php $dailyDeduction = $delivery->quantity_delivered * $subscription->price_per_litre; @endphp
+                                <div class="flex items-center gap-2">
+                                    <span class="text-sm font-bold text-red-600">-₹{{ number_format($dailyDeduction, 2) }}</span>
+                                    <span class="text-xs px-2 py-0.5 rounded-full bg-red-50 text-red-600 font-semibold">
+                                        Debited
+                                    </span>
+                                </div>
+                                <p class="text-xs mt-0.5" style="color: var(--muted);">
+                                    {{ $delivery->quantity_delivered }}L × ₹{{ number_format($subscription->price_per_litre, 2) }}
+                                </p>
                             @else
-                                <span style="color:var(--muted);">—</span>
+                                <span class="text-sm" style="color:var(--muted);">—</span>
                             @endif
                         </td>
                         @endif
@@ -260,5 +301,115 @@ function closeUpdateModal() {
     modal.classList.add('hidden');
     modal.classList.remove('flex');
 }
+
+// Payment History Modal
+function openPaymentHistory() {
+    const modal = document.getElementById('paymentHistoryModal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    
+    // Load payment history via AJAX
+    loadPaymentHistory();
+}
+
+function closePaymentHistory() {
+    const modal = document.getElementById('paymentHistoryModal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+}
+
+function loadPaymentHistory() {
+    const container = document.getElementById('paymentHistoryContent');
+    container.innerHTML = '<div class="text-center py-8"><i class="fa-solid fa-spinner fa-spin text-2xl" style="color: var(--green);"></i></div>';
+    
+    fetch('/admin/subscriptions/{{ $subscription->id }}/payment-history')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                renderPaymentHistory(data.transactions);
+            } else {
+                container.innerHTML = '<p class="text-center py-8 text-red-600">Failed to load payment history</p>';
+            }
+        })
+        .catch(error => {
+            container.innerHTML = '<p class="text-center py-8 text-red-600">Error loading payment history</p>';
+        });
+}
+
+function renderPaymentHistory(transactions) {
+    const container = document.getElementById('paymentHistoryContent');
+    
+    if (transactions.length === 0) {
+        container.innerHTML = '<p class="text-center py-8" style="color: var(--muted);">No payment history found.</p>';
+        return;
+    }
+    
+    let html = '<div class="space-y-3">';
+    
+    transactions.forEach(txn => {
+        const isCredit = txn.type === 'credit';
+        const icon = isCredit ? 'fa-arrow-up' : 'fa-arrow-down';
+        const bgColor = isCredit ? 'bg-green-50' : 'bg-red-50';
+        const textColor = isCredit ? 'text-green-700' : 'text-red-700';
+        const borderColor = isCredit ? 'border-green-200' : 'border-red-200';
+        const amountPrefix = isCredit ? '+' : '-';
+        
+        html += `
+            <div class="flex items-start gap-3 p-3 rounded-lg border ${bgColor}" style="border-color: ${borderColor};">
+                <div class="w-10 h-10 rounded-full flex items-center justify-center ${bgColor}">
+                    <i class="fa-solid ${icon} ${textColor}"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-start justify-between gap-2">
+                        <div class="flex-1">
+                            <p class="text-sm font-semibold ${textColor}">${amountPrefix}₹${parseFloat(txn.amount).toFixed(2)}</p>
+                            <p class="text-xs" style="color: var(--muted);">${txn.description || '-'}</p>
+                            ${txn.litres ? `<p class="text-xs mt-1" style="color: var(--muted);">Quantity: ${txn.litres}L</p>` : ''}
+                        </div>
+                        <div class="text-right flex-shrink-0">
+                            <p class="text-xs font-semibold" style="color: var(--text);">₹${parseFloat(txn.balance_after).toFixed(2)}</p>
+                            <p class="text-xs" style="color: var(--muted);">Balance</p>
+                        </div>
+                    </div>
+                    <p class="text-xs mt-1" style="color: var(--muted);">
+                        <i class="fa-solid fa-calendar mr-1"></i>${txn.date}
+                    </p>
+                </div>
+            </div>
+        `;
+    });
+    
+    html += '</div>';
+    container.innerHTML = html;
+}
 </script>
+
+{{-- Payment History Modal --}}
+<div id="paymentHistoryModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center p-4" onclick="if(event.target === this) closePaymentHistory()">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[80vh] flex flex-col" onclick="event.stopPropagation()">
+        <div class="flex items-center justify-between p-6 border-b" style="border-color: var(--border);">
+            <div>
+                <h3 class="text-xl font-bold" style="color: var(--text);">
+                    <i class="fa-solid fa-history mr-2" style="color: var(--green);"></i>Payment History
+                </h3>
+                <p class="text-sm mt-1" style="color: var(--muted);">All wallet transactions for this subscription</p>
+            </div>
+            <button onclick="closePaymentHistory()" class="w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-100">
+                <i class="fa-solid fa-times text-sm" style="color: var(--muted);"></i>
+            </button>
+        </div>
+        
+        <div class="flex-1 overflow-y-auto p-6" id="paymentHistoryContent">
+            <div class="text-center py-8">
+                <i class="fa-solid fa-spinner fa-spin text-2xl" style="color: var(--green);"></i>
+            </div>
+        </div>
+        
+        <div class="p-4 border-t text-center" style="border-color: var(--border);">
+            <button onclick="closePaymentHistory()" class="px-6 py-2 rounded-lg font-semibold border" style="border-color: var(--border); color: var(--text);">
+                Close
+            </button>
+        </div>
+    </div>
+</div>
 @endsection

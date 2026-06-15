@@ -650,48 +650,57 @@
                             {{-- ── STEP 1: Milk + Qty + Slot + Date ── --}}
                             <div id="wi-step-1" class="space-y-4">
                             <div>
-                                <label class="block text-xs font-semibold mb-2" style="color:var(--text);"><i class="fa-solid fa-cow mr-1" style="color:var(--green);"></i>Milk Type</label>
-                                <div class="grid grid-cols-2 gap-2">
+                                <label class="block text-xs font-semibold mb-2" style="color:var(--text);"><i class="fa-solid fa-cow mr-1" style="color:var(--green);"></i>Milk Type <span class="font-normal text-[10px]" style="color:var(--muted);">(select one or more)</span></label>
+                                @php $icons = ['cow'=>'🐄','buffalo'=>'🐃','toned'=>'💧','full_fat'=>'🥛']; @endphp
+                                <div class="grid grid-cols-2 gap-2" id="wi-milk-tabs">
                                     @foreach($milkPrices as $mp)
-                                    @php $icons=['cow'=>'fa-cow','buffalo'=>'fa-hippo','toned'=>'fa-droplet','full_fat'=>'fa-bottle-water']; @endphp
-                                    <label class="wi-milk-card flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all hover:border-green-400" style="border-color:var(--border);">
-                                        <input type="radio" name="milk_type" value="{{ $mp->milk_type }}"
-                                            class="hidden wi-milk-radio" data-ppl="{{ $mp->price_per_litre }}"
-                                            {{ $loop->first ? 'checked' : '' }}>
-                                        <div class="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style="background:rgba(47,74,30,0.08);">
-                                            <i class="fas {{ $icons[$mp->milk_type] ?? 'fa-droplet' }} text-sm" style="color:var(--green);"></i>
-                                        </div>
-                                        <div>
-                                            <p class="text-xs font-bold leading-tight" style="color:var(--text);">{{ $mp->label }}</p>
-                                            <p class="text-[10px] font-semibold" style="color:var(--green);">₹{{ number_format($mp->price_per_litre,2) }}/L</p>
-                                        </div>
-                                    </label>
+                                    <div class="wi-milk-tab rounded-xl border-2 overflow-hidden transition-all {{ $loop->first ? 'selected' : '' }}"
+                                        style="border-color:{{ $loop->first ? 'var(--green)' : 'var(--border)' }};"
+                                        data-type="{{ $mp->milk_type }}">
+                                        <label class="flex items-center gap-3 p-3 cursor-pointer"
+                                            style="background:{{ $loop->first ? 'rgba(47,74,30,0.05)' : '#fff' }};">
+                                            <input type="checkbox" class="wi-milk-check hidden"
+                                                data-type="{{ $mp->milk_type }}"
+                                                data-ppl="{{ $mp->price_per_litre }}"
+                                                {{ $loop->first ? 'checked' : '' }}>
+                                            <div class="w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all wi-check-box"
+                                                style="border-color:{{ $loop->first ? 'var(--green)' : 'var(--border)' }};background:{{ $loop->first ? 'var(--green)' : '#fff' }};">
+                                                @if($loop->first)<i class="fa-solid fa-check text-[9px] text-white"></i>@endif
+                                            </div>
+                                            <span class="text-lg">{{ $icons[$mp->milk_type] ?? '🥛' }}</span>
+                                            <div class="flex-1">
+                                                <p class="text-xs font-bold" style="color:var(--text);">{{ $mp->label }}</p>
+                                                <p class="text-[10px]" style="color:var(--green);">₹{{ number_format($mp->price_per_litre,2) }}/L</p>
+                                            </div>
+                                            {{-- Qty stepper — always visible, inline --}}
+                                            <div class="flex items-center gap-1 wi-qty-wrap {{ $loop->first ? '' : 'invisible' }}" onclick="event.preventDefault()">
+                                                <button type="button" class="wi-qty-minus w-7 h-7 rounded-lg border-2 flex items-center justify-center font-bold text-sm transition-all"
+                                                    style="border-color:var(--border);color:var(--green);">−</button>
+                                                <span class="wi-qty-display text-sm font-bold w-6 text-center" style="color:var(--text);">1</span>
+                                                <button type="button" class="wi-qty-plus w-7 h-7 rounded-lg border-2 flex items-center justify-center font-bold text-sm transition-all"
+                                                    style="border-color:var(--border);color:var(--green);">+</button>
+                                                <span class="text-[10px]" style="color:var(--muted);">L</span>
+                                            </div>
+                                            <input type="hidden" class="wi-qty-input" name="milk_items[{{ $mp->milk_type }}][qty]" value="1" {{ $loop->first ? '' : 'disabled' }}>
+                                            <input type="hidden" name="milk_items[{{ $mp->milk_type }}][milk_type]" value="{{ $mp->milk_type }}" {{ $loop->first ? '' : 'disabled' }}>
+                                            <input type="hidden" name="milk_items[{{ $mp->milk_type }}][ppl]" value="{{ $mp->price_per_litre }}" {{ $loop->first ? '' : 'disabled' }}>
+                                        </label>
+                                    </div>
                                     @endforeach
+                                </div>
+                                <div id="wi-milk-error" class="hidden px-3 py-2.5 rounded-xl text-xs font-semibold text-center mt-2" style="background:#fef2f2;border:1px solid #fecaca;color:#dc2626;">
+                                    <i class="fa-solid fa-triangle-exclamation mr-1"></i>Please select at least one milk type.
                                 </div>
                             </div>
 
-                            {{-- Quantity per day — whole numbers only --}}
-                            <div>
-                                <label class="block text-xs font-semibold mb-2" style="color:var(--text);"><i class="fa-solid fa-scale-balanced mr-1" style="color:var(--green);"></i>Quantity per Day</label>
-                                <div class="grid grid-cols-5 gap-2">
-                                    @foreach([1,2,3,5,8] as $q)
-                                    <button type="button" onclick="wiSetQty({{ $q }})"
-                                        class="wi-qty-btn py-3 rounded-xl text-sm font-bold border-2 transition-all"
-                                        data-qty="{{ $q }}"
-                                        style="border-color:var(--border);color:var(--muted);">{{ $q }}L</button>
-                                    @endforeach
-                                </div>
-                                <input type="hidden" name="quantity_per_day" id="wi-qty-input" value="1">
-                            </div>
-
-                            {{-- Delivery slot — Morning & Evening only --}}
+                            {{-- Shared Delivery Slot --}}
                             <div>
                                 <label class="block text-xs font-semibold mb-2" style="color:var(--text);"><i class="fa-solid fa-clock mr-1" style="color:var(--green);"></i>Delivery Slot</label>
                                 <div class="grid grid-cols-2 gap-3">
                                     @foreach([['value'=>'morning','label'=>'Morning','time'=>'5–8 AM','icon'=>'fa-sun'],['value'=>'evening','label'=>'Evening','time'=>'5–8 PM','icon'=>'fa-moon']] as $slot)
-                                    <label class="wi-slot-card flex flex-col items-center gap-1.5 p-4 rounded-xl border-2 cursor-pointer transition-all hover:border-green-400 text-center" style="border-color:var(--border);">
+                                    <label class="wi-slot-card flex flex-col items-center gap-1.5 p-4 rounded-xl border-2 cursor-pointer transition-all hover:border-green-400 text-center" style="border-color:{{ $loop->first ? 'var(--green)' : 'var(--border)' }};background:{{ $loop->first ? 'rgba(47,74,30,0.05)' : '#fff' }};">
                                         <input type="radio" name="delivery_slot" value="{{ $slot['value'] }}" class="hidden wi-slot-radio" {{ $loop->first ? 'checked' : '' }}>
-                                        <i class="fas {{ $slot['icon'] }} text-xl" style="color:var(--muted);"></i>
+                                        <i class="fas {{ $slot['icon'] }} text-xl" style="color:{{ $loop->first ? 'var(--green)' : 'var(--muted)' }};"></i>
                                         <p class="text-sm font-bold" style="color:var(--text);">{{ $slot['label'] }}</p>
                                         <p class="text-[10px]" style="color:var(--muted);">{{ $slot['time'] }}</p>
                                     </label>
@@ -701,7 +710,7 @@
 
                             {{-- Start date --}}
                             <div>
-                                <label class="block text-xs font-semibold mb-1.5" style="color:var(--text);"><i class="fa-solid fa-calendar-day mr-1" style="color:var(--green);"></i>Start Date</label>
+                                <label class="block text-xs font-semibold mb-1.5" style="color:var(--text);"><i class="fa-solid fa-calendar-day mr-1" style="color:var(--green);"></i>Delivery Date</label>
                                 <input type="date" name="start_date" id="wi-start-date" required
                                     min="{{ now()->format('Y-m-d') }}" max="{{ now()->addDays(30)->format('Y-m-d') }}"
                                     value="{{ now()->addDay()->format('Y-m-d') }}"
@@ -714,9 +723,9 @@
                             </div>
 
                             {{-- Cost preview --}}
-                            <div id="wi-preview" class="hidden rounded-xl px-4 py-3 text-xs space-y-1" style="background:rgba(47,74,30,0.05);">
-                                <div class="flex justify-between"><span style="color:var(--muted);">Price per litre</span><span id="wi-ppl" class="font-semibold" style="color:var(--text);">—</span></div>
-                                <div class="flex justify-between"><span style="color:var(--muted);">Daily cost</span><span id="wi-daily" class="font-semibold" style="color:var(--text);">—</span></div>
+                            <div id="wi-preview" class="rounded-xl px-4 py-3 text-xs space-y-1.5" style="background:rgba(47,74,30,0.05);">
+                                <div id="wi-milk-items-list" class="space-y-1"></div>
+                                <div class="flex justify-between pt-2 border-t" style="border-color:rgba(47,74,30,0.2);"><span class="font-bold" style="color:var(--text);">Daily cost</span><span id="wi-daily" class="font-bold" style="color:var(--green);">₹0.00</span></div>
                             </div>
 
                             <button type="button" onclick="wiGoStep(2)"
@@ -805,11 +814,9 @@
                         {{-- ── STEP 3: Amount ── --}}
                         <div id="wi-step-3" class="space-y-4 hidden">
 
-                            <div class="rounded-xl px-4 py-3 text-xs space-y-1" style="background:rgba(47,74,30,0.05);">
-                                <div class="flex justify-between"><span style="color:var(--muted);">Milk</span><span id="wi-sum-milk" class="font-semibold" style="color:var(--text);">—</span></div>
-                                <div class="flex justify-between"><span style="color:var(--muted);">Qty / Day</span><span id="wi-sum-qty" class="font-semibold" style="color:var(--text);">—</span></div>
-                                <div class="flex justify-between"><span style="color:var(--muted);">Price / Litre</span><span id="wi-sum-ppl" class="font-semibold" style="color:var(--green);">—</span></div>
-                                <div class="flex justify-between"><span style="color:var(--muted);">Daily cost</span><span id="wi-sum-daily" class="font-semibold" style="color:var(--text);">—</span></div>
+                            <div class="rounded-xl px-4 py-3 text-xs space-y-1.5" style="background:rgba(47,74,30,0.05);">
+                                <div id="wi-sum-milk-items" class="space-y-1"></div>
+                                <div class="flex justify-between pt-2 border-t" style="border-color:rgba(47,74,30,0.2);"><span class="font-bold" style="color:var(--text);">Daily cost</span><span id="wi-sum-daily" class="font-bold" style="color:var(--green);">₹0.00</span></div>
                             </div>
 
                             <div>
@@ -827,7 +834,7 @@
                                     min="1" max="500000" step="1" required
                                     class="w-full px-3 py-2.5 text-sm border-2 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent"
                                     style="border-color:var(--border);">
-                                <div id="wi-days-preview" class="hidden mt-2 text-xs font-semibold text-center" style="color:var(--green);"></div>
+                                <div id="wi-days-preview" class="mt-2 text-xs font-semibold text-center" style="color:var(--green);"></div>
                             </div>
 
                             <div class="flex gap-3">
@@ -2005,41 +2012,48 @@
 
 
 
-        // ── Wallet Init form JS ───────────────────────────────────────
-        let wiQty = 1;
-
-        function wiSetQty(val) {
-            wiQty = val;
-            const inp = document.getElementById('wi-qty-input');
-            if (inp) inp.value = wiQty;
-            document.querySelectorAll('.wi-qty-btn').forEach(b => {
-                const active = parseInt(b.dataset.qty) === wiQty;
-                b.style.background  = active ? 'var(--green)' : '';
-                b.style.color       = active ? '#fff' : 'var(--muted)';
-                b.style.borderColor = active ? 'var(--green)' : 'var(--border)';
+        // ── Wallet Init form JS (Multi-milk support) ──────────────────
+        
+        function wiGetSelectedMilks() {
+            const selected = [];
+            document.querySelectorAll('.wi-milk-check:checked').forEach(chk => {
+                const tab = chk.closest('.wi-milk-tab');
+                const qtyInput = tab.querySelector('.wi-qty-input');
+                const qty = parseInt(qtyInput?.value) || 1;
+                const ppl = parseFloat(chk.dataset.ppl) || 0;
+                const type = chk.dataset.type || '';
+                const label = tab.querySelector('label > div:not(.wi-check-box) p')?.textContent || type;
+                selected.push({ type, label, qty, ppl, daily: qty * ppl });
             });
-            wiUpdatePreview();
-        }
-
-        function wiGetPpl() {
-            const r = document.querySelector('.wi-milk-radio:checked');
-            return r ? parseFloat(r.dataset.ppl) || 0 : 0;
+            return selected;
         }
 
         function wiUpdatePreview() {
-            const ppl   = wiGetPpl();
-            const daily = ppl * wiQty;
-            const pplEl = document.getElementById('wi-ppl');
-            const dayEl = document.getElementById('wi-daily');
-            const prev  = document.getElementById('wi-preview');
-            if (pplEl) pplEl.textContent = ppl ? '₹' + ppl.toFixed(2) + '/L' : '—';
-            if (dayEl) dayEl.textContent = daily ? '₹' + daily.toFixed(2) + '/day' : '—';
-            if (prev)  ppl ? prev.classList.remove('hidden') : prev.classList.add('hidden');
-            // step 3 days preview
+            const selected = wiGetSelectedMilks();
+            const listEl = document.getElementById('wi-milk-items-list');
+            const dailyEl = document.getElementById('wi-daily');
+            const prevEl = document.getElementById('wi-preview');
+            
+            let totalDaily = 0;
+            let html = '';
+            
+            selected.forEach(item => {
+                totalDaily += item.daily;
+                html += `<div class="flex justify-between text-xs">
+                    <span style="color:var(--muted);">${item.label} × ${item.qty}L</span>
+                    <span style="color:var(--text);">₹${item.daily.toFixed(2)}</span>
+                </div>`;
+            });
+            
+            if (listEl) listEl.innerHTML = html;
+            if (dailyEl) dailyEl.textContent = totalDaily ? '₹' + totalDaily.toFixed(2) : '₹0.00';
+            if (prevEl) totalDaily > 0 ? prevEl.classList.remove('hidden') : prevEl.classList.add('hidden');
+            
+            // Step 3 days preview
             const amount = parseFloat(document.getElementById('wi-amount')?.value) || 0;
             const daysEl = document.getElementById('wi-days-preview');
-            if (daysEl && daily && amount) {
-                daysEl.textContent = '≈ ' + Math.floor(amount / daily) + ' days of delivery';
+            if (daysEl && totalDaily && amount) {
+                daysEl.textContent = '≈ ' + Math.floor(amount / totalDaily) + ' days of delivery';
                 daysEl.classList.remove('hidden');
             } else if (daysEl) {
                 daysEl.classList.add('hidden');
@@ -2049,7 +2063,17 @@
         // Wizard step navigation
         function wiGoStep(n) {
             if (n === 2) {
-                // no validation needed for step 1 — milk/qty/slot all have defaults
+                // Validate at least one milk is selected
+                const selected = wiGetSelectedMilks();
+                if (selected.length === 0) {
+                    const errorEl = document.getElementById('wi-milk-error');
+                    if (errorEl) {
+                        errorEl.classList.remove('hidden');
+                        errorEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                    return;
+                }
+                document.getElementById('wi-milk-error')?.classList.add('hidden');
             }
             if (n === 3) {
                 // Validate all required fields in step 2
@@ -2082,14 +2106,24 @@
                     addrEl.value = flat + ', ' + addrEl.value;
                 }
                 
-                // populate step 3 summary
-                const milkR = document.querySelector('.wi-milk-radio:checked');
-                const milkLabels = { cow:'Cow Milk (A2)', buffalo:'Buffalo Milk', toned:'Toned Milk', full_fat:'Full Fat Milk' };
-                const ppl = wiGetPpl();
-                document.getElementById('wi-sum-milk').textContent  = milkLabels[milkR?.value] || milkR?.value || '—';
-                document.getElementById('wi-sum-qty').textContent   = wiQty + 'L';
-                document.getElementById('wi-sum-ppl').textContent   = ppl ? '₹' + ppl.toFixed(2) + '/L' : '—';
-                document.getElementById('wi-sum-daily').textContent = ppl ? '₹' + (ppl * wiQty).toFixed(2) + '/day' : '—';
+                // Populate step 3 summary with all selected milks
+                const selected = wiGetSelectedMilks();
+                const sumListEl = document.getElementById('wi-sum-milk-items');
+                const sumDailyEl = document.getElementById('wi-sum-daily');
+                
+                let totalDaily = 0;
+                let sumHtml = '';
+                
+                selected.forEach(item => {
+                    totalDaily += item.daily;
+                    sumHtml += `<div class="flex justify-between text-xs">
+                        <span style="color:var(--muted);">${item.label} × ${item.qty}L @ ₹${item.ppl.toFixed(2)}/L</span>
+                        <span style="color:var(--text);">₹${item.daily.toFixed(2)}/day</span>
+                    </div>`;
+                });
+                
+                if (sumListEl) sumListEl.innerHTML = sumHtml;
+                if (sumDailyEl) sumDailyEl.textContent = '₹' + totalDaily.toFixed(2) + '/day';
             }
             [1,2,3].forEach(i => {
                 const el = document.getElementById('wi-step-' + i);
@@ -2105,16 +2139,14 @@
             });
         }
 
-        // Check cutoff time and show warning
         function wiCheckCutoff() {
-            const milkRadio = document.querySelector('.wi-milk-radio:checked');
+            const checkedMilks = document.querySelectorAll('.wi-milk-check:checked');
             const startDateInput = document.getElementById('wi-start-date');
             const warningDiv = document.getElementById('wi-cutoff-warning');
             const warningText = document.getElementById('wi-cutoff-text');
             
-            if (!milkRadio || !startDateInput || !warningDiv || !warningText) return;
+            if (checkedMilks.length === 0 || !startDateInput || !warningDiv || !warningText) return;
             
-            const selectedMilkType = milkRadio.value;
             const selectedDate = startDateInput.value;
             const today = new Date().toISOString().split('T')[0];
             
@@ -2124,22 +2156,25 @@
                 return;
             }
             
-            const milkPrice = MILK_PRICES_CUTOFF.find(mp => mp.milk_type === selectedMilkType);
-            if (!milkPrice) {
-                warningDiv.classList.add('hidden');
-                return;
-            }
-            
+            // Check cutoff for all selected milk types
             const now = new Date();
             const currentTime = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
-            const cutoffTime = milkPrice.cutoff_time;
+            let hasPassed = false;
             
-            if (currentTime > cutoffTime) {
+            checkedMilks.forEach(chk => {
+                const selectedMilkType = chk.dataset.type;
+                const milkPrice = MILK_PRICES_CUTOFF.find(mp => mp.milk_type === selectedMilkType);
+                if (milkPrice && currentTime > milkPrice.cutoff_time) {
+                    hasPassed = true;
+                }
+            });
+            
+            if (hasPassed) {
                 const tomorrow = new Date(now);
                 tomorrow.setDate(tomorrow.getDate() + 1);
                 const tomorrowStr = tomorrow.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
                 
-                warningText.textContent = `Order cutoff time (${cutoffTime}) has passed. Your delivery will start from ${tomorrowStr}.`;
+                warningText.textContent = `Order cutoff time has passed for one or more selected milk types. Your delivery will start from ${tomorrowStr}.`;
                 warningDiv.classList.remove('hidden');
                 
                 // Auto-adjust the date to tomorrow
@@ -2148,18 +2183,6 @@
                 warningDiv.classList.add('hidden');
             }
         }
-
-        // milk card highlight + preview update
-        document.querySelectorAll('.wi-milk-radio').forEach(r => {
-            r.addEventListener('change', () => {
-                document.querySelectorAll('.wi-milk-card').forEach(c => c.style.borderColor = 'var(--border)');
-                r.closest('label').style.borderColor = 'var(--green)';
-                wiUpdatePreview();
-                wiCheckCutoff();
-            });
-        });
-        const firstWiMilk = document.querySelector('.wi-milk-radio:checked');
-        if (firstWiMilk) firstWiMilk.closest('label').style.borderColor = 'var(--green)';
 
         // Check cutoff on start date change
         document.getElementById('wi-start-date')?.addEventListener('change', wiCheckCutoff);
@@ -2234,14 +2257,99 @@
         });
 
         function wiSubmit() {
+            // Validate at least one milk is selected
+            const selected = wiGetSelectedMilks();
+            if (selected.length === 0) {
+                alert('⚠️ Please select at least one milk type.');
+                return;
+            }
+            
             const amount = document.getElementById('wi-amount')?.value;
-            if (!amount || parseFloat(amount) < 1) { alert('Please enter a valid amount (min ₹1).'); return; }
+            if (!amount || parseFloat(amount) < 1) { 
+                alert('Please enter a valid amount (min ₹1).'); 
+                return; 
+            }
             document.getElementById('walletInitForm').submit();
         }
 
-        if (document.getElementById('wi-qty-input')) wiSetQty(1);
+        // Initialize wallet init multi-milk handlers
+        document.addEventListener('DOMContentLoaded', function() {
+            // Multi-milk tab handlers
+            document.querySelectorAll('.wi-milk-tab').forEach(function(tab) {
+                const chk = tab.querySelector('.wi-milk-check');
+                const box = tab.querySelector('.wi-check-box');
+                const wrap = tab.querySelector('.wi-qty-wrap');
+                const qtyInput = tab.querySelector('.wi-qty-input');
+                const qtyDisplay = tab.querySelector('.wi-qty-display');
+                const minusBtn = tab.querySelector('.wi-qty-minus');
+                const plusBtn = tab.querySelector('.wi-qty-plus');
 
-        // ── Delivery Settings — multi-select milk tabs ───────────────
+                // Disable inputs for unchecked tabs on page load
+                if (!chk.checked) {
+                    tab.querySelectorAll('input[name*="milk_items"]').forEach(i => i.disabled = true);
+                }
+
+                // Handle tab click (toggle checkbox)
+                tab.addEventListener('click', function(e) {
+                    if (e.target.closest('.wi-qty-wrap')) return; // Don't toggle if clicking stepper
+
+                    const isNowChecked = !chk.checked;
+                    chk.checked = isNowChecked;
+
+                    if (isNowChecked) {
+                        tab.style.borderColor = 'var(--green)';
+                        tab.style.background = 'rgba(47,74,30,0.05)';
+                        box.style.borderColor = 'var(--green)';
+                        box.style.background = 'var(--green)';
+                        box.innerHTML = '<i class="fa-solid fa-check text-[9px] text-white"></i>';
+                        wrap.classList.remove('invisible');
+                        tab.querySelectorAll('input[name*="milk_items"]').forEach(i => i.disabled = false);
+                    } else {
+                        tab.style.borderColor = 'var(--border)';
+                        tab.style.background = '#fff';
+                        box.style.borderColor = 'var(--border)';
+                        box.style.background = '#fff';
+                        box.innerHTML = '';
+                        wrap.classList.add('invisible');
+                        tab.querySelectorAll('input[name*="milk_items"]').forEach(i => i.disabled = true);
+                    }
+                    
+                    wiUpdatePreview();
+                });
+
+                // Qty stepper handlers
+                if (minusBtn && plusBtn && qtyDisplay && qtyInput) {
+                    minusBtn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        let val = parseInt(qtyInput.value) || 1;
+                        if (val > 1) {
+                            val--;
+                            qtyInput.value = val;
+                            qtyDisplay.textContent = val;
+                            wiUpdatePreview();
+                        }
+                    });
+
+                    plusBtn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        let val = parseInt(qtyInput.value) || 1;
+                        if (val < 50) {
+                            val++;
+                            qtyInput.value = val;
+                            qtyDisplay.textContent = val;
+                            wiUpdatePreview();
+                        }
+                    });
+                }
+            });
+
+            // Initial preview update
+            wiUpdatePreview();
+        });
+        
+        // Check cutoff time and show warning
         @php
             $wsPricesData = $milkPrices->map(function($mp) {
                 return ['milk_type' => $mp->milk_type, 'label' => $mp->label, 'ppl' => (float)$mp->price_per_litre];

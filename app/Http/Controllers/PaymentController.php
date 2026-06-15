@@ -241,13 +241,25 @@ class PaymentController extends Controller
         if (!$order->user_subscription_id) {
             $meta = $order->wallet_meta ?? [];
 
+            // New multi-milk structure
+            $milkItems       = $meta['milk_items']       ?? [];
+            // Legacy fallback for single milk
             $milkType        = $meta['milk_type']        ?? null;
             $qtyPerDay       = $meta['quantity_per_day'] ?? null;
+            // Common fields
             $slot            = $meta['delivery_slot']    ?? null;
             $locationId      = $meta['location_id']      ?? null;
             $deliveryAddress = $meta['delivery_address'] ?? null;
             $startDate       = $meta['start_date']       ?? null;
             $pricePerLitre   = $meta['price_per_litre']  ?? null;
+
+            // If milk_items exists, use it; otherwise fall back to legacy single-milk
+            if (!empty($milkItems)) {
+                // Multi-milk: calculate total qty and use first item as primary
+                $qtyPerDay = array_sum(array_column($milkItems, 'qty'));
+                $milkType  = $milkItems[0]['milk_type'] ?? null;
+                $pricePerLitre = $milkItems[0]['ppl'] ?? null;
+            }
 
             // Fallback: look up from milk_prices if not stored
             if (!$pricePerLitre && $milkType) {
@@ -285,15 +297,25 @@ class PaymentController extends Controller
             $order->update(['user_subscription_id' => $subscription->id]);
 
             // Create delivery settings in separate table
-            \App\Models\SubscriptionDeliverySettings::create([
-                'user_subscription_id' => $subscription->id,
-                'milk_type'            => $milkType,
-                'quantity_per_day'     => $qtyPerDay,
-                'delivery_slot'        => $slot,
-                'location_id'          => $locationId,
-                'delivery_address'     => $deliveryAddress,
-                'delivery_instructions'=> null,
-            ]);
+            $settingsData = [
+                'user_subscription_id'  => $subscription->id,
+                'delivery_slot'         => $slot,
+                'location_id'           => $locationId,
+                'delivery_address'      => $deliveryAddress,
+                'delivery_instructions' => null,
+            ];
+
+            // If multi-milk, store milk_items; otherwise use legacy fields
+            if (!empty($milkItems)) {
+                $settingsData['milk_items']       = $milkItems;
+                $settingsData['milk_type']        = $milkType;        // First item for compatibility
+                $settingsData['quantity_per_day'] = $qtyPerDay;       // Total qty
+            } else {
+                $settingsData['milk_type']        = $milkType;
+                $settingsData['quantity_per_day'] = $qtyPerDay;
+            }
+
+            \App\Models\SubscriptionDeliverySettings::create($settingsData);
 
             // Record initial credit transaction
             MilkWalletTransaction::create([
@@ -309,7 +331,7 @@ class PaymentController extends Controller
             // Auto-generate 90 days of delivery logs
             \App\Models\DeliveryLog::autoGenerate($subscription);
 
-            Log::info('Wallet Created', ['user_id' => $user->id, 'subscription_id' => $subscription->id]);
+            Log::info('Wallet Created', ['user_id' => $user->id, 'subscription_id' => $subscription->id, 'milk_items' => $milkItems]);
             return;
         }
 

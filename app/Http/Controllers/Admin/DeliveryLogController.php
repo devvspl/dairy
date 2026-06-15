@@ -37,8 +37,18 @@ class DeliveryLogController extends Controller
         }
 
         $deliveries = $query->paginate(20);
+        
+        // Get wallet transaction summary for wallet-based subscriptions
+        $walletStats = null;
+        if (!$subscription->membership_plan_id || $subscription->membershipPlan?->isOnDemand()) {
+            $walletStats = [
+                'total_credits' => $subscription->walletTransactions()->where('type', 'credit')->sum('amount'),
+                'total_debits'  => $subscription->walletTransactions()->where('type', 'debit')->sum('amount'),
+                'transaction_count' => $subscription->walletTransactions()->count(),
+            ];
+        }
 
-        return view('admin.deliveries.index', compact('subscription', 'deliveries'));
+        return view('admin.deliveries.index', compact('subscription', 'deliveries', 'walletStats'));
     }
 
     /**
