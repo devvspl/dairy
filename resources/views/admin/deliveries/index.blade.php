@@ -16,94 +16,94 @@
     @endif
 
     <!-- Subscription Info -->
-    <div class="bg-white rounded-2xl shadow-lg border-2" style="border-color: var(--border);">
+    <div class="bg-white rounded-lg shadow-sm border" style="border-color: var(--border);">
         <!-- Header Section -->
-        <div class="bg-gradient-to-r from-gray-50 to-gray-100 rounded-t-2xl p-6 border-b" style="border-color: var(--border);">
-            <div class="flex items-start justify-between flex-wrap gap-4">
-                <!-- Customer Info -->
-                <div class="flex-1 min-w-0">
-                    <div class="flex items-center gap-3 mb-2">
-                        <div class="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-lg">
-                            {{ strtoupper(substr($subscription->user->name, 0, 1)) }}
-                        </div>
-                        <div>
-                            <h3 class="font-bold text-xl" style="color: var(--text);">{{ $subscription->user->name }}</h3>
-                            <div class="flex items-center gap-2 text-sm" style="color: var(--muted);">
-                                <i class="fa-solid fa-calendar"></i>
-                                <span>{{ $subscription->start_date->format('M d, Y') }} - {{ $subscription->end_date->format('M d, Y') }}</span>
-                            </div>
-                        </div>
-                    </div>
+        <div class="flex items-start justify-between p-6 border-b" style="border-color: var(--border);">
+            <!-- Customer Info -->
+            <div class="flex items-start gap-4 flex-1">
+                <div class="w-14 h-14 rounded-full flex items-center justify-center text-white font-bold text-xl" style="background-color: var(--green);">
+                    {{ strtoupper(substr($subscription->user->name, 0, 1)) }}
+                </div>
+                <div class="flex-1">
+                    <h3 class="font-bold text-xl mb-2" style="color: var(--text);">{{ $subscription->user->name }}</h3>
                     
-                    <!-- Subscription Type & Details -->
-                    <div class="flex items-center gap-2 flex-wrap">
+                    <div class="flex items-center gap-4 mb-3">
                         @if(!$subscription->membership_plan_id || $subscription->membershipPlan?->isOnDemand())
-                            <span class="inline-flex items-center px-3 py-1 text-sm font-semibold rounded-full bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-800">
+                            <span class="inline-flex items-center px-3 py-1 text-sm font-semibold rounded-full bg-blue-50 text-blue-800 border border-blue-200">
                                 <i class="fa-solid fa-shopping-cart mr-2"></i>On-Demand / Wallet
                             </span>
-                            <span class="inline-flex items-center px-3 py-1 text-sm font-medium rounded-lg bg-gray-100 text-gray-700">
-                                <i class="fa-solid fa-droplet mr-1"></i>{{ $subscription->quantity_per_day }}L/day
-                            </span>
-                            <span class="inline-flex items-center px-3 py-1 text-sm font-medium rounded-lg bg-gray-100 text-gray-700">
-                                <i class="fa-solid fa-tag mr-1"></i>₹{{ number_format($subscription->price_per_litre, 2) }}/L
-                            </span>
                         @else
-                            <span class="inline-flex items-center px-3 py-1 text-sm font-semibold rounded-full bg-gradient-to-r from-green-100 to-emerald-100 text-green-800">
+                            <span class="inline-flex items-center px-3 py-1 text-sm font-semibold rounded-full bg-green-50 text-green-800 border border-green-200">
                                 <i class="fa-solid fa-crown mr-2"></i>{{ $subscription->membershipPlan->name }}
                             </span>
                         @endif
                     </div>
+                    
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+                        <div>
+                            <span class="font-medium" style="color: var(--muted);">Duration:</span>
+                            <p class="font-semibold" style="color: var(--text);">{{ $subscription->start_date->format('M d, Y') }} - {{ $subscription->end_date->format('M d, Y') }}</p>
+                        </div>
+                        @if(!$subscription->membership_plan_id || $subscription->membershipPlan?->isOnDemand())
+                        <div>
+                            <span class="font-medium" style="color: var(--muted);">Daily Quantity:</span>
+                            <p class="font-semibold" style="color: var(--text);">{{ $subscription->quantity_per_day }}L</p>
+                        </div>
+                        <div>
+                            <span class="font-medium" style="color: var(--muted);">Rate:</span>
+                            <p class="font-semibold" style="color: var(--text);">₹{{ number_format($subscription->price_per_litre, 2) }}/L</p>
+                        </div>
+                        @endif
+                    </div>
                 </div>
+            </div>
 
-                <!-- Wallet Balance Card -->
-                @if(!$subscription->membership_plan_id || $subscription->membershipPlan?->isOnDemand())
-                <div class="bg-gradient-to-br from-green-50 via-green-100 to-emerald-50 rounded-2xl p-6 border-2 min-w-[280px] shadow-lg" style="border-color: var(--green);">
-                    <div class="flex items-center justify-between mb-3">
-                        <div class="flex items-center gap-2">
-                            <div class="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center">
-                                <i class="fa-solid fa-wallet text-white text-sm"></i>
-                            </div>
-                            <span class="text-sm font-bold" style="color: var(--green);">Wallet Balance</span>
-                        </div>
-                        <span class="px-2 py-1 text-xs rounded-full bg-green-200 text-green-800 font-semibold">Active</span>
+            <!-- Wallet Balance Card -->
+            @if(!$subscription->membership_plan_id || $subscription->membershipPlan?->isOnDemand())
+            <div class="bg-green-50 rounded-lg p-4 border-2 min-w-[280px]" style="border-color: var(--green);">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-wallet" style="color: var(--green);"></i>
+                        <span class="text-sm font-bold" style="color: var(--green);">Wallet Balance</span>
                     </div>
-                    
-                    <div class="text-center mb-4">
-                        <p class="text-3xl font-bold mb-1" style="color: var(--green);">₹{{ number_format($subscription->wallet_balance, 2) }}</p>
-                        <p class="text-xs" style="color: var(--muted);">Available Balance</p>
+                    <span class="px-2 py-1 text-xs rounded bg-green-100 text-green-800 font-semibold">Active</span>
+                </div>
+                
+                <div class="text-center mb-4">
+                    <p class="text-3xl font-bold mb-1" style="color: var(--green);">₹{{ number_format($subscription->wallet_balance, 2) }}</p>
+                    <p class="text-xs" style="color: var(--muted);">Available Balance</p>
+                </div>
+                
+                @if($walletStats)
+                <div class="grid grid-cols-3 gap-2 mb-3">
+                    <div class="text-center p-2 rounded bg-white border" style="border-color: var(--border);">
+                        <p class="text-xs font-medium" style="color: var(--muted);">Credits</p>
+                        <p class="text-sm font-bold text-green-700">₹{{ number_format($walletStats['total_credits'], 2) }}</p>
                     </div>
-                    
-                    @if($walletStats)
-                    <div class="grid grid-cols-3 gap-2 mb-3">
-                        <div class="text-center p-2 rounded-lg bg-white/70">
-                            <p class="text-xs font-medium" style="color: var(--muted);">Credits</p>
-                            <p class="text-sm font-bold text-green-700">₹{{ number_format($walletStats['total_credits'], 2) }}</p>
-                        </div>
-                        <div class="text-center p-2 rounded-lg bg-white/70">
-                            <p class="text-xs font-medium" style="color: var(--muted);">Debits</p>
-                            <p class="text-sm font-bold text-red-600">₹{{ number_format($walletStats['total_debits'], 2) }}</p>
-                        </div>
-                        <div class="text-center p-2 rounded-lg bg-white/70">
-                            <p class="text-xs font-medium" style="color: var(--muted);">Txns</p>
-                            <p class="text-sm font-bold" style="color: var(--text);">{{ $walletStats['transaction_count'] }}</p>
-                        </div>
+                    <div class="text-center p-2 rounded bg-white border" style="border-color: var(--border);">
+                        <p class="text-xs font-medium" style="color: var(--muted);">Debits</p>
+                        <p class="text-sm font-bold text-red-600">₹{{ number_format($walletStats['total_debits'], 2) }}</p>
                     </div>
-                    @endif
-                    
-                    <button onclick="openPaymentHistory()" class="w-full py-2 px-4 rounded-lg text-sm font-semibold transition-all hover:shadow-md" style="background: var(--green); color: #fff;">
-                        <i class="fa-solid fa-history mr-2"></i>View Payment History
-                    </button>
+                    <div class="text-center p-2 rounded bg-white border" style="border-color: var(--border);">
+                        <p class="text-xs font-medium" style="color: var(--muted);">Txns</p>
+                        <p class="text-sm font-bold" style="color: var(--text);">{{ $walletStats['transaction_count'] }}</p>
+                    </div>
                 </div>
                 @endif
+                
+                <button onclick="openPaymentHistory()" class="w-full py-2 px-4 rounded font-semibold text-sm transition-all text-white" style="background-color: var(--green);">
+                    <i class="fa-solid fa-history mr-2"></i>View Payment History
+                </button>
             </div>
+            @endif
         </div>
 
         <!-- Quick Stats Row -->
-        <div class="px-6 py-4 bg-gradient-to-r from-gray-50/50 to-white border-b" style="border-color: var(--border);">
+        <div class="px-6 py-4 bg-gray-50 border-b" style="border-color: var(--border);">
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div class="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-200">
+                <div class="flex items-center gap-3 p-3 rounded-lg bg-white border shadow-sm" style="border-color: var(--border);">
                     <div class="w-10 h-10 rounded-lg bg-blue-500 flex items-center justify-center">
-                        <i class="fa-solid fa-list text-white"></i>
+                        <i class="fa-solid fa-list text-white text-sm"></i>
                     </div>
                     <div>
                         <p class="text-xs font-medium text-blue-700">Total Deliveries</p>
@@ -111,9 +111,9 @@
                     </div>
                 </div>
                 
-                <div class="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-green-50 to-green-100 border border-green-200">
+                <div class="flex items-center gap-3 p-3 rounded-lg bg-white border shadow-sm" style="border-color: var(--border);">
                     <div class="w-10 h-10 rounded-lg bg-green-500 flex items-center justify-center">
-                        <i class="fa-solid fa-check-circle text-white"></i>
+                        <i class="fa-solid fa-check-circle text-white text-sm"></i>
                     </div>
                     <div>
                         <p class="text-xs font-medium text-green-700">Delivered</p>
@@ -121,9 +121,9 @@
                     </div>
                 </div>
                 
-                <div class="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-yellow-50 to-yellow-100 border border-yellow-200">
+                <div class="flex items-center gap-3 p-3 rounded-lg bg-white border shadow-sm" style="border-color: var(--border);">
                     <div class="w-10 h-10 rounded-lg bg-yellow-500 flex items-center justify-center">
-                        <i class="fa-solid fa-clock text-white"></i>
+                        <i class="fa-solid fa-clock text-white text-sm"></i>
                     </div>
                     <div>
                         <p class="text-xs font-medium text-yellow-700">Pending</p>
@@ -131,9 +131,9 @@
                     </div>
                 </div>
                 
-                <div class="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-purple-50 to-purple-100 border border-purple-200">
+                <div class="flex items-center gap-3 p-3 rounded-lg bg-white border shadow-sm" style="border-color: var(--border);">
                     <div class="w-10 h-10 rounded-lg bg-purple-500 flex items-center justify-center">
-                        <i class="fa-solid fa-droplet text-white"></i>
+                        <i class="fa-solid fa-droplet text-white text-sm"></i>
                     </div>
                     <div>
                         <p class="text-xs font-medium text-purple-700">Total Volume</p>
@@ -145,35 +145,60 @@
         
         <!-- Action Buttons -->
         <div class="px-6 py-4">
-            <div class="flex items-center gap-3 flex-wrap">
-                <form method="POST" action="{{ route('admin.subscriptions.deliveries.generate', $subscription) }}" class="flex-1 min-w-fit">
-                    @csrf
-                    <button type="submit" class="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:-translate-y-0.5" style="background: linear-gradient(135deg, var(--green) 0%, #059669 100%);">
-                        <i class="fa-solid fa-calendar-plus"></i>
-                        <span>{{ (!$subscription->membership_plan_id || $subscription->membershipPlan?->isOnDemand()) ? 'Generate Daily Entries' : 'Generate Schedule' }}</span>
-                    </button>
-                </form>
+            <div class="flex items-center justify-between gap-4">
+                <!-- Primary Actions -->
+                <div class="flex items-center gap-3">
+                    <form method="POST" action="{{ route('admin.subscriptions.deliveries.generate', $subscription) }}">
+                        @csrf
+                        <button type="submit" class="inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold text-white shadow hover:shadow-md transition-all" style="background-color: var(--green);">
+                            <i class="fa-solid fa-calendar-plus"></i>
+                            <span>{{ (!$subscription->membership_plan_id || $subscription->membershipPlan?->isOnDemand()) ? 'Generate Daily Entries' : 'Generate Schedule' }}</span>
+                        </button>
+                    </form>
+                    
+                    <form method="POST" action="{{ route('admin.subscriptions.deliveries.reset', $subscription) }}"
+                          onsubmit="return confirm('Delete ALL delivery entries for this subscription? This cannot be undone.')">
+                        @csrf @method('DELETE')
+                        <button type="submit" class="inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold text-red-700 bg-red-50 border-2 border-red-200 hover:bg-red-100 transition-all">
+                            <i class="fa-solid fa-rotate-left"></i>
+                            <span>Reset Schedule</span>
+                        </button>
+                    </form>
+                </div>
                 
-                <form method="POST" action="{{ route('admin.subscriptions.deliveries.reset', $subscription) }}"
-                      onsubmit="return confirm('Delete ALL delivery entries for this subscription? This cannot be undone.')" class="min-w-fit">
-                    @csrf @method('DELETE')
-                    <button type="submit" class="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-red-700 bg-gradient-to-r from-red-50 to-red-100 border-2 border-red-200 shadow-lg hover:shadow-xl transition-all duration-200 transform hover:-translate-y-0.5 hover:from-red-100 hover:to-red-150">
-                        <i class="fa-solid fa-rotate-left"></i>
-                        <span>Reset Schedule</span>
+                <!-- Quick Action Buttons -->
+                <div class="flex items-center gap-2">
+                    <button onclick="openPaymentHistory()" title="Payment History" class="w-10 h-10 rounded-lg bg-blue-50 border border-blue-200 text-blue-600 hover:bg-blue-100 transition-all flex items-center justify-center">
+                        <i class="fa-solid fa-chart-line text-sm"></i>
                     </button>
-                </form>
-                
-                <!-- Additional Quick Actions -->
-                <div class="flex gap-2">
-                    <button onclick="openPaymentHistory()" title="Payment History" class="w-12 h-12 rounded-xl bg-gradient-to-r from-blue-50 to-blue-100 border-2 border-blue-200 text-blue-600 hover:from-blue-100 hover:to-blue-150 transition-all duration-200 flex items-center justify-center">
-                        <i class="fa-solid fa-chart-line"></i>
+                    <button onclick="exportDeliveries()" title="Export Data" class="w-10 h-10 rounded-lg bg-gray-50 border text-gray-600 hover:bg-gray-100 transition-all flex items-center justify-center" style="border-color: var(--border);">
+                        <i class="fa-solid fa-download text-sm"></i>
                     </button>
-                    <button onclick="alert('Export feature coming soon!')" title="Export Data" class="w-12 h-12 rounded-xl bg-gradient-to-r from-gray-50 to-gray-100 border-2 border-gray-200 text-gray-600 hover:from-gray-100 hover:to-gray-150 transition-all duration-200 flex items-center justify-center">
-                        <i class="fa-solid fa-download"></i>
+                    <button onclick="window.print()" title="Print" class="w-10 h-10 rounded-lg bg-gray-50 border text-gray-600 hover:bg-gray-100 transition-all flex items-center justify-center" style="border-color: var(--border);">
+                        <i class="fa-solid fa-print text-sm"></i>
                     </button>
-                    <button onclick="window.print()" title="Print" class="w-12 h-12 rounded-xl bg-gradient-to-r from-gray-50 to-gray-100 border-2 border-gray-200 text-gray-600 hover:from-gray-100 hover:to-gray-150 transition-all duration-200 flex items-center justify-center">
-                        <i class="fa-solid fa-print"></i>
-                    </button>
+                    <a href="{{ route('admin.subscriptions.show', $subscription) }}" title="View Full Subscription" class="w-10 h-10 rounded-lg bg-gray-50 border text-gray-600 hover:bg-gray-100 transition-all flex items-center justify-center" style="border-color: var(--border);">
+                        <i class="fa-solid fa-external-link-alt text-sm"></i>
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Additional Info Row -->
+            <div class="mt-4 pt-4 border-t grid grid-cols-1 md:grid-cols-3 gap-4 text-sm" style="border-color: var(--border);">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-calendar-check" style="color: var(--green);"></i>
+                    <span style="color: var(--muted);">Last Updated:</span>
+                    <span class="font-semibold" style="color: var(--text);">{{ $subscription->updated_at->diffForHumans() }}</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-map-marker-alt" style="color: var(--green);"></i>
+                    <span style="color: var(--muted);">Location:</span>
+                    <span class="font-semibold" style="color: var(--text);">{{ $subscription->location->name ?? 'N/A' }}</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-phone" style="color: var(--green);"></i>
+                    <span style="color: var(--muted);">Contact:</span>
+                    <span class="font-semibold" style="color: var(--text);">{{ $subscription->user->mobile ?? 'N/A' }}</span>
                 </div>
             </div>
         </div>
@@ -559,6 +584,12 @@ function renderDeliveryHistory(history) {
     
     html += '</div>';
     content.innerHTML = html;
+}
+
+// Export function
+function exportDeliveries() {
+    alert('Export functionality will be implemented soon!');
+    // TODO: Implement export to Excel/PDF
 }
 
 // Payment History Modal
