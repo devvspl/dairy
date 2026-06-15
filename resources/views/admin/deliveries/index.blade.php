@@ -167,7 +167,7 @@
                 </div>
                 
                 <!-- Quick Action Buttons -->
-                <div class="flex items-center gap-2">
+                {{-- <div class="flex items-center gap-2">
                     <button onclick="openPaymentHistory()" title="Payment History" class="w-10 h-10 rounded-lg bg-blue-50 border border-blue-200 text-blue-600 hover:bg-blue-100 transition-all flex items-center justify-center">
                         <i class="fa-solid fa-chart-line text-sm"></i>
                     </button>
@@ -180,7 +180,7 @@
                     <a href="{{ route('admin.subscriptions.show', $subscription) }}" title="View Full Subscription" class="w-10 h-10 rounded-lg bg-gray-50 border text-gray-600 hover:bg-gray-100 transition-all flex items-center justify-center" style="border-color: var(--border);">
                         <i class="fa-solid fa-external-link-alt text-sm"></i>
                     </a>
-                </div>
+                </div> --}}
             </div>
             
             <!-- Additional Info Row -->
