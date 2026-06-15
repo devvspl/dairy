@@ -203,10 +203,38 @@ class UserSubscriptionController extends Controller
      */
     public function paymentHistory(UserSubscription $subscription)
     {
-        $transactions = $subscription->walletTransactions()
+        // Bank Payments (from orders table)
+        $bankPayments = \App\Models\Order::where('user_id', $subscription->user_id)
+            ->where(function($q) use ($subscription) {
+                $q->where('user_subscription_id', $subscription->id)
+                  ->orWhere(function($q2) use ($subscription) {
+                      // Include wallet init orders that created this subscription
+                      $q2->where('order_type', 'wallet_topup')
+                         ->whereNull('user_subscription_id')
+                         ->whereJsonContains('wallet_meta->location_id', (string)$subscription->location_id);
+                  });
+            })
+            ->where('order_type', 'wallet_topup')
+            ->orderBy('created_at', 'desc')
+            ->limit(100)
+            ->get()
+            ->map(function($order) {
+                return [
+                    'order_id'       => $order->order_id,
+                    'transaction_id' => $order->transaction_id,
+                    'amount'         => (float) $order->amount,
+                    'status'         => $order->status,
+                    'payment_method' => $order->payment_method ?? 'phonepe',
+                    'date'           => $order->created_at->format('M d, Y'),
+                    'time'           => $order->created_at->format('h:i A'),
+                ];
+            });
+
+        // Wallet Transactions
+        $walletTransactions = $subscription->walletTransactions()
             ->orderBy('transaction_date', 'desc')
             ->orderBy('created_at', 'desc')
-            ->limit(50)
+            ->limit(100)
             ->get()
             ->map(function($txn) {
                 return [
@@ -221,9 +249,38 @@ class UserSubscriptionController extends Controller
                 ];
             });
 
+        // Reconciliation Data
+        $totalBankPayments = \App\Models\Order::where('user_id', $subscription->user_id)
+            ->where(function($q) use ($subscription) {
+                $q->where('user_subscription_id', $subscription->id)
+                  ->orWhere(function($q2) use ($subscription) {
+                      $q2->where('order_type', 'wallet_topup')
+                         ->whereNull('user_subscription_id')
+                         ->whereJsonContains('wallet_meta->location_id', (string)$subscription->location_id);
+                  });
+            })
+            ->where('order_type', 'wallet_topup')
+            ->where('status', 'success')
+            ->sum('amount');
+
+        $totalCredits = $subscription->walletTransactions()
+            ->where('type', 'credit')
+            ->sum('amount');
+
+        $totalDebits = $subscription->walletTransactions()
+            ->where('type', 'debit')
+            ->sum('amount');
+
         return response()->json([
-            'success'      => true,
-            'transactions' => $transactions,
+            'success'           => true,
+            'bank_payments'     => $bankPayments,
+            'wallet_transactions' => $walletTransactions,
+            'reconciliation'    => [
+                'total_bank_payments' => (float) $totalBankPayments,
+                'total_credits'       => (float) $totalCredits,
+                'total_debits'        => (float) $totalDebits,
+                'current_balance'     => (float) $subscription->wallet_balance,
+            ],
         ]);
     }
 }

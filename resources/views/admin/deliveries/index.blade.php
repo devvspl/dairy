@@ -303,12 +303,14 @@ function closeUpdateModal() {
 }
 
 // Payment History Modal
+let currentHistoryData = null;
+
 function openPaymentHistory() {
     const modal = document.getElementById('paymentHistoryModal');
     modal.classList.remove('hidden');
     modal.classList.add('flex');
     
-    // Load payment history via AJAX
+    // Load all data
     loadPaymentHistory();
 }
 
@@ -318,36 +320,138 @@ function closePaymentHistory() {
     modal.classList.remove('flex');
 }
 
-function loadPaymentHistory() {
-    const container = document.getElementById('paymentHistoryContent');
-    container.innerHTML = '<div class="text-center py-8"><i class="fa-solid fa-spinner fa-spin text-2xl" style="color: var(--green);"></i></div>';
+function switchHistoryTab(tab) {
+    // Update tab buttons
+    ['bankTab', 'walletTab', 'reconciliationTab'].forEach(tabId => {
+        const btn = document.getElementById(tabId);
+        if (tabId === tab + 'Tab') {
+            btn.style.color = 'var(--green)';
+            btn.style.borderColor = 'var(--green)';
+        } else {
+            btn.style.color = 'var(--muted)';
+            btn.style.borderColor = 'transparent';
+        }
+    });
     
+    // Update tab content
+    ['bankContent', 'walletContent', 'reconciliationContent'].forEach(contentId => {
+        const content = document.getElementById(contentId);
+        if (contentId === tab + 'Content') {
+            content.classList.remove('hidden');
+        } else {
+            content.classList.add('hidden');
+        }
+    });
+}
+
+function loadPaymentHistory() {
     fetch('/admin/subscriptions/{{ $subscription->id }}/payment-history')
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                renderPaymentHistory(data.transactions);
+                currentHistoryData = data;
+                renderBankPayments(data.bank_payments);
+                renderWalletHistory(data.wallet_transactions);
+                renderReconciliation(data.reconciliation);
             } else {
-                container.innerHTML = '<p class="text-center py-8 text-red-600">Failed to load payment history</p>';
+                showError('Failed to load payment history');
             }
         })
         .catch(error => {
-            container.innerHTML = '<p class="text-center py-8 text-red-600">Error loading payment history</p>';
+            showError('Error loading payment history');
         });
 }
 
-function renderPaymentHistory(transactions) {
-    const container = document.getElementById('paymentHistoryContent');
+function renderBankPayments(payments) {
+    const container = document.getElementById('bankContent');
     
-    if (transactions.length === 0) {
-        container.innerHTML = '<p class="text-center py-8" style="color: var(--muted);">No payment history found.</p>';
+    if (payments.length === 0) {
+        container.innerHTML = '<p class="text-center py-8" style="color: var(--muted);">No bank payments found.</p>';
         return;
     }
     
+    let totalAmount = 0;
     let html = '<div class="space-y-3">';
+    
+    payments.forEach(payment => {
+        totalAmount += parseFloat(payment.amount);
+        const statusColor = payment.status === 'success' ? 'text-green-700' : payment.status === 'pending' ? 'text-yellow-700' : 'text-red-700';
+        const statusBg = payment.status === 'success' ? 'bg-green-50' : payment.status === 'pending' ? 'bg-yellow-50' : 'bg-red-50';
+        
+        html += `
+            <div class="flex items-start gap-3 p-4 rounded-lg border bg-white hover:shadow-md transition-shadow" style="border-color: var(--border);">
+                <div class="w-12 h-12 rounded-full flex items-center justify-center bg-green-50">
+                    <i class="fa-solid fa-building-columns text-lg" style="color: var(--green);"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-start justify-between gap-2 mb-2">
+                        <div class="flex-1">
+                            <p class="text-lg font-bold" style="color: var(--green);">₹${parseFloat(payment.amount).toFixed(2)}</p>
+                            <p class="text-sm font-semibold" style="color: var(--text);">${payment.payment_method || 'PhonePe'}</p>
+                        </div>
+                        <span class="px-2 py-1 text-xs rounded-full font-semibold ${statusBg} ${statusColor}">
+                            ${payment.status.charAt(0).toUpperCase() + payment.status.slice(1)}
+                        </span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2 text-xs" style="color: var(--muted);">
+                        <div>
+                            <i class="fa-solid fa-hashtag mr-1"></i>
+                            <span class="font-mono">${payment.order_id || '-'}</span>
+                        </div>
+                        <div>
+                            <i class="fa-solid fa-calendar mr-1"></i>
+                            ${payment.date}
+                        </div>
+                        ${payment.transaction_id ? `
+                        <div class="col-span-2">
+                            <i class="fa-solid fa-receipt mr-1"></i>
+                            <span class="font-mono text-[10px]">${payment.transaction_id}</span>
+                        </div>
+                        ` : ''}
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    html += '</div>';
+    
+    // Add summary
+    html = `
+        <div class="bg-gradient-to-r from-green-50 to-green-100 rounded-xl p-4 mb-4 border-2" style="border-color: var(--green);">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-semibold" style="color: var(--green);">Total Bank Payments</p>
+                    <p class="text-xs" style="color: var(--muted);">${payments.length} transaction(s)</p>
+                </div>
+                <p class="text-2xl font-bold" style="color: var(--green);">₹${totalAmount.toFixed(2)}</p>
+            </div>
+        </div>
+    ` + html;
+    
+    container.innerHTML = html;
+}
+
+function renderWalletHistory(transactions) {
+    const container = document.getElementById('walletContent');
+    
+    if (transactions.length === 0) {
+        container.innerHTML = '<p class="text-center py-8" style="color: var(--muted);">No wallet transactions found.</p>';
+        return;
+    }
+    
+    let totalCredits = 0;
+    let totalDebits = 0;
+    let html = '<div class="space-y-2">';
     
     transactions.forEach(txn => {
         const isCredit = txn.type === 'credit';
+        if (isCredit) {
+            totalCredits += parseFloat(txn.amount);
+        } else {
+            totalDebits += parseFloat(txn.amount);
+        }
+        
         const icon = isCredit ? 'fa-arrow-up' : 'fa-arrow-down';
         const bgColor = isCredit ? 'bg-green-50' : 'bg-red-50';
         const textColor = isCredit ? 'text-green-700' : 'text-red-700';
@@ -355,24 +459,24 @@ function renderPaymentHistory(transactions) {
         const amountPrefix = isCredit ? '+' : '-';
         
         html += `
-            <div class="flex items-start gap-3 p-3 rounded-lg border ${bgColor}" style="border-color: ${borderColor};">
-                <div class="w-10 h-10 rounded-full flex items-center justify-center ${bgColor}">
+            <div class="flex items-start gap-3 p-3 rounded-lg border ${bgColor}" style="border-color: var(--border);">
+                <div class="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0">
                     <i class="fa-solid ${icon} ${textColor}"></i>
                 </div>
                 <div class="flex-1 min-w-0">
                     <div class="flex items-start justify-between gap-2">
                         <div class="flex-1">
-                            <p class="text-sm font-semibold ${textColor}">${amountPrefix}₹${parseFloat(txn.amount).toFixed(2)}</p>
-                            <p class="text-xs" style="color: var(--muted);">${txn.description || '-'}</p>
-                            ${txn.litres ? `<p class="text-xs mt-1" style="color: var(--muted);">Quantity: ${txn.litres}L</p>` : ''}
+                            <p class="text-sm font-bold ${textColor}">${amountPrefix}₹${parseFloat(txn.amount).toFixed(2)}</p>
+                            <p class="text-xs truncate" style="color: var(--muted);">${txn.description || '-'}</p>
+                            ${txn.litres ? `<p class="text-xs mt-1" style="color: var(--muted);"><i class="fa-solid fa-droplet mr-1"></i>${txn.litres}L</p>` : ''}
                         </div>
                         <div class="text-right flex-shrink-0">
-                            <p class="text-xs font-semibold" style="color: var(--text);">₹${parseFloat(txn.balance_after).toFixed(2)}</p>
-                            <p class="text-xs" style="color: var(--muted);">Balance</p>
+                            <p class="text-xs font-bold" style="color: var(--text);">₹${parseFloat(txn.balance_after).toFixed(2)}</p>
+                            <p class="text-[10px]" style="color: var(--muted);">Balance</p>
                         </div>
                     </div>
-                    <p class="text-xs mt-1" style="color: var(--muted);">
-                        <i class="fa-solid fa-calendar mr-1"></i>${txn.date}
+                    <p class="text-[10px] mt-1" style="color: var(--muted);">
+                        <i class="fa-solid fa-clock mr-1"></i>${txn.date} ${txn.time}
                     </p>
                 </div>
             </div>
@@ -380,28 +484,216 @@ function renderPaymentHistory(transactions) {
     });
     
     html += '</div>';
+    
+    // Add summary
+    html = `
+        <div class="grid grid-cols-3 gap-3 mb-4">
+            <div class="bg-green-50 rounded-xl p-3 border-2 border-green-200">
+                <p class="text-xs font-semibold text-green-700 mb-1">Credits</p>
+                <p class="text-lg font-bold text-green-700">₹${totalCredits.toFixed(2)}</p>
+            </div>
+            <div class="bg-red-50 rounded-xl p-3 border-2 border-red-200">
+                <p class="text-xs font-semibold text-red-700 mb-1">Debits</p>
+                <p class="text-lg font-bold text-red-700">₹${totalDebits.toFixed(2)}</p>
+            </div>
+            <div class="bg-blue-50 rounded-xl p-3 border-2 border-blue-200">
+                <p class="text-xs font-semibold text-blue-700 mb-1">Net</p>
+                <p class="text-lg font-bold text-blue-700">₹${(totalCredits - totalDebits).toFixed(2)}</p>
+            </div>
+        </div>
+    ` + html;
+    
     container.innerHTML = html;
+}
+
+function renderReconciliation(data) {
+    const container = document.getElementById('reconciliationContent');
+    
+    const totalBankPayments = parseFloat(data.total_bank_payments);
+    const totalCredits = parseFloat(data.total_credits);
+    const totalDebits = parseFloat(data.total_debits);
+    const currentBalance = parseFloat(data.current_balance);
+    const expectedBalance = totalCredits - totalDebits;
+    const difference = currentBalance - expectedBalance;
+    
+    const isBalanced = Math.abs(difference) < 0.01; // Allow for rounding errors
+    const bankMatch = Math.abs(totalBankPayments - totalCredits) < 0.01;
+    
+    let suggestions = [];
+    
+    if (!isBalanced) {
+        suggestions.push({
+            type: 'error',
+            icon: 'fa-exclamation-triangle',
+            title: 'Balance Mismatch',
+            message: `Current balance (₹${currentBalance.toFixed(2)}) doesn't match expected balance (₹${expectedBalance.toFixed(2)}). Difference: ₹${Math.abs(difference).toFixed(2)}`,
+            action: 'Review all wallet transactions and check for manual adjustments or missing entries.'
+        });
+    }
+    
+    if (!bankMatch) {
+        const bankDiff = totalBankPayments - totalCredits;
+        suggestions.push({
+            type: 'warning',
+            icon: 'fa-exclamation-circle',
+            title: 'Bank Payment Mismatch',
+            message: `Bank payments (₹${totalBankPayments.toFixed(2)}) don't match wallet credits (₹${totalCredits.toFixed(2)}). Difference: ₹${Math.abs(bankDiff).toFixed(2)}`,
+            action: bankDiff > 0 
+                ? 'Some bank payments may not have been credited to wallet. Check failed or pending payments.'
+                : 'Wallet has more credits than bank payments. Check for manual credits or refunds.'
+        });
+    }
+    
+    if (totalDebits > totalCredits) {
+        suggestions.push({
+            type: 'error',
+            icon: 'fa-triangle-exclamation',
+            title: 'Negative Balance Allowed',
+            message: `Total debits (₹${totalDebits.toFixed(2)}) exceed total credits (₹${totalCredits.toFixed(2)})`,
+            action: 'System allowed negative balance. This should not happen. Review wallet debit logic and add validation.'
+        });
+    }
+    
+    if (isBalanced && bankMatch && suggestions.length === 0) {
+        suggestions.push({
+            type: 'success',
+            icon: 'fa-circle-check',
+            title: 'All Clear!',
+            message: 'All accounts are balanced and reconciled correctly.',
+            action: 'No action needed. Continue monitoring regular transactions.'
+        });
+    }
+    
+    let html = `
+        <div class="space-y-4">
+            <!-- Summary Cards -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div class="bg-white rounded-xl p-4 border" style="border-color: var(--border);">
+                    <p class="text-xs font-semibold mb-1" style="color: var(--muted);">Bank Payments</p>
+                    <p class="text-xl font-bold" style="color: var(--green);">₹${totalBankPayments.toFixed(2)}</p>
+                </div>
+                <div class="bg-white rounded-xl p-4 border" style="border-color: var(--border);">
+                    <p class="text-xs font-semibold mb-1" style="color: var(--muted);">Wallet Credits</p>
+                    <p class="text-xl font-bold text-green-600">₹${totalCredits.toFixed(2)}</p>
+                </div>
+                <div class="bg-white rounded-xl p-4 border" style="border-color: var(--border);">
+                    <p class="text-xs font-semibold mb-1" style="color: var(--muted);">Wallet Debits</p>
+                    <p class="text-xl font-bold text-red-600">₹${totalDebits.toFixed(2)}</p>
+                </div>
+                <div class="bg-white rounded-xl p-4 border" style="border-color: var(--border);">
+                    <p class="text-xs font-semibold mb-1" style="color: var(--muted);">Current Balance</p>
+                    <p class="text-xl font-bold" style="color: var(--text);">₹${currentBalance.toFixed(2)}</p>
+                </div>
+            </div>
+            
+            <!-- Reconciliation Status -->
+            <div class="bg-${isBalanced ? 'green' : 'red'}-50 rounded-xl p-4 border-2 border-${isBalanced ? 'green' : 'red'}-200">
+                <div class="flex items-center gap-3">
+                    <i class="fa-solid fa-${isBalanced ? 'check-circle' : 'times-circle'} text-2xl text-${isBalanced ? 'green' : 'red'}-600"></i>
+                    <div class="flex-1">
+                        <p class="font-bold text-${isBalanced ? 'green' : 'red'}-700">${isBalanced ? 'Books are Balanced' : 'Books Need Reconciliation'}</p>
+                        <p class="text-sm text-${isBalanced ? 'green' : 'red'}-600">
+                            Expected: ₹${expectedBalance.toFixed(2)} | Actual: ₹${currentBalance.toFixed(2)}
+                            ${!isBalanced ? ` | Diff: ₹${Math.abs(difference).toFixed(2)}` : ''}
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Suggestions -->
+            <div class="space-y-3">
+                <h4 class="font-bold text-sm" style="color: var(--text);">
+                    <i class="fa-solid fa-lightbulb mr-2" style="color: var(--green);"></i>Recommendations
+                </h4>
+    `;
+    
+    suggestions.forEach(sug => {
+        const colors = {
+            error: { bg: 'bg-red-50', border: 'border-red-200', text: 'text-red-700', icon: 'text-red-600' },
+            warning: { bg: 'bg-yellow-50', border: 'border-yellow-200', text: 'text-yellow-700', icon: 'text-yellow-600' },
+            success: { bg: 'bg-green-50', border: 'border-green-200', text: 'text-green-700', icon: 'text-green-600' }
+        };
+        const color = colors[sug.type];
+        
+        html += `
+            <div class="p-4 rounded-lg border-2 ${color.bg} ${color.border}">
+                <div class="flex items-start gap-3">
+                    <i class="fa-solid ${sug.icon} text-lg ${color.icon} mt-0.5"></i>
+                    <div class="flex-1">
+                        <p class="font-bold text-sm ${color.text} mb-1">${sug.title}</p>
+                        <p class="text-sm ${color.text} mb-2">${sug.message}</p>
+                        <p class="text-xs" style="color: var(--muted);"><strong>Action:</strong> ${sug.action}</p>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    html += `
+            </div>
+        </div>
+    `;
+    
+    container.innerHTML = html;
+}
+
+function showError(message) {
+    ['bankContent', 'walletContent', 'reconciliationContent'].forEach(contentId => {
+        document.getElementById(contentId).innerHTML = 
+            `<p class="text-center py-8 text-red-600">${message}</p>`;
+    });
 }
 </script>
 
 {{-- Payment History Modal --}}
 <div id="paymentHistoryModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center p-4" onclick="if(event.target === this) closePaymentHistory()">
-    <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[80vh] flex flex-col" onclick="event.stopPropagation()">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[85vh] flex flex-col" onclick="event.stopPropagation()">
         <div class="flex items-center justify-between p-6 border-b" style="border-color: var(--border);">
             <div>
                 <h3 class="text-xl font-bold" style="color: var(--text);">
-                    <i class="fa-solid fa-history mr-2" style="color: var(--green);"></i>Payment History
+                    <i class="fa-solid fa-history mr-2" style="color: var(--green);"></i>Transaction History
                 </h3>
-                <p class="text-sm mt-1" style="color: var(--muted);">All wallet transactions for this subscription</p>
+                <p class="text-sm mt-1" style="color: var(--muted);">Bank payments and wallet transactions</p>
             </div>
             <button onclick="closePaymentHistory()" class="w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-100">
                 <i class="fa-solid fa-times text-sm" style="color: var(--muted);"></i>
             </button>
         </div>
         
-        <div class="flex-1 overflow-y-auto p-6" id="paymentHistoryContent">
-            <div class="text-center py-8">
-                <i class="fa-solid fa-spinner fa-spin text-2xl" style="color: var(--green);"></i>
+        {{-- Tabs --}}
+        <div class="flex border-b" style="border-color: var(--border);">
+            <button onclick="switchHistoryTab('bank')" id="bankTab" class="flex-1 px-6 py-3 font-semibold transition-all border-b-2" style="color: var(--green); border-color: var(--green);">
+                <i class="fa-solid fa-building-columns mr-2"></i>Bank Payments
+            </button>
+            <button onclick="switchHistoryTab('wallet')" id="walletTab" class="flex-1 px-6 py-3 font-semibold transition-all border-b-2 border-transparent" style="color: var(--muted);">
+                <i class="fa-solid fa-wallet mr-2"></i>Wallet History
+            </button>
+            <button onclick="switchHistoryTab('reconciliation')" id="reconciliationTab" class="flex-1 px-6 py-3 font-semibold transition-all border-b-2 border-transparent" style="color: var(--muted);">
+                <i class="fa-solid fa-chart-line mr-2"></i>Reconciliation
+            </button>
+        </div>
+        
+        {{-- Tab Contents --}}
+        <div class="flex-1 overflow-y-auto p-6">
+            {{-- Bank Payments Tab --}}
+            <div id="bankContent" class="tab-content">
+                <div class="text-center py-8">
+                    <i class="fa-solid fa-spinner fa-spin text-2xl" style="color: var(--green);"></i>
+                </div>
+            </div>
+            
+            {{-- Wallet History Tab --}}
+            <div id="walletContent" class="tab-content hidden">
+                <div class="text-center py-8">
+                    <i class="fa-solid fa-spinner fa-spin text-2xl" style="color: var(--green);"></i>
+                </div>
+            </div>
+            
+            {{-- Reconciliation Tab --}}
+            <div id="reconciliationContent" class="tab-content hidden">
+                <div class="text-center py-8">
+                    <i class="fa-solid fa-spinner fa-spin text-2xl" style="color: var(--green);"></i>
+                </div>
             </div>
         </div>
         
