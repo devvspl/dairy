@@ -806,6 +806,9 @@ function renderReconciliation(data) {
     const difference  = parseFloat(r.difference);
     const bankMatched = r.bank_matched;
     const bankDiff    = parseFloat(r.bank_diff);
+    // Support both old and new field names
+    const realCredits = parseFloat(r.real_credits ?? r.total_credits ?? 0);
+    const realDebits  = parseFloat(r.real_debits  ?? r.total_debits  ?? 0);
 
     // ── Status Banner ────────────────────────────────────────────────────────
     const statusBanner = isBalanced
@@ -842,16 +845,20 @@ function renderReconciliation(data) {
                         <td class="px-4 py-3"><span class="px-2 py-0.5 text-xs rounded bg-blue-50 text-blue-700 font-semibold">Source</span></td>
                     </tr>
                     <tr>
-                        <td class="px-4 py-3" style="color: var(--text);">Wallet Credits (ledger)</td>
-                        <td class="px-4 py-3 text-right font-bold text-green-600">₹${r.total_credits.toFixed(2)}</td>
+                        <td class="px-4 py-3" style="color: var(--text);">
+                            Wallet Credits <span class="text-xs text-gray-400">(real top-ups only)</span>
+                        </td>
+                        <td class="px-4 py-3 text-right font-bold text-green-600">₹${r.real_credits.toFixed(2)}</td>
                         <td class="px-4 py-3">${bankMatched
                             ? '<span class="px-2 py-0.5 text-xs rounded bg-green-50 text-green-700 font-semibold">✓ Matches bank</span>'
                             : `<span class="px-2 py-0.5 text-xs rounded bg-red-50 text-red-700 font-semibold">✗ Diff ₹${Math.abs(bankDiff).toFixed(2)}</span>`
                         }</td>
                     </tr>
                     <tr>
-                        <td class="px-4 py-3" style="color: var(--text);">Wallet Debits (delivered)</td>
-                        <td class="px-4 py-3 text-right font-bold text-red-600">₹${r.total_debits.toFixed(2)}</td>
+                        <td class="px-4 py-3" style="color: var(--text);">
+                            Wallet Debits <span class="text-xs text-gray-400">(delivery transactions only)</span>
+                        </td>
+                        <td class="px-4 py-3 text-right font-bold text-red-600">₹${r.real_debits.toFixed(2)}</td>
                         <td class="px-4 py-3"><span class="px-2 py-0.5 text-xs rounded bg-gray-50 text-gray-700 font-semibold">Spent</span></td>
                     </tr>
                     <tr class="bg-gray-50">
@@ -876,7 +883,17 @@ function renderReconciliation(data) {
                     </tr>
                 </tbody>
             </table>
-        </div>`;
+        </div>
+        ${(r.adjustment_credits > 0 || r.adjustment_debits > 0) ? `
+        <div class="flex items-start gap-2 p-3 rounded-lg bg-yellow-50 border border-yellow-200 text-xs mb-4">
+            <i class="fa-solid fa-info-circle text-yellow-600 mt-0.5"></i>
+            <div class="text-yellow-800">
+                <span class="font-semibold">Prior reconciliation adjustments in ledger:</span>
+                adjustment credits ₹${r.adjustment_credits.toFixed(2)}, adjustment debits ₹${r.adjustment_debits.toFixed(2)}.
+                These are excluded from balance calculation and will be removed when a new fix is applied.
+            </div>
+        </div>` : ''}
+    `;
 
     // ── Last Reconciled ──────────────────────────────────────────────────────
     const lastReconciledRow = (r.last_reconciled_at || r.last_reconciled_by)
@@ -902,7 +919,7 @@ function renderReconciliation(data) {
 
     if (!bankMatched) {
         if (bankDiff > 0) {
-            fixes.push({ type: 'recalculate_credits', label: 'Credit Missing Payment', desc: `Bank paid ₹${r.bank_total.toFixed(2)} but wallet credits only ₹${r.total_credits.toFixed(2)}`, icon: 'fa-building-columns', safe: false });
+            fixes.push({ type: 'recalculate_credits', label: 'Credit Missing Payment', desc: `Bank paid ₹${r.bank_total.toFixed(2)} but wallet credits only ₹${realCredits.toFixed(2)}`, icon: 'fa-building-columns', safe: false });
         } else {
             fixes.push({ type: 'recalculate_credits', label: 'Remove Excess Credits', desc: `Wallet has ₹${Math.abs(bankDiff).toFixed(2)} more credits than bank payments`, icon: 'fa-circle-minus', safe: false });
         }
