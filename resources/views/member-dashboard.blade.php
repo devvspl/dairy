@@ -21,8 +21,13 @@
                     <p class="font-semibold" style="color: var(--green);">Success!</p>
                     <p class="text-sm" style="color: var(--text);">{{ session('success') }}</p>
                 </div>
-                <button onclick="this.parentElement.remove()" class="text-gray-400 hover:text-gray-600"><i
-                        class="fa-solid fa-times"></i></button>
+                <button onclick="this.parentElement.remove()"
+                    class="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center transition-colors"
+                    style="background:rgba(47,74,30,0.12); color:var(--green);"
+                    onmouseover="this.style.background='rgba(47,74,30,0.22)'" onmouseout="this.style.background='rgba(47,74,30,0.12)'"
+                    aria-label="Dismiss">
+                    <i class="fa-solid fa-times text-xs"></i>
+                </button>
             </div>
         @endif
         @if(session('error'))
@@ -32,8 +37,13 @@
                     <p class="font-semibold" style="color: #dc2626;">Error!</p>
                     <p class="text-sm" style="color: var(--text);">{{ session('error') }}</p>
                 </div>
-                <button onclick="this.parentElement.remove()" class="text-gray-400 hover:text-gray-600"><i
-                        class="fa-solid fa-times"></i></button>
+                <button onclick="this.parentElement.remove()"
+                    class="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center transition-colors"
+                    style="background:rgba(220,38,38,0.12); color:#dc2626;"
+                    onmouseover="this.style.background='rgba(220,38,38,0.22)'" onmouseout="this.style.background='rgba(220,38,38,0.12)'"
+                    aria-label="Dismiss">
+                    <i class="fa-solid fa-times text-xs"></i>
+                </button>
             </div>
         @endif
 
@@ -1093,8 +1103,11 @@
                     <div class="flex-1">
                         <p class="text-sm font-semibold" style="color:#991b1b;">${message}</p>
                     </div>
-                    <button onclick="document.getElementById('wi-error-message').remove()" class="flex-shrink-0 mt-0.5">
-                        <i class="fa-solid fa-times" style="color:#dc2626;"></i>
+                    <button onclick="document.getElementById('wi-error-message').remove()"
+                        class="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center"
+                        style="background:rgba(220,38,38,0.15); color:#dc2626;"
+                        aria-label="Dismiss">
+                        <i class="fa-solid fa-times text-xs"></i>
                     </button>
                 </div>
             `;
@@ -1132,8 +1145,11 @@
             {{-- Modal Header (fixed, never scrolls) --}}
             <div class="flex-shrink-0 bg-white rounded-t-2xl px-5 pt-5 pb-3 border-b" style="border-color: var(--border);">
                 <button onclick="closeBuyModal()"
-                    class="absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors">
-                    <i class="fa-solid fa-times text-sm" style="color: var(--muted);"></i>
+                    class="absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center transition-colors"
+                    style="background:#f3f4f6; color:#374151;"
+                    onmouseover="this.style.background='#e5e7eb'" onmouseout="this.style.background='#f3f4f6'"
+                    aria-label="Close">
+                    <i class="fa-solid fa-times text-sm"></i>
                 </button>
                 <div class="flex items-start pr-8">
                     <div class="flex flex-col items-center" style="min-width:64px;">
@@ -1974,8 +1990,12 @@
     <div id="topupModal" class="fixed inset-0 bg-black bg-opacity-60 z-50 items-center justify-center p-4"
         style="display:none; backdrop-filter: blur(6px);">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 relative" onclick="event.stopPropagation()">
-            <button onclick="closeTopupModal()" class="absolute top-4 right-4 z-10 w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-100">
-                <i class="fa-solid fa-times text-sm" style="color: var(--muted);"></i>
+            <button onclick="closeTopupModal()"
+                class="absolute top-3 right-3 z-10 w-8 h-8 rounded-full flex items-center justify-center transition-colors"
+                style="background:#f3f4f6; color:#374151;"
+                onmouseover="this.style.background='#e5e7eb'" onmouseout="this.style.background='#f3f4f6'"
+                aria-label="Close">
+                <i class="fa-solid fa-times text-sm"></i>
             </button>
             <div class="flex items-center gap-3 mb-5">
                 <div class="w-10 h-10 rounded-full flex items-center justify-center" style="background: rgba(47,74,30,0.1);">
