@@ -5,8 +5,16 @@ namespace App\Http\Controllers\Admin;
 use App\Exports\SubscriptionsExport;
 use App\Http\Controllers\Controller;
 use App\Models\ExportLog;
+use App\Models\MilkWalletTransaction;
+use App\Models\Order;
+use App\Models\SubscriptionChangeLog;
 use App\Models\UserSubscription;
+use App\Models\WalletReconciliationLog;
+use App\Services\WalletReconciliationService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Facades\Excel;
 
 class UserSubscriptionController extends Controller
@@ -201,34 +209,33 @@ class UserSubscriptionController extends Controller
     /**
      * Get payment history for a subscription (AJAX)
      */
-    public function paymentHistory(UserSubscription $subscription)
+    public function paymentHistory(UserSubscription $subscription): JsonResponse
     {
+        $svc = app(WalletReconciliationService::class);
+
         // Bank Payments (from orders table)
-        $bankPayments = \App\Models\Order::where('user_id', $subscription->user_id)
-            ->where(function($q) use ($subscription) {
+        $bankPayments = Order::where('user_id', $subscription->user_id)
+            ->where(function ($q) use ($subscription) {
                 $q->where('user_subscription_id', $subscription->id)
-                  ->orWhere(function($q2) use ($subscription) {
-                      // Include wallet init orders that created this subscription
+                  ->orWhere(function ($q2) use ($subscription) {
                       $q2->where('order_type', 'wallet_topup')
                          ->whereNull('user_subscription_id')
-                         ->whereJsonContains('wallet_meta->location_id', (string)$subscription->location_id);
+                         ->whereJsonContains('wallet_meta->location_id', (string) $subscription->location_id);
                   });
             })
             ->where('order_type', 'wallet_topup')
             ->orderBy('created_at', 'desc')
             ->limit(100)
             ->get()
-            ->map(function($order) {
-                return [
-                    'order_id'       => $order->order_id,
-                    'transaction_id' => $order->transaction_id,
-                    'amount'         => (float) $order->amount,
-                    'status'         => $order->status,
-                    'payment_method' => $order->payment_method ?? 'phonepe',
-                    'date'           => $order->created_at->format('M d, Y'),
-                    'time'           => $order->created_at->format('h:i A'),
-                ];
-            });
+            ->map(fn($order) => [
+                'order_id'       => $order->order_id,
+                'transaction_id' => $order->transaction_id,
+                'amount'         => (float) $order->amount,
+                'status'         => $order->status,
+                'payment_method' => $order->payment_method ?? 'phonepe',
+                'date'           => $order->created_at->format('M d, Y'),
+                'time'           => $order->created_at->format('h:i A'),
+            ]);
 
         // Wallet Transactions
         $walletTransactions = $subscription->walletTransactions()
@@ -236,248 +243,98 @@ class UserSubscriptionController extends Controller
             ->orderBy('created_at', 'desc')
             ->limit(100)
             ->get()
-            ->map(function($txn) {
-                return [
-                    'id'            => $txn->id,
-                    'type'          => $txn->type,
-                    'amount'        => (float) $txn->amount,
-                    'litres'        => $txn->litres ? (float) $txn->litres : null,
-                    'balance_after' => (float) $txn->balance_after,
-                    'description'   => $txn->description,
-                    'date'          => $txn->transaction_date->format('M d, Y'),
-                    'time'          => $txn->created_at->format('h:i A'),
-                ];
-            });
+            ->map(fn($txn) => [
+                'id'            => $txn->id,
+                'type'          => $txn->type,
+                'amount'        => (float) $txn->amount,
+                'litres'        => $txn->litres ? (float) $txn->litres : null,
+                'balance_after' => (float) $txn->balance_after,
+                'description'   => $txn->description,
+                'is_reversal'   => (bool) $txn->is_reversal,
+                'date'          => $txn->transaction_date->format('M d, Y'),
+                'time'          => $txn->created_at->format('h:i A'),
+            ]);
 
-        // Reconciliation Data
-        $totalBankPayments = \App\Models\Order::where('user_id', $subscription->user_id)
-            ->where(function($q) use ($subscription) {
-                $q->where('user_subscription_id', $subscription->id)
-                  ->orWhere(function($q2) use ($subscription) {
-                      $q2->where('order_type', 'wallet_topup')
-                         ->whereNull('user_subscription_id')
-                         ->whereJsonContains('wallet_meta->location_id', (string)$subscription->location_id);
-                  });
-            })
-            ->where('order_type', 'wallet_topup')
-            ->where('status', 'success')
-            ->sum('amount');
+        // Full reconciliation snapshot from service
+        $reconciliation = $svc->calculate($subscription);
 
-        $totalCredits = $subscription->walletTransactions()
-            ->where('type', 'credit')
-            ->sum('amount');
-
-        $totalDebits = $subscription->walletTransactions()
-            ->where('type', 'debit')
-            ->sum('amount');
+        // Reconciliation history
+        $history = $svc->getHistory($subscription, 10);
 
         return response()->json([
-            'success'           => true,
-            'bank_payments'     => $bankPayments,
-            'wallet_transactions' => $walletTransactions,
-            'reconciliation'    => [
-                'total_bank_payments' => (float) $totalBankPayments,
-                'total_credits'       => (float) $totalCredits,
-                'total_debits'        => (float) $totalDebits,
-                'current_balance'     => (float) $subscription->wallet_balance,
-            ],
+            'success'              => true,
+            'bank_payments'        => $bankPayments,
+            'wallet_transactions'  => $walletTransactions,
+            'reconciliation'       => $reconciliation,
+            'reconciliation_history' => $history,
         ]);
     }
 
     /**
      * Fix reconciliation issues (AJAX)
+     * All logic delegated to WalletReconciliationService.
      */
-    public function fixReconciliation(Request $request, UserSubscription $subscription)
+    public function fixReconciliation(Request $request, UserSubscription $subscription): JsonResponse
     {
+        $request->validate([
+            'fix_type' => 'required|string|in:rebuild_from_ledger,fix_from_deliveries,recalculate_credits,recalculate_debits,mark_reconciled',
+        ]);
+
         $fixType = $request->input('fix_type');
-        
-        DB::beginTransaction();
-        try {
-            $result = ['success' => false, 'message' => 'Unknown fix type'];
-            
-            switch ($fixType) {
-                case 'sync_balance':
-                    // Recalculate balance from transactions
-                    $totalCredits = $subscription->walletTransactions()->where('type', 'credit')->sum('amount');
-                    $totalDebits = $subscription->walletTransactions()->where('type', 'debit')->sum('amount');
-                    $calculatedBalance = $totalCredits - $totalDebits;
-                    
-                    $oldBalance = $subscription->wallet_balance;
-                    $subscription->update(['wallet_balance' => $calculatedBalance]);
-                    
-                    \App\Models\SubscriptionChangeLog::record(
-                        $subscription->id,
-                        auth()->id(),
-                        'balance_reconciliation',
-                        ['old_balance' => $oldBalance],
-                        ['new_balance' => $calculatedBalance],
-                        "Balance synced from transactions (admin fix)"
-                    );
-                    
-                    $result = [
-                        'success' => true,
-                        'message' => "Balance synchronized successfully. Updated from ₹{$oldBalance} to ₹{$calculatedBalance}",
-                        'old_balance' => (float) $oldBalance,
-                        'new_balance' => (float) $calculatedBalance,
-                    ];
-                    break;
-                    
-                case 'sync_bank_to_wallet':
-                    // Find successful bank payments not yet credited to wallet
-                    $bankTotal = \App\Models\Order::where('user_id', $subscription->user_id)
-                        ->where(function($q) use ($subscription) {
-                            $q->where('user_subscription_id', $subscription->id)
-                              ->orWhere(function($q2) use ($subscription) {
-                                  $q2->where('order_type', 'wallet_topup')
-                                     ->whereNull('user_subscription_id')
-                                     ->whereJsonContains('wallet_meta->location_id', (string)$subscription->location_id);
-                              });
-                        })
-                        ->where('order_type', 'wallet_topup')
-                        ->where('status', 'success')
-                        ->sum('amount');
-                    
-                    $walletCredits = $subscription->walletTransactions()->where('type', 'credit')->sum('amount');
-                    $difference = $bankTotal - $walletCredits;
-                    
-                    if (abs($difference) > 0.01) {
-                        // Add adjustment transaction
-                        \App\Models\MilkWalletTransaction::create([
-                            'user_id' => $subscription->user_id,
-                            'user_subscription_id' => $subscription->id,
-                            'type' => $difference > 0 ? 'credit' : 'debit',
-                            'amount' => abs($difference),
-                            'balance_after' => $subscription->wallet_balance + $difference,
-                            'description' => "Reconciliation adjustment: Bank payments sync (admin fix)",
-                            'transaction_date' => now()->toDateString(),
-                        ]);
-                        
-                        $subscription->update([
-                            'wallet_balance' => $subscription->wallet_balance + $difference,
-                            'wallet_total' => $subscription->wallet_total + ($difference > 0 ? $difference : 0),
-                        ]);
-                        
-                        $result = [
-                            'success' => true,
-                            'message' => "Adjustment of ₹" . number_format(abs($difference), 2) . " applied to match bank payments",
-                            'adjustment' => (float) $difference,
-                        ];
-                    } else {
-                        $result = [
-                            'success' => true,
-                            'message' => "No adjustment needed. Bank payments and wallet credits are already synchronized.",
-                        ];
-                    }
-                    break;
-                    
-                case 'prevent_negative':
-                    // Check if balance is negative and fix
-                    if ($subscription->wallet_balance < 0) {
-                        $negativeAmount = abs($subscription->wallet_balance);
-                        
-                        // Add credit to bring balance to zero
-                        \App\Models\MilkWalletTransaction::create([
-                            'user_id' => $subscription->user_id,
-                            'user_subscription_id' => $subscription->id,
-                            'type' => 'credit',
-                            'amount' => $negativeAmount,
-                            'balance_after' => 0,
-                            'description' => "Negative balance correction (admin fix)",
-                            'transaction_date' => now()->toDateString(),
-                        ]);
-                        
-                        $subscription->update([
-                            'wallet_balance' => 0,
-                            'wallet_total' => $subscription->wallet_total + $negativeAmount,
-                        ]);
-                        
-                        $result = [
-                            'success' => true,
-                            'message' => "Negative balance of ₹{$negativeAmount} corrected. Balance is now ₹0.",
-                            'correction' => (float) $negativeAmount,
-                        ];
-                    } else {
-                        $result = [
-                            'success' => true,
-                            'message' => "Balance is positive. No correction needed.",
-                        ];
-                    }
-                    break;
-                    
-                case 'remove_excess_credits':
-                    // Remove wallet credits that exceed bank payments
-                    $bankTotal = \App\Models\Order::where('user_id', $subscription->user_id)
-                        ->where(function($q) use ($subscription) {
-                            $q->where('user_subscription_id', $subscription->id)
-                              ->orWhere(function($q2) use ($subscription) {
-                                  $q2->where('order_type', 'wallet_topup')
-                                     ->whereNull('user_subscription_id')
-                                     ->whereJsonContains('wallet_meta->location_id', (string)$subscription->location_id);
-                              });
-                        })
-                        ->where('order_type', 'wallet_topup')
-                        ->where('status', 'success')
-                        ->sum('amount');
-                    
-                    $walletCredits = $subscription->walletTransactions()->where('type', 'credit')->sum('amount');
-                    $excessAmount = $walletCredits - $bankTotal;
-                    
-                    if ($excessAmount > 0.01) {
-                        // Add debit transaction to remove excess credits
-                        \App\Models\MilkWalletTransaction::create([
-                            'user_id' => $subscription->user_id,
-                            'user_subscription_id' => $subscription->id,
-                            'type' => 'debit',
-                            'amount' => $excessAmount,
-                            'balance_after' => $subscription->wallet_balance - $excessAmount,
-                            'description' => "Reconciliation adjustment: Remove excess credits not backed by bank payments (admin fix)",
-                            'transaction_date' => now()->toDateString(),
-                        ]);
-                        
-                        $oldBalance = $subscription->wallet_balance;
-                        $newBalance = $subscription->wallet_balance - $excessAmount;
-                        
-                        $subscription->update([
-                            'wallet_balance' => $newBalance,
-                        ]);
-                        
-                        \App\Models\SubscriptionChangeLog::record(
-                            $subscription->id,
-                            auth()->id(),
-                            'excess_credits_removal',
-                            [
-                                'old_balance' => $oldBalance,
-                                'excess_amount' => $excessAmount,
-                                'bank_total' => $bankTotal,
-                                'wallet_credits' => $walletCredits
-                            ],
-                            ['new_balance' => $newBalance],
-                            "Removed excess credits (₹{$excessAmount}) not backed by bank payments (admin fix)"
-                        );
-                        
-                        $result = [
-                            'success' => true,
-                            'message' => "Removed excess credits of ₹" . number_format($excessAmount, 2) . " to match bank payments",
-                            'adjustment' => -(float) $excessAmount,
-                        ];
-                    } else {
-                        $result = [
-                            'success' => true,
-                            'message' => "No excess credits found. Wallet credits match or are less than bank payments.",
-                        ];
-                    }
-                    break;
+        $svc     = app(WalletReconciliationService::class);
+
+        // Safety: never run destructive fixes on already-balanced books
+        // (except mark_reconciled which is explicitly for balanced books)
+        if ($fixType !== 'mark_reconciled') {
+            $calc = $svc->calculate($subscription);
+            if ($calc['is_balanced'] && in_array($fixType, ['rebuild_from_ledger'])) {
+                return response()->json([
+                    'success' => true,
+                    'skipped' => true,
+                    'message' => 'Books are already balanced. No fix needed.',
+                ]);
             }
-            
-            DB::commit();
+        }
+
+        try {
+            $result = match ($fixType) {
+                'rebuild_from_ledger'  => $svc->rebuildFromLedger($subscription),
+                'fix_from_deliveries'  => $svc->fixFromDeliveries($subscription),
+                'recalculate_credits'  => $svc->recalculateCredits($subscription),
+                'recalculate_debits'   => $svc->recalculateDebits($subscription),
+                'mark_reconciled'      => $svc->markReconciled($subscription),
+            };
+
+            // Refresh balance for response
+            $subscription->refresh();
+            $result['current_balance']  = (float) $subscription->wallet_balance;
+            $result['reconciliation']   = $svc->calculate($subscription);
+
             return response()->json($result);
-            
-        } catch (\Exception $e) {
-            DB::rollBack();
-            Log::error('Reconciliation Fix Error', ['error' => $e->getMessage(), 'subscription_id' => $subscription->id]);
+
+        } catch (\Throwable $e) {
+            Log::error('Reconciliation Fix Error', [
+                'fix_type'        => $fixType,
+                'subscription_id' => $subscription->id,
+                'error'           => $e->getMessage(),
+                'trace'           => $e->getTraceAsString(),
+            ]);
+
+            WalletReconciliationLog::record(
+                $subscription->id,
+                $fixType,
+                (float) $subscription->wallet_balance,
+                (float) $subscription->wallet_balance,
+                0,
+                (float) $subscription->wallet_balance,
+                ['error' => $e->getMessage()],
+                'Fix failed: ' . $e->getMessage(),
+                'failed'
+            );
+
             return response()->json([
                 'success' => false,
-                'message' => 'An error occurred while fixing reconciliation: ' . $e->getMessage(),
+                'message' => 'Reconciliation fix failed: ' . $e->getMessage(),
             ], 500);
         }
     }

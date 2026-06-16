@@ -640,6 +640,8 @@ function loadPaymentHistory() {
         .then(data => {
             if (data.success) {
                 currentHistoryData = data;
+                // Store reconciliation history globally for renderReconciliation
+                window._reconciliationHistory = data.reconciliation_history || [];
                 renderBankPayments(data.bank_payments);
                 renderWalletHistory(data.wallet_transactions);
                 renderReconciliation(data.reconciliation);
@@ -799,196 +801,210 @@ function renderWalletHistory(transactions) {
 function renderReconciliation(data) {
     const container = document.getElementById('reconciliationContent');
     
-    const totalBankPayments = parseFloat(data.total_bank_payments);
-    const totalCredits = parseFloat(data.total_credits);
-    const totalDebits = parseFloat(data.total_debits);
-    const currentBalance = parseFloat(data.current_balance);
-    const expectedBalance = totalCredits - totalDebits;
-    const difference = currentBalance - expectedBalance;
-    
-    const isBalanced = Math.abs(difference) < 0.01; // Allow for rounding errors
-    const bankMatch = Math.abs(totalBankPayments - totalCredits) < 0.01;
-    
-    let suggestions = [];
-    let fixes = [];
-    
+    const r = data;
+    const isBalanced  = r.is_balanced;
+    const difference  = parseFloat(r.difference);
+    const bankMatched = r.bank_matched;
+    const bankDiff    = parseFloat(r.bank_diff);
+
+    // ── Status Banner ────────────────────────────────────────────────────────
+    const statusBanner = isBalanced
+        ? `<div class="flex items-center gap-3 p-4 rounded-lg border border-green-300 bg-green-50 mb-4">
+               <i class="fa-solid fa-circle-check text-green-600 text-xl"></i>
+               <div>
+                   <p class="font-bold text-green-700">Books are Balanced</p>
+                   <p class="text-sm text-green-600">Expected ₹${r.expected_balance.toFixed(2)} = Actual ₹${r.actual_balance.toFixed(2)}</p>
+               </div>
+           </div>`
+        : `<div class="flex items-center gap-3 p-4 rounded-lg border border-red-300 bg-red-50 mb-4">
+               <i class="fa-solid fa-triangle-exclamation text-red-600 text-xl"></i>
+               <div>
+                   <p class="font-bold text-red-700">Reconciliation Required</p>
+                   <p class="text-sm text-red-600">Expected ₹${r.expected_balance.toFixed(2)} ≠ Actual ₹${r.actual_balance.toFixed(2)} — Difference: ₹${Math.abs(difference).toFixed(2)}</p>
+               </div>
+           </div>`;
+
+    // ── Summary Table ────────────────────────────────────────────────────────
+    const summaryTable = `
+        <div class="bg-white border rounded-lg overflow-hidden mb-4" style="border-color: var(--border);">
+            <table class="w-full text-sm">
+                <thead class="bg-gray-50 border-b" style="border-color: var(--border);">
+                    <tr>
+                        <th class="px-4 py-2 text-left font-semibold" style="color: var(--muted);">Metric</th>
+                        <th class="px-4 py-2 text-right font-semibold" style="color: var(--muted);">Amount</th>
+                        <th class="px-4 py-2 text-left font-semibold" style="color: var(--muted);">Status</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y" style="border-color: var(--border);">
+                    <tr>
+                        <td class="px-4 py-3" style="color: var(--text);">Bank Payments (received)</td>
+                        <td class="px-4 py-3 text-right font-bold" style="color: var(--green);">₹${r.bank_total.toFixed(2)}</td>
+                        <td class="px-4 py-3"><span class="px-2 py-0.5 text-xs rounded bg-blue-50 text-blue-700 font-semibold">Source</span></td>
+                    </tr>
+                    <tr>
+                        <td class="px-4 py-3" style="color: var(--text);">Wallet Credits (ledger)</td>
+                        <td class="px-4 py-3 text-right font-bold text-green-600">₹${r.total_credits.toFixed(2)}</td>
+                        <td class="px-4 py-3">${bankMatched
+                            ? '<span class="px-2 py-0.5 text-xs rounded bg-green-50 text-green-700 font-semibold">✓ Matches bank</span>'
+                            : `<span class="px-2 py-0.5 text-xs rounded bg-red-50 text-red-700 font-semibold">✗ Diff ₹${Math.abs(bankDiff).toFixed(2)}</span>`
+                        }</td>
+                    </tr>
+                    <tr>
+                        <td class="px-4 py-3" style="color: var(--text);">Wallet Debits (delivered)</td>
+                        <td class="px-4 py-3 text-right font-bold text-red-600">₹${r.total_debits.toFixed(2)}</td>
+                        <td class="px-4 py-3"><span class="px-2 py-0.5 text-xs rounded bg-gray-50 text-gray-700 font-semibold">Spent</span></td>
+                    </tr>
+                    <tr class="bg-gray-50">
+                        <td class="px-4 py-3 font-semibold" style="color: var(--text);">Expected Balance <span class="text-xs font-normal text-gray-400">(Credits − Debits)</span></td>
+                        <td class="px-4 py-3 text-right font-bold" style="color: var(--text);">₹${r.expected_balance.toFixed(2)}</td>
+                        <td class="px-4 py-3"><span class="px-2 py-0.5 text-xs rounded bg-blue-50 text-blue-700 font-semibold">Calculated</span></td>
+                    </tr>
+                    <tr class="bg-gray-50">
+                        <td class="px-4 py-3 font-semibold" style="color: var(--text);">Actual Balance <span class="text-xs font-normal text-gray-400">(wallet_balance field)</span></td>
+                        <td class="px-4 py-3 text-right font-bold" style="color: var(--text);">₹${r.actual_balance.toFixed(2)}</td>
+                        <td class="px-4 py-3">${isBalanced
+                            ? '<span class="px-2 py-0.5 text-xs rounded bg-green-50 text-green-700 font-semibold">✓ Correct</span>'
+                            : '<span class="px-2 py-0.5 text-xs rounded bg-red-50 text-red-700 font-semibold">✗ Mismatch</span>'
+                        }</td>
+                    </tr>
+                    <tr class="${isBalanced ? 'bg-green-50' : 'bg-red-50'}">
+                        <td class="px-4 py-3 font-bold" style="color: var(--text);">Difference</td>
+                        <td class="px-4 py-3 text-right font-bold ${isBalanced ? 'text-green-700' : 'text-red-700'}">
+                            ${isBalanced ? '₹0.00' : (difference > 0 ? '+' : '−') + '₹' + Math.abs(difference).toFixed(2)}
+                        </td>
+                        <td class="px-4 py-3 font-semibold ${isBalanced ? 'text-green-700' : 'text-red-700'}">${isBalanced ? 'Balanced ✓' : 'Mismatch ✗'}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>`;
+
+    // ── Last Reconciled ──────────────────────────────────────────────────────
+    const lastReconciledRow = (r.last_reconciled_at || r.last_reconciled_by)
+        ? `<div class="flex items-center gap-4 p-3 rounded-lg bg-gray-50 border text-sm mb-4" style="border-color: var(--border);">
+               <i class="fa-solid fa-clock-rotate-left text-gray-400"></i>
+               <span style="color: var(--muted);">Last reconciled:</span>
+               <span class="font-semibold" style="color: var(--text);">${r.last_reconciled_by ?? '—'}</span>
+               <span style="color: var(--muted);">${r.last_reconciled_at ? new Date(r.last_reconciled_at).toLocaleString('en-IN') : '—'}</span>
+               ${r.last_fix_type ? `<span class="px-2 py-0.5 text-xs rounded bg-blue-50 text-blue-700">${r.last_fix_type.replace(/_/g,' ')}</span>` : ''}
+           </div>`
+        : `<div class="flex items-center gap-3 p-3 rounded-lg bg-yellow-50 border border-yellow-200 text-sm mb-4">
+               <i class="fa-solid fa-exclamation-circle text-yellow-600"></i>
+               <span class="text-yellow-700">Never reconciled.</span>
+           </div>`;
+
+    // ── Quick Fix Actions ────────────────────────────────────────────────────
+    const fixes = [];
+
     if (!isBalanced) {
-        suggestions.push({
-            type: 'error',
-            icon: 'fa-exclamation-triangle',
-            title: 'Balance Mismatch',
-            message: `Current balance (₹${currentBalance.toFixed(2)}) doesn't match expected balance (₹${expectedBalance.toFixed(2)}). Difference: ₹${Math.abs(difference).toFixed(2)}`,
-            action: 'Click "Sync Balance" to recalculate balance from transactions.'
-        });
-        fixes.push({
-            type: 'sync_balance',
-            label: 'Sync Balance',
-            icon: 'fa-sync',
-            description: 'Recalculate balance from all wallet transactions'
-        });
+        fixes.push({ type: 'rebuild_from_ledger', label: 'Rebuild Balance from Ledger', desc: 'Set wallet_balance = Credits − Debits', icon: 'fa-calculator', safe: true });
+        fixes.push({ type: 'fix_from_deliveries', label: 'Fix from Deliveries', desc: 'Set balance = Bank payments − Delivered debits', icon: 'fa-truck', safe: false });
     }
-    
-    if (!bankMatch) {
-        const bankDiff = totalBankPayments - totalCredits;
-        suggestions.push({
-            type: 'warning',
-            icon: 'fa-exclamation-circle',
-            title: 'Bank Payment Mismatch',
-            message: `Bank payments (₹${totalBankPayments.toFixed(2)}) don't match wallet credits (₹${totalCredits.toFixed(2)}). Difference: ₹${Math.abs(bankDiff).toFixed(2)}`,
-            action: bankDiff > 0 
-                ? 'Click "Sync Bank to Wallet" to credit missing payments to wallet.'
-                : 'Click "Remove Excess Credits" to remove extra wallet credits not backed by bank payments.'
-        });
+
+    if (!bankMatched) {
         if (bankDiff > 0) {
-            fixes.push({
-                type: 'sync_bank_to_wallet',
-                label: 'Sync Bank to Wallet',
-                icon: 'fa-building-columns',
-                description: 'Credit missing bank payments to wallet'
-            });
-        } else if (bankDiff < 0) {
-            fixes.push({
-                type: 'remove_excess_credits',
-                label: 'Remove Excess Credits',
-                icon: 'fa-minus-circle',
-                description: 'Remove wallet credits not backed by bank payments'
-            });
+            fixes.push({ type: 'recalculate_credits', label: 'Credit Missing Payment', desc: `Bank paid ₹${r.bank_total.toFixed(2)} but wallet credits only ₹${r.total_credits.toFixed(2)}`, icon: 'fa-building-columns', safe: false });
+        } else {
+            fixes.push({ type: 'recalculate_credits', label: 'Remove Excess Credits', desc: `Wallet has ₹${Math.abs(bankDiff).toFixed(2)} more credits than bank payments`, icon: 'fa-circle-minus', safe: false });
         }
+        fixes.push({ type: 'recalculate_debits', label: 'Recalculate Debits', desc: 'Verify debits match all delivered transactions', icon: 'fa-rotate', safe: false });
     }
-    
-    if (totalDebits > totalCredits) {
-        suggestions.push({
-            type: 'error',
-            icon: 'fa-triangle-exclamation',
-            title: 'Negative Balance Allowed',
-            message: `Total debits (₹${totalDebits.toFixed(2)}) exceed total credits (₹${totalCredits.toFixed(2)})`,
-            action: 'This should not happen. Click "Fix Negative Balance" to correct.'
-        });
-        fixes.push({
-            type: 'prevent_negative',
-            label: 'Fix Negative Balance',
-            icon: 'fa-plus',
-            description: 'Add credit to bring balance to zero'
-        });
-    }
-    
-    if (isBalanced && bankMatch && suggestions.length === 0) {
-        suggestions.push({
-            type: 'success',
-            icon: 'fa-circle-check',
-            title: 'All Clear!',
-            message: 'All accounts are balanced and reconciled correctly.',
-            action: 'No action needed. Continue monitoring regular transactions.'
-        });
-    }
-    
-    let html = `
-        <div class="space-y-4">
-            <!-- Summary Cards -->
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <div class="bg-white rounded-xl p-4 border" style="border-color: var(--border);">
-                    <p class="text-xs font-semibold mb-1" style="color: var(--muted);">Bank Payments</p>
-                    <p class="text-xl font-bold" style="color: var(--green);">₹${totalBankPayments.toFixed(2)}</p>
-                </div>
-                <div class="bg-white rounded-xl p-4 border" style="border-color: var(--border);">
-                    <p class="text-xs font-semibold mb-1" style="color: var(--muted);">Wallet Credits</p>
-                    <p class="text-xl font-bold text-green-600">₹${totalCredits.toFixed(2)}</p>
-                </div>
-                <div class="bg-white rounded-xl p-4 border" style="border-color: var(--border);">
-                    <p class="text-xs font-semibold mb-1" style="color: var(--muted);">Wallet Debits</p>
-                    <p class="text-xl font-bold text-red-600">₹${totalDebits.toFixed(2)}</p>
-                </div>
-                <div class="bg-white rounded-xl p-4 border" style="border-color: var(--border);">
-                    <p class="text-xs font-semibold mb-1" style="color: var(--muted);">Current Balance</p>
-                    <p class="text-xl font-bold" style="color: var(--text);">₹${currentBalance.toFixed(2)}</p>
-                </div>
-            </div>
-            
-            <!-- Reconciliation Status -->
-            <div class="bg-${isBalanced ? 'green' : 'red'}-50 rounded-xl p-4 border-2 border-${isBalanced ? 'green' : 'red'}-200">
-                <div class="flex items-center gap-3">
-                    <i class="fa-solid fa-${isBalanced ? 'check-circle' : 'times-circle'} text-2xl text-${isBalanced ? 'green' : 'red'}-600"></i>
-                    <div class="flex-1">
-                        <p class="font-bold text-${isBalanced ? 'green' : 'red'}-700">${isBalanced ? 'Books are Balanced' : 'Books Need Reconciliation'}</p>
-                        <p class="text-sm text-${isBalanced ? 'green' : 'red'}-600">
-                            Expected: ₹${expectedBalance.toFixed(2)} | Actual: ₹${currentBalance.toFixed(2)}
-                            ${!isBalanced ? ` | Diff: ₹${Math.abs(difference).toFixed(2)}` : ''}
-                        </p>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Quick Fixes -->
-            ${fixes.length > 0 ? `
-            <div class="bg-blue-50 rounded-xl p-4 border-2 border-blue-200">
-                <h4 class="font-bold text-sm mb-3 text-blue-700">
-                    <i class="fa-solid fa-wrench mr-2"></i>Quick Fixes Available
+
+    const fixActions = fixes.length > 0
+        ? `<div class="mb-4">
+               <h4 class="text-sm font-bold mb-2 flex items-center gap-2" style="color: var(--text);">
+                   <i class="fa-solid fa-wrench text-blue-600"></i> Quick Fix Actions
+               </h4>
+               <div class="space-y-2">
+                   ${fixes.map(f => `
+                       <button onclick="applyFix('${f.type}')"
+                               class="w-full flex items-center gap-3 px-4 py-3 rounded-lg border text-left hover:bg-blue-50 transition-colors"
+                               style="border-color: var(--border);">
+                           <div class="w-9 h-9 rounded-lg bg-blue-50 border border-blue-200 flex items-center justify-center flex-shrink-0">
+                               <i class="fa-solid ${f.icon} text-blue-600 text-sm"></i>
+                           </div>
+                           <div class="flex-1 min-w-0">
+                               <p class="font-semibold text-sm" style="color: var(--text);">${f.label}</p>
+                               <p class="text-xs" style="color: var(--muted);">${f.desc}</p>
+                           </div>
+                           ${!f.safe ? '<span class="text-xs text-orange-600 font-semibold px-2 py-1 rounded bg-orange-50 border border-orange-200">Modifies data</span>' : ''}
+                           <i class="fa-solid fa-chevron-right text-gray-300 text-xs"></i>
+                       </button>`).join('')}
+               </div>
+           </div>`
+        : '';
+
+    // "Mark Reconciled" button — only when balanced
+    const markReconciledBtn = isBalanced
+        ? `<button onclick="applyFix('mark_reconciled')"
+                   class="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border-2 border-green-300 text-green-700 bg-green-50 hover:bg-green-100 font-semibold text-sm transition-colors mb-4">
+               <i class="fa-solid fa-check-circle"></i> Mark as Reconciled
+           </button>`
+        : '';
+
+    // ── History Table ────────────────────────────────────────────────────────
+    let historySection = '';
+    if (window._reconciliationHistory && window._reconciliationHistory.length > 0) {
+        const rows = window._reconciliationHistory.map(h => `
+            <tr class="border-b hover:bg-gray-50" style="border-color: var(--border);">
+                <td class="px-3 py-2 text-xs" style="color: var(--muted);">${h.performed_at}</td>
+                <td class="px-3 py-2">
+                    <span class="px-2 py-0.5 text-xs rounded bg-blue-50 text-blue-700 font-semibold">${h.fix_label}</span>
+                </td>
+                <td class="px-3 py-2 text-xs text-right font-mono ${h.difference >= 0 ? 'text-green-700' : 'text-red-700'}">
+                    ${h.difference >= 0 ? '+' : ''}₹${h.difference.toFixed(2)}
+                </td>
+                <td class="px-3 py-2 text-xs" style="color: var(--text);">${h.performed_by}</td>
+                <td class="px-3 py-2">
+                    <span class="px-2 py-0.5 text-xs rounded ${h.status === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'} font-semibold">${h.status}</span>
+                </td>
+            </tr>`).join('');
+
+        historySection = `
+            <div>
+                <h4 class="text-sm font-bold mb-2 flex items-center gap-2" style="color: var(--text);">
+                    <i class="fa-solid fa-clock-rotate-left" style="color: var(--green);"></i> Reconciliation History
                 </h4>
-                <div class="grid grid-cols-1 md:grid-cols-${fixes.length > 1 ? '2' : '1'} gap-2">
-                    ${fixes.map(fix => `
-                        <button onclick="applyFix('${fix.type}')" 
-                                class="flex items-center gap-3 p-3 rounded-lg border-2 border-blue-300 bg-white hover:bg-blue-50 transition-all">
-                            <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
-                                <i class="fa-solid ${fix.icon} text-blue-600"></i>
-                            </div>
-                            <div class="text-left flex-1">
-                                <p class="font-bold text-sm text-blue-700">${fix.label}</p>
-                                <p class="text-xs text-blue-600">${fix.description}</p>
-                            </div>
-                            <i class="fa-solid fa-chevron-right text-blue-400"></i>
-                        </button>
-                    `).join('')}
+                <div class="border rounded-lg overflow-hidden" style="border-color: var(--border);">
+                    <table class="w-full text-sm">
+                        <thead class="bg-gray-50 border-b" style="border-color: var(--border);">
+                            <tr>
+                                <th class="px-3 py-2 text-left text-xs font-semibold" style="color: var(--muted);">Date</th>
+                                <th class="px-3 py-2 text-left text-xs font-semibold" style="color: var(--muted);">Action</th>
+                                <th class="px-3 py-2 text-right text-xs font-semibold" style="color: var(--muted);">Δ Balance</th>
+                                <th class="px-3 py-2 text-left text-xs font-semibold" style="color: var(--muted);">By</th>
+                                <th class="px-3 py-2 text-left text-xs font-semibold" style="color: var(--muted);">Result</th>
+                            </tr>
+                        </thead>
+                        <tbody>${rows}</tbody>
+                    </table>
                 </div>
-            </div>
-            ` : ''}
-            
-            <!-- Suggestions -->
-            <div class="space-y-3">
-                <h4 class="font-bold text-sm" style="color: var(--text);">
-                    <i class="fa-solid fa-lightbulb mr-2" style="color: var(--green);"></i>Recommendations
-                </h4>
-    `;
-    
-    suggestions.forEach(sug => {
-        const colors = {
-            error: { bg: 'bg-red-50', border: 'border-red-200', text: 'text-red-700', icon: 'text-red-600' },
-            warning: { bg: 'bg-yellow-50', border: 'border-yellow-200', text: 'text-yellow-700', icon: 'text-yellow-600' },
-            success: { bg: 'bg-green-50', border: 'border-green-200', text: 'text-green-700', icon: 'text-green-600' }
-        };
-        const color = colors[sug.type];
-        
-        html += `
-            <div class="p-4 rounded-lg border-2 ${color.bg} ${color.border}">
-                <div class="flex items-start gap-3">
-                    <i class="fa-solid ${sug.icon} text-lg ${color.icon} mt-0.5"></i>
-                    <div class="flex-1">
-                        <p class="font-bold text-sm ${color.text} mb-1">${sug.title}</p>
-                        <p class="text-sm ${color.text} mb-2">${sug.message}</p>
-                        <p class="text-xs" style="color: var(--muted);"><strong>Action:</strong> ${sug.action}</p>
-                    </div>
-                </div>
-            </div>
-        `;
-    });
-    
-    html += `
-            </div>
-        </div>
-    `;
-    
-    container.innerHTML = html;
+            </div>`;
+    }
+
+    container.innerHTML = statusBanner + summaryTable + lastReconciledRow + fixActions + markReconciledBtn + historySection;
 }
 
 function applyFix(fixType) {
-    if (!confirm('Are you sure you want to apply this fix? This will modify the wallet balance and transactions.')) {
-        return;
-    }
-    
+    const labels = {
+        'rebuild_from_ledger': 'Rebuild Balance from Ledger',
+        'fix_from_deliveries': 'Fix Balance from Deliveries',
+        'recalculate_credits': 'Recalculate Credits',
+        'recalculate_debits':  'Recalculate Debits',
+        'mark_reconciled':     'Mark as Reconciled',
+    };
+    const label = labels[fixType] || fixType;
+
+    const warn = fixType !== 'mark_reconciled'
+        ? '\n\n⚠️ This will modify wallet data. An audit log will be created.'
+        : '';
+
+    if (!confirm(`Apply fix: "${label}"?${warn}`)) return;
+
     const btn = event.target.closest('button');
     const originalHTML = btn.innerHTML;
     btn.disabled = true;
-    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i>Applying fix...';
-    
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i>Applying...';
+
     fetch('/admin/subscriptions/{{ $subscription->id }}/fix-reconciliation', {
         method: 'POST',
         headers: {
@@ -1000,19 +1016,25 @@ function applyFix(fixType) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            alert('✅ ' + data.message);
-            // Reload payment history to show updated data
+            const msg = data.skipped
+                ? 'ℹ️ ' + data.message
+                : '✅ ' + data.message;
+            alert(msg);
+            // Reload full history to show updated reconciliation
+            window._reconciliationHistory = [];
             loadPaymentHistory();
-            // Reload page to update wallet balance display
-            window.location.reload();
+            if (!data.skipped) {
+                // Reload page to reflect updated wallet balance in header
+                setTimeout(() => window.location.reload(), 1200);
+            }
         } else {
             alert('❌ Error: ' + data.message);
             btn.disabled = false;
             btn.innerHTML = originalHTML;
         }
     })
-    .catch(error => {
-        alert('❌ An error occurred while applying the fix');
+    .catch(() => {
+        alert('❌ Network error. Please try again.');
         btn.disabled = false;
         btn.innerHTML = originalHTML;
     });
