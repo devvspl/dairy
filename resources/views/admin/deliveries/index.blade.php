@@ -910,7 +910,7 @@ function renderReconciliation(data) {
                 </tbody>
             </table>
         </div>
-        ${(r.adjustment_credits > 0 || r.adjustment_debits > 0) ? `
+       ${(r.adjustment_credits > 0 || r.adjustment_debits > 0) ? `
         <div class="flex items-start gap-2 p-3 rounded-lg bg-yellow-50 border border-yellow-200 text-xs mb-4">
             <i class="fa-solid fa-info-circle text-yellow-600 mt-0.5"></i>
             <div class="text-yellow-800">
@@ -918,7 +918,7 @@ function renderReconciliation(data) {
                 adjustment credits ₹${r.adjustment_credits.toFixed(2)}, adjustment debits ₹${r.adjustment_debits.toFixed(2)}.
                 These are excluded from balance calculation and will be removed when a new fix is applied.
             </div>
-    `;
+        </div>` : ''}`;
 
     // ── Last Reconciled ──────────────────────────────────────────────────────
     const lastReconciledRow = (r.last_reconciled_at || r.last_reconciled_by)
