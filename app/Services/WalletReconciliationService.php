@@ -12,64 +12,54 @@ use Illuminate\Support\Facades\DB;
 /**
  * WalletReconciliationService
  *
- * Reconciliation Formula
- * ──────────────────────
- *   expected_balance = Σ real_credits − Σ real_debits
+ * Single source of truth formula
+ * ───────────────────────────────
+ *   expected_balance = bank_total − delivery_debits
  *
- *   real_credits = wallet credits where description NOT LIKE 'Reconciliation:%'
- *                  (i.e. genuine top-up / reversal credits only)
- *   real_debits  = wallet debits where delivery_log_id IS NOT NULL
- *                  (i.e. genuine delivery debits only)
+ *   bank_total      = Σ successful wallet_topup orders (what the customer actually paid)
+ *   delivery_debits = Σ debit transactions WHERE delivery_log_id IS NOT NULL (milk delivered)
+ *   actual_balance  = user_subscriptions.wallet_balance field
+ *   difference      = actual_balance − expected_balance
  *
- *   actual_balance   = user_subscriptions.wallet_balance
- *   difference       = actual_balance − expected_balance
+ *   |difference| < 0.01  → Balanced
+ *   otherwise            → Mismatch — admin fix needed
  *
- *   Status:
- *     |difference| < 0.01  → Balanced
- *     otherwise            → Mismatch
- *
- * Why exclude reconciliation adjustment rows?
- * ─────────────────────────────────────────────
- *   Each reconciliation fix inserts an adjustment transaction into
- *   milk_wallet_transactions so there is an audit trail.  If we include
- *   those adjustment rows in subsequent calculations the numbers
- *   compound — every new fix sees the previous fix's correction and
- *   creates yet another adjustment.  By always deriving expected_balance
- *   from "real" (non-adjustment) transactions we stay idempotent.
+ * Why bank_total as the source?
+ * ──────────────────────────────
+ *   The wallet ledger (milk_wallet_transactions) may accumulate stale
+ *   reconciliation adjustment rows from past fix attempts. Using bank_total
+ *   (Orders table) and delivery_debits (delivery_log_id-linked rows) ensures
+ *   calculations are always anchored to real, verified data and cannot
+ *   compound across multiple fix runs.
  */
 class WalletReconciliationService
 {
-    /** Prefix used on all reconciliation adjustment transaction descriptions */
     const RECON_PREFIX = 'Reconciliation:';
 
-    // ── Calculation ──────────────────────────────────────────────────────────
+    // ── Core Calculation ─────────────────────────────────────────────────────
 
     public function calculate(UserSubscription $subscription): array
     {
-        // Real credits = every credit that is NOT a reconciliation adjustment
-        $realCredits = (float) $subscription->walletTransactions()
-            ->where('type', 'credit')
-            ->where('description', 'not like', self::RECON_PREFIX . '%')
-            ->sum('amount');
+        $bankTotal = $this->getBankTotal($subscription);
 
-        // Real debits = only delivery-linked debits (not adjustment debits)
-        $realDebits = (float) $subscription->walletTransactions()
-            ->where('type', 'debit')
-            ->whereNotNull('delivery_log_id')
-            ->where('is_reversal', false)
-            ->sum('amount');
+        $deliveryDebits = round(
+            (float) $subscription->walletTransactions()
+                ->where('type', 'debit')
+                ->whereNotNull('delivery_log_id')
+                ->where('is_reversal', false)
+                ->sum('amount'),
+            2
+        );
 
-        $expectedBalance = round($realCredits - $realDebits, 2);
+        $expectedBalance = round($bankTotal - $deliveryDebits, 2);
         $actualBalance   = round((float) $subscription->wallet_balance, 2);
         $difference      = round($actualBalance - $expectedBalance, 2);
         $isBalanced      = abs($difference) < 0.01;
 
-        // Bank vs real credits
-        $bankTotal   = $this->getBankTotal($subscription);
-        $bankDiff    = round($bankTotal - $realCredits, 2);
-        $bankMatched = abs($bankDiff) < 0.01;
+        // Full ledger totals for display only
+        $totalCredits = (float) $subscription->walletTransactions()->where('type', 'credit')->sum('amount');
+        $totalDebits  = (float) $subscription->walletTransactions()->where('type', 'debit')->sum('amount');
 
-        // Outstanding adjustment transactions (so UI can warn about them)
         $adjustmentCredits = (float) $subscription->walletTransactions()
             ->where('type', 'credit')
             ->where('description', 'like', self::RECON_PREFIX . '%')
@@ -87,47 +77,45 @@ class WalletReconciliationService
             ->first();
 
         return [
-            // Core values (real transactions only)
-            'real_credits'          => $realCredits,
-            'real_debits'           => $realDebits,
+            // Core (source of truth)
+            'bank_total'            => $bankTotal,
+            'delivery_debits'       => $deliveryDebits,
             'expected_balance'      => $expectedBalance,
             'actual_balance'        => $actualBalance,
             'difference'            => $difference,
             'is_balanced'           => $isBalanced,
 
-            // Legacy keys expected by the view
-            'total_credits'         => $realCredits,
-            'total_debits'          => $realDebits,
+            // Aliases used by the view JS
+            'real_credits'          => $bankTotal,
+            'real_debits'           => $deliveryDebits,
+            'total_credits'         => $totalCredits,
+            'total_debits'          => $totalDebits,
 
-            // Bank vs ledger
-            'bank_total'            => $bankTotal,
-            'bank_diff'             => $bankDiff,
-            'bank_matched'          => $bankMatched,
+            // Bank diff always 0 (bank IS the source; kept for view compat)
+            'bank_diff'             => 0.0,
+            'bank_matched'          => true,
 
-            // Adjustment rows already in ledger (for info display)
+            // Stale adjustment rows in ledger
             'adjustment_credits'    => $adjustmentCredits,
             'adjustment_debits'     => $adjustmentDebits,
 
-            // wallet_total drift
+            // wallet_total field
             'wallet_total'          => (float) $subscription->wallet_total,
-            'expected_wallet_total' => $realCredits,
-            'wallet_total_diff'     => round((float) $subscription->wallet_total - $realCredits, 2),
+            'expected_wallet_total' => $bankTotal,
+            'wallet_total_diff'     => round((float) $subscription->wallet_total - $bankTotal, 2),
 
-            // Last reconciliation
+            // Last reconciliation audit
             'last_reconciled_at'    => $lastLog?->created_at?->toIso8601String(),
             'last_reconciled_by'    => $lastLog?->performedBy?->name,
             'last_fix_type'         => $lastLog?->fix_type,
         ];
     }
 
-    // ── Fix Actions ───────────────────────────────────────────────────────────
+    // ── Fix Actions ──────────────────────────────────────────────────────────
 
     /**
-     * Rebuild wallet_balance from real ledger transactions.
-     * Formula: wallet_balance = real_credits − real_debits
-     *
-     * Before setting the new balance this removes all prior reconciliation
-     * adjustment transactions so we start from a clean slate.
+     * Rebuild wallet_balance = bank_total − delivery_debits.
+     * Removes all stale reconciliation adjustment rows first.
      */
     public function rebuildFromLedger(UserSubscription $subscription): array
     {
@@ -142,18 +130,16 @@ class WalletReconciliationService
             $beforeBalance = $calc['actual_balance'];
             $newBalance    = $calc['expected_balance'];
 
-            // Remove stale adjustment transactions so ledger is clean
             $this->removeAdjustmentTransactions($subscription);
-
             $subscription->refresh();
+
             $subscription->update(['wallet_balance' => $newBalance]);
 
             WalletReconciliationLog::record(
                 $subscription->id, 'rebuild_from_ledger',
-                $beforeBalance, $newBalance,
-                $calc['expected_balance'], $beforeBalance,
-                ['real_credits' => $calc['real_credits'], 'real_debits' => $calc['real_debits']],
-                "Rebuilt wallet_balance from real ledger (credits − delivery debits)"
+                $beforeBalance, $newBalance, $newBalance, $beforeBalance,
+                ['bank_total' => $calc['bank_total'], 'delivery_debits' => $calc['delivery_debits']],
+                "Balance rebuilt: bank ₹{$calc['bank_total']} − deliveries ₹{$calc['delivery_debits']} = ₹{$newBalance}"
             );
 
             SubscriptionChangeLog::record(
@@ -161,7 +147,7 @@ class WalletReconciliationService
                 'reconciliation_rebuild_from_ledger',
                 ['wallet_balance' => $beforeBalance],
                 ['wallet_balance' => $newBalance],
-                "Balance rebuilt from ledger. Correction: ₹" . number_format(abs($calc['difference']), 2)
+                "Balance corrected from ₹{$beforeBalance} to ₹{$newBalance}"
             );
 
             return [
@@ -170,28 +156,29 @@ class WalletReconciliationService
                 'before_balance' => $beforeBalance,
                 'after_balance'  => $newBalance,
                 'difference'     => round($newBalance - $beforeBalance, 2),
-                'message'        => "Balance rebuilt. ₹" . number_format($beforeBalance, 2)
-                                  . " → ₹" . number_format($newBalance, 2),
+                'message'        => "Balance set to ₹" . number_format($newBalance, 2)
+                                  . " (bank ₹" . number_format($calc['bank_total'], 2)
+                                  . " − delivered ₹" . number_format($calc['delivery_debits'], 2) . ")",
             ];
         });
     }
 
     /**
-     * Fix balance using delivered transactions.
-     * Formula: expected = bank_payments − delivery_debits
-     *
-     * This is the "ground truth" fix — it anchors the balance to actual
-     * physical deliveries and verified bank payments only.
+     * Fix balance from deliveries — same formula as rebuildFromLedger
+     * but inserts an adjustment transaction for the audit trail.
      */
     public function fixFromDeliveries(UserSubscription $subscription): array
     {
         return DB::transaction(function () use ($subscription) {
             $bankTotal      = $this->getBankTotal($subscription);
-            $deliveryDebits = (float) $subscription->walletTransactions()
-                ->where('type', 'debit')
-                ->whereNotNull('delivery_log_id')
-                ->where('is_reversal', false)
-                ->sum('amount');
+            $deliveryDebits = round(
+                (float) $subscription->walletTransactions()
+                    ->where('type', 'debit')
+                    ->whereNotNull('delivery_log_id')
+                    ->where('is_reversal', false)
+                    ->sum('amount'),
+                2
+            );
 
             $expectedBalance = round($bankTotal - $deliveryDebits, 2);
             $beforeBalance   = round((float) $subscription->wallet_balance, 2);
@@ -199,14 +186,13 @@ class WalletReconciliationService
 
             if (abs($adjustment) < 0.01) {
                 return ['success' => true, 'skipped' => true,
-                        'message' => 'Balance already correct based on delivered transactions.'];
+                        'message' => 'Balance already correct.'];
             }
 
-            // Remove prior adjustment entries first
             $this->removeAdjustmentTransactions($subscription);
             $subscription->refresh();
+            $beforeBalance = round((float) $subscription->wallet_balance, 2);
 
-            // Single adjustment transaction for audit trail
             MilkWalletTransaction::create([
                 'user_id'              => $subscription->user_id,
                 'user_subscription_id' => $subscription->id,
@@ -241,100 +227,30 @@ class WalletReconciliationService
                 'before_balance' => $beforeBalance,
                 'after_balance'  => $expectedBalance,
                 'difference'     => $adjustment,
-                'message'        => "Balance fixed. ₹" . number_format($beforeBalance, 2)
-                                  . " → ₹" . number_format($expectedBalance, 2),
+                'message'        => "Balance fixed to ₹" . number_format($expectedBalance, 2)
+                                  . " (₹" . number_format($beforeBalance, 2) . " → ₹" . number_format($expectedBalance, 2) . ")",
             ];
         });
     }
 
     /**
-     * Recalculate credits: add/remove a single adjustment so
-     * real_credits == bank_total.
-     *
-     * Use case: bank recorded ₹500 but wallet only shows ₹420 credits
-     * (missing ₹80 credit entry).
+     * Recalculate credits — since bank_total IS the source of truth,
+     * this is equivalent to rebuildFromLedger.
      */
     public function recalculateCredits(UserSubscription $subscription): array
     {
-        $calc = $this->calculate($subscription);
-
-        if ($calc['bank_matched']) {
-            return ['success' => true, 'skipped' => true,
-                    'message' => 'Bank payments already match wallet credits.'];
-        }
-
-        return DB::transaction(function () use ($subscription, $calc) {
-            $bankDiff      = $calc['bank_diff'];         // bank_total − real_credits
-            $beforeBalance = $calc['actual_balance'];
-            $newBalance    = round($beforeBalance + $bankDiff, 2);
-
-            // Remove any prior credit adjustment so we don't compound
-            $this->removeAdjustmentTransactions($subscription, 'credit');
-            $subscription->refresh();
-            $beforeBalance = round((float) $subscription->wallet_balance, 2);
-            $newBalance    = round($beforeBalance + $bankDiff, 2);
-
-            MilkWalletTransaction::create([
-                'user_id'              => $subscription->user_id,
-                'user_subscription_id' => $subscription->id,
-                'type'                 => $bankDiff > 0 ? 'credit' : 'debit',
-                'amount'               => abs($bankDiff),
-                'balance_after'        => $newBalance,
-                'description'          => $bankDiff > 0
-                    ? self::RECON_PREFIX . ' Missing bank payment credited (admin)'
-                    : self::RECON_PREFIX . ' Excess wallet credit removed (admin)',
-                'transaction_date'     => now()->toDateString(),
-                'is_reversal'          => false,
-            ]);
-
-            $subscription->update([
-                'wallet_balance' => $newBalance,
-                'wallet_total'   => $bankDiff > 0
-                    ? round((float) $subscription->wallet_total + $bankDiff, 2)
-                    : $subscription->wallet_total,
-            ]);
-
-            WalletReconciliationLog::record(
-                $subscription->id, 'recalculate_credits',
-                $beforeBalance, $newBalance, $newBalance, $beforeBalance,
-                ['bank_total' => $calc['bank_total'], 'real_credits' => $calc['real_credits'], 'bank_diff' => $bankDiff],
-                "Credits adjusted to match bank payments"
-            );
-
-            SubscriptionChangeLog::record(
-                $subscription->id, auth()->id(),
-                'reconciliation_recalculate_credits',
-                ['wallet_balance' => $beforeBalance, 'real_credits' => $calc['real_credits']],
-                ['wallet_balance' => $newBalance, 'bank_total' => $calc['bank_total']],
-                "Credit adjustment of ₹" . number_format(abs($bankDiff), 2)
-            );
-
-            return [
-                'success'        => true,
-                'skipped'        => false,
-                'before_balance' => $beforeBalance,
-                'after_balance'  => $newBalance,
-                'difference'     => $bankDiff,
-                'message'        => "Credits adjusted by ₹" . number_format(abs($bankDiff), 2)
-                                  . ". Balance ₹" . number_format($beforeBalance, 2)
-                                  . " → ₹" . number_format($newBalance, 2),
-            ];
-        });
+        return $this->rebuildFromLedger($subscription);
     }
 
     /**
-     * Recalculate debits: compare delivery-based expected debits vs actual
-     * delivery-linked debits and insert a single correction entry.
-     *
-     * expected_debits = Σ (qty × price_per_litre) for all delivered logs
-     * actual_debits   = Σ debit transactions WHERE delivery_log_id IS NOT NULL
-     *
-     * This is idempotent: adjustment rows (no delivery_log_id) are ignored.
+     * Recalculate debits:
+     * 1. Compute expected_debits = Σ (qty × price) for all DELIVERED logs.
+     * 2. Set wallet_balance = bank_total − expected_debits.
+     * 3. Insert a single adjustment transaction for the difference.
      */
     public function recalculateDebits(UserSubscription $subscription): array
     {
         return DB::transaction(function () use ($subscription) {
-            // Ground truth: what deliveries say we should have debited
             $deliveries = $subscription->deliveryLogs()
                 ->where('status', 'delivered')
                 ->get();
@@ -348,54 +264,57 @@ class WalletReconciliationService
             }
             $expectedDebits = round($expectedDebits, 2);
 
-            // What has actually been debited via delivery transactions
-            $actualDeliveryDebits = (float) $subscription->walletTransactions()
-                ->where('type', 'debit')
-                ->whereNotNull('delivery_log_id')
-                ->where('is_reversal', false)
-                ->sum('amount');
-            $actualDeliveryDebits = round($actualDeliveryDebits, 2);
+            $actualDeliveryDebits = round(
+                (float) $subscription->walletTransactions()
+                    ->where('type', 'debit')
+                    ->whereNotNull('delivery_log_id')
+                    ->where('is_reversal', false)
+                    ->sum('amount'),
+                2
+            );
 
-            $delta = round($expectedDebits - $actualDeliveryDebits, 2);
+            $bankTotal     = $this->getBankTotal($subscription);
+            $newBalance    = round($bankTotal - $expectedDebits, 2);
+            $beforeBalance = round((float) $subscription->wallet_balance, 2);
+            $balanceDelta  = round($newBalance - $beforeBalance, 2);
 
-            if (abs($delta) < 0.01) {
+            if (abs($balanceDelta) < 0.01 && abs($expectedDebits - $actualDeliveryDebits) < 0.01) {
                 return ['success' => true, 'skipped' => true,
-                        'message' => "Delivery debits already correct at ₹" . number_format($expectedDebits, 2) . "."];
+                        'message' => "Everything correct. Expected debits ₹" . number_format($expectedDebits, 2)];
             }
 
-            // Remove prior debit adjustments to stay idempotent
-            $this->removeAdjustmentTransactions($subscription, 'debit');
+            // Clean stale adjustments first
+            $this->removeAdjustmentTransactions($subscription);
             $subscription->refresh();
-
             $beforeBalance = round((float) $subscription->wallet_balance, 2);
-            $newBalance    = round($beforeBalance - $delta, 2);
+            $newBalance    = round($bankTotal - $expectedDebits, 2);
+            $balanceDelta  = round($newBalance - $beforeBalance, 2);
 
-            MilkWalletTransaction::create([
-                'user_id'              => $subscription->user_id,
-                'user_subscription_id' => $subscription->id,
-                'type'                 => $delta > 0 ? 'debit' : 'credit',
-                'amount'               => abs($delta),
-                'balance_after'        => $newBalance,
-                'description'          => $delta > 0
-                    ? self::RECON_PREFIX . ' Missing delivery debit applied (admin)'
-                    : self::RECON_PREFIX . ' Excess delivery debit reversed (admin)',
-                'transaction_date'     => now()->toDateString(),
-                'is_reversal'          => $delta < 0,
-            ]);
+            if (abs($balanceDelta) > 0.01) {
+                MilkWalletTransaction::create([
+                    'user_id'              => $subscription->user_id,
+                    'user_subscription_id' => $subscription->id,
+                    'type'                 => $balanceDelta > 0 ? 'credit' : 'debit',
+                    'amount'               => abs($balanceDelta),
+                    'balance_after'        => $newBalance,
+                    'description'          => self::RECON_PREFIX . ' Debit recalculation adjustment (admin)',
+                    'transaction_date'     => now()->toDateString(),
+                    'is_reversal'          => false,
+                ]);
+            }
 
             $subscription->update(['wallet_balance' => $newBalance]);
 
             WalletReconciliationLog::record(
                 $subscription->id, 'recalculate_debits',
-                $beforeBalance, $newBalance,
-                $beforeBalance - $delta, $beforeBalance,
+                $beforeBalance, $newBalance, $newBalance, $beforeBalance,
                 [
-                    'expected_debits'      => $expectedDebits,
-                    'actual_delivery_debits'=> $actualDeliveryDebits,
-                    'delta'                => $delta,
-                    'delivered_count'      => $deliveries->count(),
+                    'bank_total'             => $bankTotal,
+                    'expected_debits'        => $expectedDebits,
+                    'actual_delivery_debits' => $actualDeliveryDebits,
+                    'delivered_count'        => $deliveries->count(),
                 ],
-                "Debit reconciliation: expected ₹{$expectedDebits}, actual delivery debits ₹{$actualDeliveryDebits}"
+                "Debits recalculated. {$deliveries->count()} deliveries × ₹{$subscription->price_per_litre}/L = ₹{$expectedDebits}"
             );
 
             SubscriptionChangeLog::record(
@@ -403,8 +322,7 @@ class WalletReconciliationService
                 'reconciliation_recalculate_debits',
                 ['wallet_balance' => $beforeBalance, 'actual_delivery_debits' => $actualDeliveryDebits],
                 ['wallet_balance' => $newBalance, 'expected_debits' => $expectedDebits],
-                "Debit correction of ₹" . number_format(abs($delta), 2)
-                . " (expected ₹{$expectedDebits}, had ₹{$actualDeliveryDebits})"
+                "Balance set to ₹{$newBalance} (bank ₹{$bankTotal} − expected debits ₹{$expectedDebits})"
             );
 
             return [
@@ -412,17 +330,16 @@ class WalletReconciliationService
                 'skipped'        => false,
                 'before_balance' => $beforeBalance,
                 'after_balance'  => $newBalance,
-                'difference'     => -$delta,
-                'message'        => "Debits corrected by ₹" . number_format(abs($delta), 2)
-                                  . ". Balance ₹" . number_format($beforeBalance, 2)
-                                  . " → ₹" . number_format($newBalance, 2),
+                'difference'     => $balanceDelta,
+                'message'        => "Balance corrected to ₹" . number_format($newBalance, 2)
+                                  . " (bank ₹" . number_format($bankTotal, 2)
+                                  . " − ₹" . number_format($expectedDebits, 2) . " deliveries)",
             ];
         });
     }
 
     /**
-     * Mark as reconciled (no balance change).
-     * Only allowed when books are balanced.
+     * Mark as reconciled — only when books are already balanced.
      */
     public function markReconciled(UserSubscription $subscription): array
     {
@@ -431,8 +348,8 @@ class WalletReconciliationService
         if (!$calc['is_balanced']) {
             return [
                 'success' => false,
-                'message' => 'Cannot mark as reconciled — books are not balanced. '
-                           . 'Difference: ₹' . number_format(abs($calc['difference']), 2),
+                'message' => 'Cannot mark as reconciled — books are not balanced. Difference: ₹'
+                           . number_format(abs($calc['difference']), 2),
             ];
         }
 
@@ -441,7 +358,7 @@ class WalletReconciliationService
         WalletReconciliationLog::record(
             $subscription->id, 'mark_reconciled',
             $balance, $balance, $balance, $balance,
-            ['real_credits' => $calc['real_credits'], 'real_debits' => $calc['real_debits']],
+            ['bank_total' => $calc['bank_total'], 'delivery_debits' => $calc['delivery_debits']],
             "Manually marked as reconciled by admin"
         );
 
@@ -449,7 +366,7 @@ class WalletReconciliationService
             $subscription->id, auth()->id(),
             'reconciliation_marked',
             [], ['balance' => $balance],
-            "Books confirmed balanced and marked as reconciled"
+            "Books confirmed balanced at ₹{$balance}"
         );
 
         return [
@@ -459,14 +376,11 @@ class WalletReconciliationService
         ];
     }
 
-    // ── Helpers ───────────────────────────────────────────────────────────────
+    // ── Helpers ──────────────────────────────────────────────────────────────
 
     /**
-     * Remove reconciliation adjustment transactions.
-     * Pass $type = 'credit'|'debit' to remove only one side, or null for both.
-     *
-     * These are identified by description starting with 'Reconciliation:' AND
-     * having no delivery_log_id (so real delivery debits are never touched).
+     * Delete reconciliation adjustment transactions (those with RECON_PREFIX
+     * in description and no delivery_log_id).
      */
     private function removeAdjustmentTransactions(UserSubscription $subscription, ?string $type = null): void
     {
@@ -482,7 +396,7 @@ class WalletReconciliationService
     }
 
     /**
-     * Total successful bank payments linked to this subscription.
+     * Total successful bank payments for a subscription.
      */
     public function getBankTotal(UserSubscription $subscription): float
     {
@@ -501,7 +415,7 @@ class WalletReconciliationService
     }
 
     /**
-     * Reconciliation audit log history.
+     * Reconciliation log history for display.
      */
     public function getHistory(UserSubscription $subscription, int $limit = 20): array
     {
@@ -511,20 +425,20 @@ class WalletReconciliationService
             ->limit($limit)
             ->get()
             ->map(fn($log) => [
-                'id'                => $log->id,
-                'fix_type'          => $log->fix_type,
-                'fix_label'         => $this->getFixLabel($log->fix_type),
-                'before_balance'    => (float) $log->before_balance,
-                'after_balance'     => (float) $log->after_balance,
-                'difference'        => (float) $log->difference,
-                'expected_balance'  => (float) $log->expected_balance,
-                'actual_balance'    => (float) $log->actual_balance,
-                'status'            => $log->status,
-                'notes'             => $log->notes,
-                'performed_by'      => $log->performedBy?->name ?? 'System',
-                'performed_at'      => $log->created_at->format('M j, Y g:i A'),
-                'performed_at_human'=> $log->created_at->diffForHumans(),
-                'meta'              => $log->meta,
+                'id'                 => $log->id,
+                'fix_type'           => $log->fix_type,
+                'fix_label'          => $this->getFixLabel($log->fix_type),
+                'before_balance'     => (float) $log->before_balance,
+                'after_balance'      => (float) $log->after_balance,
+                'difference'         => (float) $log->difference,
+                'expected_balance'   => (float) $log->expected_balance,
+                'actual_balance'     => (float) $log->actual_balance,
+                'status'             => $log->status,
+                'notes'              => $log->notes,
+                'performed_by'       => $log->performedBy?->name ?? 'System',
+                'performed_at'       => $log->created_at->format('M j, Y g:i A'),
+                'performed_at_human' => $log->created_at->diffForHumans(),
+                'meta'               => $log->meta,
             ])
             ->toArray();
     }
