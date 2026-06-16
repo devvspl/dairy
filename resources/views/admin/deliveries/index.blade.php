@@ -802,21 +802,30 @@ function renderReconciliation(data) {
     const container = document.getElementById('reconciliationContent');
     
     const r = data;
-    const isBalanced  = r.is_balanced;
-    const difference  = parseFloat(r.difference);
-    const bankMatched = r.bank_matched;
-    const bankDiff    = parseFloat(r.bank_diff);
+    const isBalanced           = r.is_balanced;
+    const difference           = parseFloat(r.difference);
+    const bankMatched          = r.bank_matched;
+    const bankDiff             = parseFloat(r.bank_diff);
+    const hasStaleAdjustments  = r.has_stale_adjustments || false;
     // Support both old and new field names
     const realCredits = parseFloat(r.real_credits ?? r.total_credits ?? 0);
     const realDebits  = parseFloat(r.real_debits  ?? r.total_debits  ?? 0);
 
     // ── Status Banner ────────────────────────────────────────────────────────
-    const statusBanner = isBalanced
+    const statusBanner = isBalanced && !hasStaleAdjustments
         ? `<div class="flex items-center gap-3 p-4 rounded-lg border border-green-300 bg-green-50 mb-4">
                <i class="fa-solid fa-circle-check text-green-600 text-xl"></i>
                <div>
                    <p class="font-bold text-green-700">Books are Balanced</p>
                    <p class="text-sm text-green-600">Expected ₹${r.expected_balance.toFixed(2)} = Actual ₹${r.actual_balance.toFixed(2)}</p>
+               </div>
+           </div>`
+        : isBalanced && hasStaleAdjustments
+        ? `<div class="flex items-center gap-3 p-4 rounded-lg border border-yellow-300 bg-yellow-50 mb-4">
+               <i class="fa-solid fa-triangle-exclamation text-yellow-600 text-xl"></i>
+               <div>
+                   <p class="font-bold text-yellow-700">Ledger Has Stale Adjustments</p>
+                   <p class="text-sm text-yellow-600">Balance appears correct but stale reconciliation entries (₹${(r.adjustment_credits + r.adjustment_debits).toFixed(2)}) exist — click "Clean Stale Adjustments" to fully reconcile.</p>
                </div>
            </div>`
         : `<div class="flex items-center gap-3 p-4 rounded-lg border border-red-300 bg-red-50 mb-4">
@@ -913,8 +922,19 @@ function renderReconciliation(data) {
     const fixes = [];
 
     if (!isBalanced) {
-        fixes.push({ type: 'rebuild_from_ledger', label: 'Rebuild Balance from Ledger', desc: 'Set wallet_balance = Credits − Debits', icon: 'fa-calculator', safe: true });
-        fixes.push({ type: 'fix_from_deliveries', label: 'Fix from Deliveries', desc: 'Set balance = Bank payments − Delivered debits', icon: 'fa-truck', safe: false });
+        fixes.push({ type: 'rebuild_from_ledger', label: 'Rebuild Balance from Ledger', desc: 'Set wallet_balance = Bank payments − Delivered debits', icon: 'fa-calculator', safe: true });
+        fixes.push({ type: 'fix_from_deliveries', label: 'Fix from Deliveries', desc: 'Set balance = Bank payments − Delivered debits (with audit entry)', icon: 'fa-truck', safe: false });
+    }
+
+    // Always show Rebuild when stale adjustments exist — even if books look balanced
+    if (isBalanced && hasStaleAdjustments) {
+        fixes.push({
+            type: 'rebuild_from_ledger',
+            label: 'Clean Stale Adjustments',
+            desc: `Ledger has stale adjustment entries (credits ₹${r.adjustment_credits.toFixed(2)}, debits ₹${r.adjustment_debits.toFixed(2)}) that should be removed`,
+            icon: 'fa-broom',
+            safe: true
+        });
     }
 
     if (!bankMatched) {
@@ -950,8 +970,8 @@ function renderReconciliation(data) {
            </div>`
         : '';
 
-    // "Mark Reconciled" button — only when balanced
-    const markReconciledBtn = isBalanced
+    // "Mark Reconciled" button — only when truly balanced AND no stale adjustments
+    const markReconciledBtn = (isBalanced && !hasStaleAdjustments)
         ? `<button onclick="applyFix('mark_reconciled')"
                    class="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border-2 border-green-300 text-green-700 bg-green-50 hover:bg-green-100 font-semibold text-sm transition-colors mb-4">
                <i class="fa-solid fa-check-circle"></i> Mark as Reconciled

@@ -54,8 +54,8 @@ class WalletReconciliationService
         $expectedBalance = round($bankTotal - $deliveryDebits, 2);
         $actualBalance   = round((float) $subscription->wallet_balance, 2);
         $difference      = round($actualBalance - $expectedBalance, 2);
-        $isBalanced      = abs($difference) < 0.01;
 
+        // Has stale adjustment entries in the ledger?
         // Full ledger totals for display only
         $totalCredits = (float) $subscription->walletTransactions()->where('type', 'credit')->sum('amount');
         $totalDebits  = (float) $subscription->walletTransactions()->where('type', 'debit')->sum('amount');
@@ -70,6 +70,13 @@ class WalletReconciliationService
             ->whereNull('delivery_log_id')
             ->where('description', 'like', self::RECON_PREFIX . '%')
             ->sum('amount');
+
+        $hasStaleAdjustments = ($adjustmentCredits + $adjustmentDebits) > 0.01;
+
+        // Books are only truly balanced when:
+        // 1. actual_balance == expected_balance, AND
+        // 2. No stale adjustment entries exist in the ledger
+        $isBalanced = abs($difference) < 0.01 && !$hasStaleAdjustments;
 
         $lastLog = WalletReconciliationLog::where('user_subscription_id', $subscription->id)
             ->where('status', 'success')
@@ -98,6 +105,7 @@ class WalletReconciliationService
             // Stale adjustment rows in ledger
             'adjustment_credits'    => $adjustmentCredits,
             'adjustment_debits'     => $adjustmentDebits,
+            'has_stale_adjustments' => $hasStaleAdjustments,
 
             // wallet_total field
             'wallet_total'          => (float) $subscription->wallet_total,
