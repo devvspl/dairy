@@ -273,6 +273,11 @@
                                 {{-- Milk Type — multi-select tabs, each with qty only --}}
                                 <div>
                                     <p class="text-xs font-bold mb-2" style="color:var(--text);"><i class="fa-solid fa-cow mr-1.5" style="color:var(--green);"></i>Milk Type <span class="font-normal text-[10px]" style="color:var(--muted);">(select one or more)</span></p>
+
+                                    {{-- Preview Container --}}
+                                    <div id="ws-preview" class="mb-3 p-2 rounded-lg border" style="border-color: var(--border); background: rgba(47,74,30,0.02);">
+                                        <p class="text-xs text-center" style="color: var(--muted);">Select milk types to see daily cost preview</p>
+                                    </div>
                                     @php
                                         $resolvedItems = $wds->getMilkItemsResolved();
                                         $selectedTypes = collect($resolvedItems)->pluck('milk_type')->toArray();
@@ -290,29 +295,33 @@
                                         <div class="ws-milk-tab rounded-xl border-2 overflow-hidden transition-all"
                                             style="border-color:{{ $isSelected ? 'var(--green)' : 'var(--border)' }};"
                                             data-type="{{ $mp->milk_type }}">
-                                            <label class="flex items-center gap-3 p-3 cursor-pointer"
+                                            <label class="flex flex-col p-2.5 cursor-pointer gap-2"
                                                 style="background:{{ $isSelected ? 'rgba(47,74,30,0.05)' : '#fff' }};">
                                                 <input type="checkbox" class="ws-milk-check hidden"
                                                     data-type="{{ $mp->milk_type }}"
                                                     data-ppl="{{ $mp->price_per_litre }}"
                                                     {{ $isSelected ? 'checked' : '' }}>
-                                                <div class="w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all ws-check-box"
-                                                    style="border-color:{{ $isSelected ? 'var(--green)' : 'var(--border)' }};background:{{ $isSelected ? 'var(--green)' : '#fff' }};">
-                                                    @if($isSelected)<i class="fa-solid fa-check text-[9px] text-white"></i>@endif
+                                                {{-- Top row: checkbox + emoji + name --}}
+                                                <div class="flex items-center gap-2">
+                                                    <div class="w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all ws-check-box"
+                                                        style="border-color:{{ $isSelected ? 'var(--green)' : 'var(--border)' }};background:{{ $isSelected ? 'var(--green)' : '#fff' }};">
+                                                        @if($isSelected)<i class="fa-solid fa-check text-[9px] text-white"></i>@endif
+                                                    </div>
+                                                    <span class="text-base leading-none">{{ $icons[$mp->milk_type] ?? '🥛' }}</span>
+                                                    <div class="flex-1 min-w-0">
+                                                        <p class="text-xs font-bold leading-tight truncate" style="color:var(--text);">{{ $mp->label }}</p>
+                                                        <p class="text-[10px]" style="color:var(--green);">₹{{ number_format($mp->price_per_litre,2) }}/L</p>
+                                                    </div>
                                                 </div>
-                                                <span class="text-lg">{{ $icons[$mp->milk_type] ?? '🥛' }}</span>
-                                                <div class="flex-1">
-                                                    <p class="text-xs font-bold" style="color:var(--text);">{{ $mp->label }}</p>
-                                                    <p class="text-[10px]" style="color:var(--green);">₹{{ number_format($mp->price_per_litre,2) }}/L</p>
-                                                </div>
-                                                {{-- Qty stepper — always visible, inline --}}
-                                                <div class="flex items-center gap-1 ws-qty-wrap {{ $isSelected ? '' : 'invisible' }}" onclick="event.preventDefault()">
-                                                    <button type="button" class="ws-qty-minus w-7 h-7 rounded-lg border-2 flex items-center justify-center font-bold text-sm transition-all"
+                                                {{-- Bottom row: stepper full-width --}}
+                                                <div class="ws-qty-wrap flex items-center justify-center gap-1.5 {{ $isSelected ? '' : 'invisible' }}" onclick="event.preventDefault()">
+                                                    <button type="button" class="ws-qty-minus flex-shrink-0 w-7 h-7 rounded-lg border-2 flex items-center justify-center font-bold text-sm transition-all"
                                                         style="border-color:var(--border);color:var(--green);">−</button>
-                                                    <span class="ws-qty-display text-sm font-bold w-6 text-center" style="color:var(--text);">{{ $itemQty }}</span>
-                                                    <button type="button" class="ws-qty-plus w-7 h-7 rounded-lg border-2 flex items-center justify-center font-bold text-sm transition-all"
+                                                    <input type="number" step="0.5" min="0.5" max="50" class="ws-qty-input-direct text-sm font-bold text-center border rounded-lg"
+                                                        style="width:2.8rem;border-color:var(--border);padding:2px 0;" value="{{ $itemQty }}" onchange="wsUpdateQtyFromInput(this)">
+                                                    <button type="button" class="ws-qty-plus flex-shrink-0 w-7 h-7 rounded-lg border-2 flex items-center justify-center font-bold text-sm transition-all"
                                                         style="border-color:var(--border);color:var(--green);">+</button>
-                                                    <span class="text-[10px]" style="color:var(--muted);">L</span>
+                                                    <span class="text-[10px] flex-shrink-0" style="color:var(--muted);">L</span>
                                                 </div>
                                                 <input type="hidden" class="ws-qty-input" name="milk_items[{{ $mp->milk_type }}][qty]" value="{{ $itemQty }}">
                                                 <input type="hidden" name="milk_items[{{ $mp->milk_type }}][milk_type]" value="{{ $mp->milk_type }}">
@@ -657,31 +666,37 @@
                                     <div class="wi-milk-tab rounded-xl border-2 overflow-hidden transition-all {{ $loop->first ? 'selected' : '' }}"
                                         style="border-color:{{ $loop->first ? 'var(--green)' : 'var(--border)' }};"
                                         data-type="{{ $mp->milk_type }}">
-                                        <label class="flex items-center gap-3 p-3 cursor-pointer"
+                                        <label class="flex flex-col p-2.5 cursor-pointer gap-2"
                                             style="background:{{ $loop->first ? 'rgba(47,74,30,0.05)' : '#fff' }};">
                                             <input type="checkbox" class="wi-milk-check hidden"
                                                 data-type="{{ $mp->milk_type }}"
                                                 data-ppl="{{ $mp->price_per_litre }}"
                                                 {{ $loop->first ? 'checked' : '' }}>
-                                            <div class="w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all wi-check-box"
-                                                style="border-color:{{ $loop->first ? 'var(--green)' : 'var(--border)' }};background:{{ $loop->first ? 'var(--green)' : '#fff' }};">
-                                                @if($loop->first)<i class="fa-solid fa-check text-[9px] text-white"></i>@endif
+                                            {{-- Top row: checkbox + emoji + name --}}
+                                            <div class="flex items-center gap-2">
+                                                <div class="w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all wi-check-box"
+                                                    style="border-color:{{ $loop->first ? 'var(--green)' : 'var(--border)' }};background:{{ $loop->first ? 'var(--green)' : '#fff' }};">
+                                                    @if($loop->first)<i class="fa-solid fa-check text-[9px] text-white"></i>@endif
+                                                </div>
+                                                <span class="text-base leading-none">{{ $icons[$mp->milk_type] ?? '🥛' }}</span>
+                                                <div class="flex-1 min-w-0">
+                                                    <p class="text-xs font-bold leading-tight truncate" style="color:var(--text);">{{ $mp->label }}</p>
+                                                    <p class="text-[10px]" style="color:var(--green);">₹{{ number_format($mp->price_per_litre,2) }}/L</p>
+                                                </div>
                                             </div>
-                                            <span class="text-lg">{{ $icons[$mp->milk_type] ?? '🥛' }}</span>
-                                            <div class="flex-1">
-                                                <p class="text-xs font-bold" style="color:var(--text);">{{ $mp->label }}</p>
-                                                <p class="text-[10px]" style="color:var(--green);">₹{{ number_format($mp->price_per_litre,2) }}/L</p>
-                                            </div>
-                                            {{-- Qty stepper — always visible, inline --}}
-                                            <div class="flex items-center gap-1 wi-qty-wrap {{ $loop->first ? '' : 'invisible' }}" onclick="event.preventDefault()">
-                                                <button type="button" class="wi-qty-minus w-7 h-7 rounded-lg border-2 flex items-center justify-center font-bold text-sm transition-all"
+                                            {{-- Bottom row: stepper full-width --}}
+                                            <div class="wi-qty-wrap flex items-center justify-center gap-1.5 {{ $loop->first ? '' : 'invisible' }}" onclick="event.preventDefault()">
+                                                <button type="button" class="wi-qty-minus flex-shrink-0 w-7 h-7 rounded-lg border-2 flex items-center justify-center font-bold text-sm transition-all"
                                                     style="border-color:var(--border);color:var(--green);">−</button>
-                                                <span class="wi-qty-display text-sm font-bold w-6 text-center" style="color:var(--text);">1</span>
-                                                <button type="button" class="wi-qty-plus w-7 h-7 rounded-lg border-2 flex items-center justify-center font-bold text-sm transition-all"
+                                                <input type="number" class="wi-qty-input wi-qty-display text-sm font-bold text-center rounded border outline-none"
+                                                    name="milk_items[{{ $mp->milk_type }}][qty]"
+                                                    value="1" min="1" max="50" step="1"
+                                                    style="width:2.8rem;color:var(--text);background:#fff;border-color:var(--border);padding:2px 0;"
+                                                    {{ $loop->first ? '' : 'disabled' }}>
+                                                <button type="button" class="wi-qty-plus flex-shrink-0 w-7 h-7 rounded-lg border-2 flex items-center justify-center font-bold text-sm transition-all"
                                                     style="border-color:var(--border);color:var(--green);">+</button>
-                                                <span class="text-[10px]" style="color:var(--muted);">L</span>
+                                                <span class="text-[10px] flex-shrink-0" style="color:var(--muted);">L</span>
                                             </div>
-                                            <input type="hidden" class="wi-qty-input" name="milk_items[{{ $mp->milk_type }}][qty]" value="1" {{ $loop->first ? '' : 'disabled' }}>
                                             <input type="hidden" name="milk_items[{{ $mp->milk_type }}][milk_type]" value="{{ $mp->milk_type }}" {{ $loop->first ? '' : 'disabled' }}>
                                             <input type="hidden" name="milk_items[{{ $mp->milk_type }}][ppl]" value="{{ $mp->price_per_litre }}" {{ $loop->first ? '' : 'disabled' }}>
                                         </label>
@@ -1897,13 +1912,13 @@
             document.getElementById('topupSubId').value = subscriptionId;
             document.getElementById('topupForm').action = '/wallet/' + subscriptionId + '/topup';
             const m = document.getElementById('topupModal');
-            m.classList.remove('hidden'); m.classList.add('flex');
+            m.style.display = 'flex';
             document.body.style.overflow = 'hidden';
         }
 
         function closeTopupModal() {
             const m = document.getElementById('topupModal');
-            m.classList.add('hidden'); m.classList.remove('flex');
+            m.style.display = 'none';
             document.body.style.overflow = 'auto';
         }
         
@@ -1956,8 +1971,8 @@
     </script>
 
     {{-- ===== WALLET TOP-UP MODAL ===== --}}
-    <div id="topupModal" class="fixed inset-0 bg-black bg-opacity-60 z-50 hidden items-center justify-center p-4"
-        style="backdrop-filter: blur(6px);">
+    <div id="topupModal" class="fixed inset-0 bg-black bg-opacity-60 z-50 items-center justify-center p-4"
+        style="display:none; backdrop-filter: blur(6px);">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 relative" onclick="event.stopPropagation()">
             <button onclick="closeTopupModal()" class="absolute top-4 right-4 z-10 w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-100">
                 <i class="fa-solid fa-times text-sm" style="color: var(--muted);"></i>
@@ -2263,12 +2278,22 @@
                 alert('⚠️ Please select at least one milk type.');
                 return;
             }
-            
-            const amount = document.getElementById('wi-amount')?.value;
-            if (!amount || parseFloat(amount) < 1) { 
-                alert('Please enter a valid amount (min ₹1).'); 
-                return; 
+
+            const amount = parseFloat(document.getElementById('wi-amount')?.value) || 0;
+            if (!amount || amount < 1) {
+                alert('Please enter a valid amount (min ₹1).');
+                return;
             }
+
+            // Validate that entered amount covers at least 1 day of delivery
+            const totalDailyCost = selected.reduce((sum, item) => sum + item.daily, 0);
+            if (totalDailyCost > 0 && amount < totalDailyCost) {
+                const shortfall = (totalDailyCost - amount).toFixed(2);
+                alert(`⚠️ Insufficient amount!\n\nYour daily delivery cost is ₹${totalDailyCost.toFixed(2)}.\nPlease add at least ₹${totalDailyCost.toFixed(2)} to activate your subscription.\n\nYou need ₹${shortfall} more.`);
+                document.getElementById('wi-amount')?.focus();
+                return;
+            }
+
             document.getElementById('walletInitForm').submit();
         }
 
@@ -2296,9 +2321,10 @@
                     const isNowChecked = !chk.checked;
                     chk.checked = isNowChecked;
 
+                    const label = tab.querySelector('label');
                     if (isNowChecked) {
                         tab.style.borderColor = 'var(--green)';
-                        tab.style.background = 'rgba(47,74,30,0.05)';
+                        if (label) label.style.background = 'rgba(47,74,30,0.05)';
                         box.style.borderColor = 'var(--green)';
                         box.style.background = 'var(--green)';
                         box.innerHTML = '<i class="fa-solid fa-check text-[9px] text-white"></i>';
@@ -2306,7 +2332,7 @@
                         tab.querySelectorAll('input[name*="milk_items"]').forEach(i => i.disabled = false);
                     } else {
                         tab.style.borderColor = 'var(--border)';
-                        tab.style.background = '#fff';
+                        if (label) label.style.background = '#fff';
                         box.style.borderColor = 'var(--border)';
                         box.style.background = '#fff';
                         box.innerHTML = '';
@@ -2317,16 +2343,14 @@
                     wiUpdatePreview();
                 });
 
-                // Qty stepper handlers
-                if (minusBtn && plusBtn && qtyDisplay && qtyInput) {
+                // Qty stepper handlers — qtyInput is now the visible editable input
+                if (minusBtn && plusBtn && qtyInput) {
                     minusBtn.addEventListener('click', function(e) {
                         e.preventDefault();
                         e.stopPropagation();
                         let val = parseInt(qtyInput.value) || 1;
                         if (val > 1) {
-                            val--;
-                            qtyInput.value = val;
-                            qtyDisplay.textContent = val;
+                            qtyInput.value = val - 1;
                             wiUpdatePreview();
                         }
                     });
@@ -2336,11 +2360,21 @@
                         e.stopPropagation();
                         let val = parseInt(qtyInput.value) || 1;
                         if (val < 50) {
-                            val++;
-                            qtyInput.value = val;
-                            qtyDisplay.textContent = val;
+                            qtyInput.value = val + 1;
                             wiUpdatePreview();
                         }
+                    });
+
+                    // Allow direct typing — clamp to 1–50 on blur
+                    qtyInput.addEventListener('input', function() {
+                        wiUpdatePreview();
+                    });
+                    qtyInput.addEventListener('blur', function() {
+                        let val = parseInt(qtyInput.value) || 1;
+                        if (val < 1) val = 1;
+                        if (val > 50) val = 50;
+                        qtyInput.value = val;
+                        wiUpdatePreview();
                     });
                 }
             });
@@ -2384,9 +2418,10 @@
                     const isNowChecked = !chk.checked;
                     chk.checked = isNowChecked;
 
+                    const label = tab.querySelector('label');
                     if (isNowChecked) {
                         tab.style.borderColor = 'var(--green)';
-                        tab.style.background = 'rgba(47,74,30,0.05)';
+                        if (label) label.style.background = 'rgba(47,74,30,0.05)';
                         box.style.borderColor = 'var(--green)';
                         box.style.background = 'var(--green)';
                         box.innerHTML = '<i class="fa-solid fa-check text-[9px] text-white"></i>';
@@ -2394,7 +2429,7 @@
                         tab.querySelectorAll('input[name*="milk_items"]').forEach(i => i.disabled = false);
                     } else {
                         tab.style.borderColor = 'var(--border)';
-                        tab.style.background = '#fff';
+                        if (label) label.style.background = '#fff';
                         box.style.borderColor = 'var(--border)';
                         box.style.background = '#fff';
                         box.innerHTML = '';
@@ -2403,28 +2438,37 @@
                     }
                 });
 
-                // Qty stepper handlers
-                if (minus && plus && display && input) {
+                // Qty stepper handlers — use visible input (ws-qty-input-direct)
+                const visibleInput = tab.querySelector('.ws-qty-input-direct');
+                const hiddenInput  = tab.querySelector('.ws-qty-input');
+                if (minus && plus && visibleInput) {
                     minus.addEventListener('click', function(e) {
                         e.preventDefault();
                         e.stopPropagation();
-                        let val = parseInt(input.value) || 1;
-                        if (val > 1) {
-                            val--;
-                            input.value = val;
-                            display.textContent = val;
-                        }
+                        let val = parseFloat(visibleInput.value) || 1;
+                        val = Math.max(0.5, parseFloat((val - 0.5).toFixed(1)));
+                        visibleInput.value = val;
+                        if (hiddenInput) hiddenInput.value = val;
+                        wsUpdatePreview();
                     });
 
                     plus.addEventListener('click', function(e) {
                         e.preventDefault();
                         e.stopPropagation();
-                        let val = parseInt(input.value) || 1;
-                        if (val < 50) {
-                            val++;
-                            input.value = val;
-                            display.textContent = val;
-                        }
+                        let val = parseFloat(visibleInput.value) || 1;
+                        val = Math.min(50, parseFloat((val + 0.5).toFixed(1)));
+                        visibleInput.value = val;
+                        if (hiddenInput) hiddenInput.value = val;
+                        wsUpdatePreview();
+                    });
+
+                    visibleInput.addEventListener('blur', function() {
+                        let val = parseFloat(visibleInput.value) || 0.5;
+                        if (val < 0.5) val = 0.5;
+                        if (val > 50) val = 50;
+                        visibleInput.value = val;
+                        if (hiddenInput) hiddenInput.value = val;
+                        wsUpdatePreview();
                     });
                 }
             });
@@ -2710,7 +2754,99 @@
                     });
                 }
             });
+
+            // Handle direct quantity input
+            document.querySelectorAll('.ws-qty-input-direct').forEach(function(input) {
+                input.addEventListener('input', function() {
+                    const tab = this.closest('.ws-milk-tab');
+                    const hiddenInput = tab.querySelector('.ws-qty-input');
+                    const value = parseFloat(this.value) || 0.5;
+                    
+                    // Validate bounds
+                    const clampedValue = Math.max(0.5, Math.min(50, value));
+                    this.value = clampedValue;
+                    hiddenInput.value = clampedValue;
+                    
+                    wsUpdatePreview();
+                });
+            });
         });
+
+        // Syncs visible qty input → hidden input (called by onchange attribute)
+        function wsUpdateQtyFromInput(el) {
+            const tab = el.closest('.ws-milk-tab');
+            if (!tab) return;
+            const hiddenInput = tab.querySelector('.ws-qty-input');
+            let val = parseFloat(el.value) || 0.5;
+            val = Math.max(0.5, Math.min(50, val));
+            el.value = val;
+            if (hiddenInput) hiddenInput.value = val;
+            wsUpdatePreview();
+        }
+
+        // Wallet settings update preview function
+        function wsUpdatePreview() {
+            const selected = wsGetSelectedMilks();
+            const currentBalance = {{ $ws->wallet_balance ?? 0 }};
+            let totalCost = 0;
+
+            // Calculate total daily cost
+            selected.forEach(item => {
+                totalCost += item.qty * item.ppl;
+            });
+
+            // Update preview display
+            const previewEl = document.getElementById('ws-preview');
+            if (previewEl && selected.length > 0) {
+                const itemsList = selected.map(item => 
+                    `${item.qty}L ${item.milk_type.charAt(0).toUpperCase() + item.milk_type.slice(1)} (₹${(item.qty * item.ppl).toFixed(2)})`
+                ).join(', ');
+                
+                previewEl.innerHTML = `
+                    <div class="text-xs">
+                        <p><strong>Items:</strong> ${itemsList}</p>
+                        <p><strong>Daily Cost:</strong> ₹${totalCost.toFixed(2)}</p>
+                        ${totalCost > currentBalance ? 
+                            `<p class="text-red-600 font-semibold mt-1"><i class="fa-solid fa-exclamation-triangle mr-1"></i>Insufficient Balance! Need ₹${(totalCost - currentBalance).toFixed(2)} more</p>` : 
+                            `<p class="text-green-600 font-semibold mt-1"><i class="fa-solid fa-check-circle mr-1"></i>Sufficient Balance</p>`
+                        }
+                    </div>
+                `;
+            }
+
+            // Disable/enable submit if insufficient balance
+            const submitBtn = document.querySelector('button[type="submit"]');
+            if (submitBtn) {
+                if (totalCost > currentBalance && selected.length > 0) {
+                    submitBtn.disabled = true;
+                    submitBtn.textContent = 'Insufficient Balance';
+                    submitBtn.style.background = '#ef4444';
+                } else {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Update Settings';
+                    submitBtn.style.background = 'var(--green)';
+                }
+            }
+        }
+
+        // Get selected milk items
+        function wsGetSelectedMilks() {
+            const selected = [];
+            document.querySelectorAll('.ws-milk-check:checked').forEach(checkbox => {
+                const tab = checkbox.closest('.ws-milk-tab');
+                const qtyInput = tab.querySelector('.ws-qty-input-direct') || tab.querySelector('.ws-qty-input');
+                const qty = parseFloat(qtyInput.value) || 1;
+                const ppl = parseFloat(checkbox.dataset.ppl) || 0;
+                const type = checkbox.dataset.type || '';
+                
+                selected.push({
+                    milk_type: type,
+                    qty: qty,
+                    ppl: ppl
+                });
+            });
+            return selected;
+        }
 
         // Referral functions
         function copyReferralCode(code) {
