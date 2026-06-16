@@ -161,8 +161,23 @@ class DeliveryLogController extends Controller
                 // Handle quantity change on delivered item
                 $diff = $newQty - $oldQty;
                 if ($diff > 0) {
-                    // Additional quantity - debit
-                    $subscription->debitWallet($diff, $dateStr, auth()->id(), $delivery->id);
+                    // Additional quantity — debit the delta directly (bypass idempotency
+                    // since the original delivery_log_id debit already exists for the old qty)
+                    $extraAmount = round($diff * (float) $subscription->price_per_litre, 2);
+                    $newBalance  = round((float) $subscription->wallet_balance - $extraAmount, 2);
+                    $subscription->update(['wallet_balance' => $newBalance]);
+                    \App\Models\MilkWalletTransaction::create([
+                        'user_id'              => $subscription->user_id,
+                        'user_subscription_id' => $subscription->id,
+                        'delivery_log_id'      => $delivery->id,
+                        'type'                 => 'debit',
+                        'amount'               => $extraAmount,
+                        'litres'               => $diff,
+                        'balance_after'        => $newBalance,
+                        'description'          => "Qty increased +{$diff}L on " . $delivery->delivery_date->toDateString(),
+                        'transaction_date'     => $dateStr,
+                        'is_reversal'          => false,
+                    ]);
                 } else {
                     // Reduced quantity - credit back
                     $creditAmt = round(abs($diff) * (float) $subscription->price_per_litre, 2);

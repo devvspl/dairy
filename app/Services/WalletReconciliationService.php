@@ -42,6 +42,8 @@ class WalletReconciliationService
     {
         $bankTotal = $this->getBankTotal($subscription);
 
+        // Delivery debits = ALL debit transactions linked to a delivery log
+        // (includes original debit + any qty-increase debits for same delivery)
         $deliveryDebits = round(
             (float) $subscription->walletTransactions()
                 ->where('type', 'debit')
@@ -50,6 +52,17 @@ class WalletReconciliationService
                 ->sum('amount'),
             2
         );
+
+        // Expected debits from delivery logs (ground truth for debit validation)
+        $deliveries = $subscription->deliveryLogs()->where('status', 'delivered')->get();
+        $expectedDebitsFromLogs = 0.0;
+        foreach ($deliveries as $log) {
+            $expectedDebitsFromLogs += round(
+                (float) $log->quantity_delivered * (float) $subscription->price_per_litre, 2
+            );
+        }
+        $expectedDebitsFromLogs = round($expectedDebitsFromLogs, 2);
+        $debitMismatch = abs($deliveryDebits - $expectedDebitsFromLogs) > 0.01;
 
         $expectedBalance = round($bankTotal - $deliveryDebits, 2);
         $actualBalance   = round((float) $subscription->wallet_balance, 2);
@@ -85,12 +98,15 @@ class WalletReconciliationService
 
         return [
             // Core (source of truth)
-            'bank_total'            => $bankTotal,
-            'delivery_debits'       => $deliveryDebits,
-            'expected_balance'      => $expectedBalance,
-            'actual_balance'        => $actualBalance,
-            'difference'            => $difference,
-            'is_balanced'           => $isBalanced,
+            'bank_total'                => $bankTotal,
+            'delivery_debits'           => $deliveryDebits,
+            'expected_debits_from_logs' => $expectedDebitsFromLogs,
+            'debit_mismatch'            => $debitMismatch,
+            'delivered_count'           => $deliveries->count(),
+            'expected_balance'          => $expectedBalance,
+            'actual_balance'            => $actualBalance,
+            'difference'                => $difference,
+            'is_balanced'               => $isBalanced,
 
             // Aliases used by the view JS
             'real_credits'          => $bankTotal,

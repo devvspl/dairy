@@ -865,11 +865,27 @@ function renderReconciliation(data) {
                     </tr>
                     <tr>
                         <td class="px-4 py-3" style="color: var(--text);">
-                            Wallet Debits <span class="text-xs text-gray-400">(delivery transactions only)</span>
+                            Wallet Debits <span class="text-xs text-gray-400">(from transactions)</span>
                         </td>
-                        <td class="px-4 py-3 text-right font-bold text-red-600">₹${r.real_debits.toFixed(2)}</td>
-                        <td class="px-4 py-3"><span class="px-2 py-0.5 text-xs rounded bg-gray-50 text-gray-700 font-semibold">Spent</span></td>
+                        <td class="px-4 py-3 text-right font-bold text-red-600">₹${r.delivery_debits.toFixed(2)}</td>
+                        <td class="px-4 py-3">${
+                            r.debit_mismatch
+                                ? `<span class="px-2 py-0.5 text-xs rounded bg-red-50 text-red-700 font-semibold">✗ Mismatch</span>`
+                                : `<span class="px-2 py-0.5 text-xs rounded bg-gray-50 text-gray-700 font-semibold">Spent</span>`
+                        }</td>
                     </tr>
+                    ${r.expected_debits_from_logs !== undefined ? `
+                    <tr>
+                        <td class="px-4 py-3" style="color: var(--text);">
+                            Expected Debits <span class="text-xs text-gray-400">(from ${r.delivered_count ?? 0} delivered logs)</span>
+                        </td>
+                        <td class="px-4 py-3 text-right font-bold text-orange-600">₹${r.expected_debits_from_logs.toFixed(2)}</td>
+                        <td class="px-4 py-3">${
+                            r.debit_mismatch
+                                ? `<span class="px-2 py-0.5 text-xs rounded bg-orange-50 text-orange-700 font-semibold">Ground Truth</span>`
+                                : `<span class="px-2 py-0.5 text-xs rounded bg-green-50 text-green-700 font-semibold">✓ Matches</span>`
+                        }</td>
+                    </tr>` : ''}
                     <tr class="bg-gray-50">
                         <td class="px-4 py-3 font-semibold" style="color: var(--text);">Expected Balance <span class="text-xs font-normal text-gray-400">(Credits − Debits)</span></td>
                         <td class="px-4 py-3 text-right font-bold" style="color: var(--text);">₹${r.expected_balance.toFixed(2)}</td>
@@ -901,7 +917,6 @@ function renderReconciliation(data) {
                 adjustment credits ₹${r.adjustment_credits.toFixed(2)}, adjustment debits ₹${r.adjustment_debits.toFixed(2)}.
                 These are excluded from balance calculation and will be removed when a new fix is applied.
             </div>
-        </div>` : ''}
     `;
 
     // ── Last Reconciled ──────────────────────────────────────────────────────
@@ -921,30 +936,82 @@ function renderReconciliation(data) {
     // ── Quick Fix Actions ────────────────────────────────────────────────────
     const fixes = [];
 
-    if (!isBalanced) {
-        fixes.push({ type: 'rebuild_from_ledger', label: 'Rebuild Balance from Ledger', desc: 'Set wallet_balance = Bank payments − Delivered debits', icon: 'fa-calculator', safe: true });
-        fixes.push({ type: 'fix_from_deliveries', label: 'Fix from Deliveries', desc: 'Set balance = Bank payments − Delivered debits (with audit entry)', icon: 'fa-truck', safe: false });
+    // Delivery debits mismatch: actual debit transactions don't match delivered log totals
+    const deliveryDebitMismatch = r.debit_mismatch ?? false;
+    const expectedDebitsFromLogs = r.expected_debits_from_logs ?? r.delivery_debits;
+
+    // Show warning if debits don't match
+    let debitMismatchWarning = '';
+    if (deliveryDebitMismatch) {
+        const missingAmount = Math.abs(expectedDebitsFromLogs - r.delivery_debits);
+        debitMismatchWarning = `
+        <div class="flex items-start gap-3 p-4 rounded-lg border border-orange-300 bg-orange-50 mb-4">
+            <i class="fa-solid fa-exclamation-triangle text-orange-600 text-xl"></i>
+            <div>
+                <p class="font-bold text-orange-700">Delivery Debit Mismatch Detected</p>
+                <p class="text-sm text-orange-600">
+                    Actual spent from deliveries: <strong>₹${expectedDebitsFromLogs.toFixed(2)}</strong><br>
+                    Wallet debits recorded: <strong>₹${r.delivery_debits.toFixed(2)}</strong><br>
+                    Missing debit transactions: <strong>₹${missingAmount.toFixed(2)}</strong>
+                </p>
+                <p class="text-xs text-orange-500 mt-1">
+                    ℹ️ Click "Recalculate Delivery Debits" below to fix this issue.
+                </p>
+            </div>
+        </div>`;
     }
 
-    // Always show Rebuild when stale adjustments exist — even if books look balanced
-    if (isBalanced && hasStaleAdjustments) {
+    // Case 1: balance is wrong (expected != actual)
+    if (!isBalanced) {
         fixes.push({
             type: 'rebuild_from_ledger',
-            label: 'Clean Stale Adjustments',
-            desc: `Ledger has stale adjustment entries (credits ₹${r.adjustment_credits.toFixed(2)}, debits ₹${r.adjustment_debits.toFixed(2)}) that should be removed`,
+            label: 'Rebuild Balance from Ledger',
+            desc: `Set balance = Bank ₹${r.bank_total.toFixed(2)} − Delivered ₹${r.delivery_debits.toFixed(2)} = ₹${r.expected_balance.toFixed(2)}`,
+            icon: 'fa-calculator',
+            safe: true
+        });
+    }
+
+    // Case 2: stale reconciliation adjustment entries exist in ledger
+    if (hasStaleAdjustments) {
+        fixes.push({
+            type: 'rebuild_from_ledger',
+            label: 'Clean Stale Adjustments & Rebuild',
+            desc: `Removes stale adj. entries (credits ₹${r.adjustment_credits.toFixed(2)}, debits ₹${r.adjustment_debits.toFixed(2)}) and sets correct balance`,
             icon: 'fa-broom',
             safe: true
         });
     }
 
-    if (!bankMatched) {
-        if (bankDiff > 0) {
-            fixes.push({ type: 'recalculate_credits', label: 'Credit Missing Payment', desc: `Bank paid ₹${r.bank_total.toFixed(2)} but wallet credits only ₹${realCredits.toFixed(2)}`, icon: 'fa-building-columns', safe: false });
-        } else {
-            fixes.push({ type: 'recalculate_credits', label: 'Remove Excess Credits', desc: `Wallet has ₹${Math.abs(bankDiff).toFixed(2)} more credits than bank payments`, icon: 'fa-circle-minus', safe: false });
-        }
-        fixes.push({ type: 'recalculate_debits', label: 'Recalculate Debits', desc: 'Verify debits match all delivered transactions', icon: 'fa-rotate', safe: false });
+    // Case 3: delivery debit transactions don't match what was delivered
+    // Always show this so admin can fix the ₹80 missing debit scenario
+    if (deliveryDebitMismatch) {
+        fixes.push({
+            type: 'recalculate_debits',
+            label: 'Recalculate Delivery Debits ⚠️',
+            desc: `Fix missing debits: Expected ₹${expectedDebitsFromLogs.toFixed(2)} but only ₹${r.delivery_debits.toFixed(2)} recorded`,
+            icon: 'fa-rotate',
+            safe: false,
+            priority: true
+        });
+    } else {
+        fixes.push({
+            type: 'recalculate_debits',
+            label: 'Recalculate Delivery Debits',
+            desc: `Verify all delivery transactions are correctly debited`,
+            icon: 'fa-rotate',
+            safe: false
+        });
     }
+
+    // Case 4: fix from deliveries (hard reset using bank − deliveries formula)
+    fixes.push({
+        type: 'fix_from_deliveries',
+        label: 'Fix Balance from Deliveries',
+        desc: `Hard reset: Bank ₹${r.bank_total.toFixed(2)} − Delivered debits ₹${r.delivery_debits.toFixed(2)} = ₹${r.expected_balance.toFixed(2)}`,
+        icon: 'fa-truck',
+        safe: false
+    });
 
     const fixActions = fixes.length > 0
         ? `<div class="mb-4">
@@ -954,16 +1021,16 @@ function renderReconciliation(data) {
                <div class="space-y-2">
                    ${fixes.map(f => `
                        <button onclick="applyFix('${f.type}')"
-                               class="w-full flex items-center gap-3 px-4 py-3 rounded-lg border text-left hover:bg-blue-50 transition-colors"
-                               style="border-color: var(--border);">
-                           <div class="w-9 h-9 rounded-lg bg-blue-50 border border-blue-200 flex items-center justify-center flex-shrink-0">
-                               <i class="fa-solid ${f.icon} text-blue-600 text-sm"></i>
+                               class="w-full flex items-center gap-3 px-4 py-3 rounded-lg border text-left hover:${f.priority ? 'bg-orange-50' : 'bg-blue-50'} transition-colors ${f.priority ? 'border-orange-300 bg-orange-50' : ''}"
+                               style="border-color: ${f.priority ? '#fb923c' : 'var(--border)'};">
+                           <div class="w-9 h-9 rounded-lg ${f.priority ? 'bg-orange-100 border-orange-300' : 'bg-blue-50 border-blue-200'} border flex items-center justify-center flex-shrink-0">
+                               <i class="fa-solid ${f.icon} ${f.priority ? 'text-orange-600' : 'text-blue-600'} text-sm"></i>
                            </div>
                            <div class="flex-1 min-w-0">
                                <p class="font-semibold text-sm" style="color: var(--text);">${f.label}</p>
                                <p class="text-xs" style="color: var(--muted);">${f.desc}</p>
                            </div>
-                           ${!f.safe ? '<span class="text-xs text-orange-600 font-semibold px-2 py-1 rounded bg-orange-50 border border-orange-200">Modifies data</span>' : ''}
+                           ${!f.safe ? `<span class="text-xs ${f.priority ? 'text-orange-600 bg-orange-100 border-orange-300' : 'text-orange-600 bg-orange-50 border-orange-200'} font-semibold px-2 py-1 rounded border">Modifies data</span>` : ''}
                            <i class="fa-solid fa-chevron-right text-gray-300 text-xs"></i>
                        </button>`).join('')}
                </div>
