@@ -180,7 +180,7 @@
                                         style="width:{{ $walletPct }}%; background:{{ $walletPct < 20 ? '#ef4444' : ($walletPct < 40 ? '#f59e0b' : 'var(--green)') }};"></div>
                                 </div>
                                 @if($walletPct < 20 && $walletPct > 0)
-                                <p class="text-[11px] mt-1.5 font-semibold" style="color:#ef4444;"><i class="fa-solid fa-triangle-exclamation mr-1"></i>Low balance — top up soon</p>
+                                <p class="text-[11px] mt-1.5 font-semibold" style="color:#ef4444;"><i class="fa-solid fa-triangle-exclamation mr-1"></i>Low balance — Add Money to Wallet soon</p>
                                 @endif
                             </div>
                         </div>
@@ -206,7 +206,7 @@
                             <button onclick="openTopupModal({{ $ws->id }})"
                                 class="flex flex-col items-center gap-1 py-3.5 text-xs font-semibold transition-colors hover:bg-green-50"
                                 style="color:var(--green); background:transparent; border:none; cursor:pointer;">
-                                <i class="fa-solid fa-arrow-up text-sm"></i>Top Up
+                                <i class="fa-solid fa-arrow-up text-sm"></i>Add Money to Wallet
                             </button>
 
                             @if($isStopped)
@@ -327,7 +327,7 @@
                                                 <div class="ws-qty-wrap flex items-center justify-center gap-1.5 {{ $isSelected ? '' : 'invisible' }}" onclick="event.preventDefault()">
                                                     <button type="button" class="ws-qty-minus flex-shrink-0 w-7 h-7 rounded-lg border-2 flex items-center justify-center font-bold text-sm transition-all"
                                                         style="border-color:var(--border);color:var(--green);">−</button>
-                                                    <input type="number" step="0.5" min="0.5" max="50" class="ws-qty-input-direct text-sm font-bold text-center border rounded-lg"
+                                                    <input type="number" step="1" min="1" max="50" class="ws-qty-input-direct text-sm font-bold text-center border rounded-lg"
                                                         style="width:2.8rem;border-color:var(--border);padding:2px 0;" value="{{ $itemQty }}" onchange="wsUpdateQtyFromInput(this)">
                                                     <button type="button" class="ws-qty-plus flex-shrink-0 w-7 h-7 rounded-lg border-2 flex items-center justify-center font-bold text-sm transition-all"
                                                         style="border-color:var(--border);color:var(--green);">+</button>
@@ -2002,7 +2002,7 @@
                     <i class="fa-solid fa-arrow-up" style="color: var(--green);"></i>
                 </div>
                 <div>
-                    <h3 class="font-bold text-base" style="color: var(--text);">Top Up Wallet</h3>
+                    <h3 class="font-bold text-base" style="color: var(--text);">Add Money to Wallet</h3>
                     <p class="text-xs" style="color: var(--muted);">Add balance to continue milk deliveries</p>
                 </div>
             </div>
@@ -2028,7 +2028,7 @@
                 </div>
                 <button type="submit" class="w-full py-3 rounded-xl font-bold text-sm text-white transition-all hover:shadow-lg"
                     style="background: var(--green);">
-                    <i class="fa-solid fa-lock mr-1"></i> Pay & Top Up
+                    <i class="fa-solid fa-lock mr-1"></i> Add Money to Wallet
                 </button>
             </form>
         </div>
