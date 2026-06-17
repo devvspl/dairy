@@ -328,7 +328,7 @@
                                                     <button type="button" class="ws-qty-minus flex-shrink-0 w-7 h-7 rounded-lg border-2 flex items-center justify-center font-bold text-sm transition-all"
                                                         style="border-color:var(--border);color:var(--green);">−</button>
                                                     <input type="number" step="1" min="1" max="50" class="ws-qty-input-direct text-sm font-bold text-center border rounded-lg"
-                                                        style="width:2.8rem;border-color:var(--border);padding:2px 0;" value="{{ $itemQty }}" onchange="wsUpdateQtyFromInput(this)">
+                                                        style="width:2.8rem;border-color:var(--border);padding:2px 0;" value="{{ max(1, (int)$itemQty) }}" onchange="wsUpdateQtyFromInput(this)">
                                                     <button type="button" class="ws-qty-plus flex-shrink-0 w-7 h-7 rounded-lg border-2 flex items-center justify-center font-bold text-sm transition-all"
                                                         style="border-color:var(--border);color:var(--green);">+</button>
                                                     <span class="text-[10px] flex-shrink-0" style="color:var(--muted);">L</span>
@@ -2465,8 +2465,8 @@
                     minus.addEventListener('click', function(e) {
                         e.preventDefault();
                         e.stopPropagation();
-                        let val = parseFloat(visibleInput.value) || 1;
-                        val = Math.max(0.5, parseFloat((val - 0.5).toFixed(1)));
+                        let val = parseInt(visibleInput.value) || 1;
+                        val = Math.max(1, val - 1);
                         visibleInput.value = val;
                         if (hiddenInput) hiddenInput.value = val;
                         wsUpdatePreview();
@@ -2475,16 +2475,16 @@
                     plus.addEventListener('click', function(e) {
                         e.preventDefault();
                         e.stopPropagation();
-                        let val = parseFloat(visibleInput.value) || 1;
-                        val = Math.min(50, parseFloat((val + 0.5).toFixed(1)));
+                        let val = parseInt(visibleInput.value) || 1;
+                        val = Math.min(50, val + 1);
                         visibleInput.value = val;
                         if (hiddenInput) hiddenInput.value = val;
                         wsUpdatePreview();
                     });
 
                     visibleInput.addEventListener('blur', function() {
-                        let val = parseFloat(visibleInput.value) || 0.5;
-                        if (val < 0.5) val = 0.5;
+                        let val = parseInt(visibleInput.value) || 1;
+                        if (val < 1) val = 1;
                         if (val > 50) val = 50;
                         visibleInput.value = val;
                         if (hiddenInput) hiddenInput.value = val;
@@ -2780,10 +2780,10 @@
                 input.addEventListener('input', function() {
                     const tab = this.closest('.ws-milk-tab');
                     const hiddenInput = tab.querySelector('.ws-qty-input');
-                    const value = parseFloat(this.value) || 0.5;
+                    const value = parseInt(this.value) || 1;
                     
                     // Validate bounds
-                    const clampedValue = Math.max(0.5, Math.min(50, value));
+                    const clampedValue = Math.max(1, Math.min(50, value));
                     this.value = clampedValue;
                     hiddenInput.value = clampedValue;
                     
@@ -2797,8 +2797,8 @@
             const tab = el.closest('.ws-milk-tab');
             if (!tab) return;
             const hiddenInput = tab.querySelector('.ws-qty-input');
-            let val = parseFloat(el.value) || 0.5;
-            val = Math.max(0.5, Math.min(50, val));
+            let val = parseInt(el.value) || 1;
+            val = Math.max(1, Math.min(50, val));
             el.value = val;
             if (hiddenInput) hiddenInput.value = val;
             wsUpdatePreview();
