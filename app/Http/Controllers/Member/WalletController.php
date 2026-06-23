@@ -72,8 +72,8 @@ class WalletController extends Controller
             'location_id'                => 'required|exists:locations,id',
             'delivery_address'           => 'required|string|max:500',
             'start_date'                 => 'required|date|after_or_equal:today',
-            'delivery_frequency'         => 'nullable|in:daily,alternate,weekly',
-            'preferred_day'              => 'nullable|integer|min:0|max:6',
+            'delivery_frequency'         => 'nullable|in:daily,alternate,weekly,monthly',
+            'preferred_day'              => 'nullable|integer|min:0|max:28',
         ]);
 
         $user   = auth()->user();
@@ -255,8 +255,8 @@ class WalletController extends Controller
             'milk_items.*.milk_type'    => 'required_with:milk_items|string|max:50',
             'milk_items.*.qty'          => 'required_with:milk_items|numeric|min:0.5|max:20',
             'milk_items.*.ppl'          => 'nullable|numeric|min:0',
-            'delivery_frequency'        => 'nullable|in:daily,alternate,weekly',
-            'preferred_day'             => 'nullable|integer|min:0|max:6',
+            'delivery_frequency'        => 'nullable|in:daily,alternate,weekly,monthly',
+            'preferred_day'             => 'nullable|integer|min:0|max:28',
         ]);
 
         // Enrich milk_items: apply shared slot + refresh price from DB
@@ -314,8 +314,8 @@ class WalletController extends Controller
             'quantity_per_day'      => !empty($data['milk_items']) ? array_sum(array_column($data['milk_items'], 'qty')) : null,
         ], fn($v) => $v !== null);
 
-        // If frequency is not weekly, clear preferred_day
-        if (isset($data['delivery_frequency']) && $data['delivery_frequency'] !== 'weekly') {
+        // If frequency doesn't use preferred_day, clear it
+        if (isset($data['delivery_frequency']) && !in_array($data['delivery_frequency'], ['weekly', 'monthly'])) {
             $settingsData['preferred_day'] = null;
         }
 

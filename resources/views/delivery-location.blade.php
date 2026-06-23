@@ -183,6 +183,7 @@
                                 $freqLbl = match($freqVal) {
                                     'alternate' => 'Alternate Days',
                                     'weekly' => 'Weekly' . ($wds->preferred_day !== null ? ' (' . ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][$wds->preferred_day] . ')' : ''),
+                                    'monthly' => 'Monthly' . ($wds->preferred_day !== null ? ' (Day ' . $wds->preferred_day . ')' : ''),
                                     default => null,
                                 };
                             @endphp
@@ -311,6 +312,7 @@
                                 $cFreqLbl = match($cFreqVal) {
                                     'alternate' => 'Alternate Days',
                                     'weekly' => 'Weekly' . ($wds->preferred_day !== null ? ' (' . ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][$wds->preferred_day] . ')' : ''),
+                                    'monthly' => 'Monthly' . ($wds->preferred_day !== null ? ' (Day ' . $wds->preferred_day . ')' : ''),
                                     default => null,
                                 };
                             @endphp

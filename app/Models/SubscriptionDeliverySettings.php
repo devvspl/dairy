@@ -16,8 +16,8 @@ class SubscriptionDeliverySettings extends Model
         'location_id',
         'delivery_address',
         'delivery_instructions',
-        'delivery_frequency', // daily, alternate, weekly
-        'preferred_day',      // 0=Sun, 1=Mon, ... 6=Sat (used when frequency=weekly)
+        'delivery_frequency', // daily, alternate, weekly, monthly
+        'preferred_day',      // weekly: 0=Sun..6=Sat | monthly: 1–28 (day of month)
     ];
 
     protected $casts = [
@@ -110,6 +110,15 @@ class SubscriptionDeliverySettings extends Model
                 return true; // fallback to daily if no preferred day set
             }
             return $date->dayOfWeek === $preferredDay;
+        }
+
+        if ($frequency === 'monthly') {
+            // Deliver only on the preferred day of the month (1–28)
+            $preferredDate = $this->preferred_day; // 1–28
+            if ($preferredDate === null) {
+                return true; // fallback to daily if no preferred date set
+            }
+            return $date->day === $preferredDate;
         }
 
         return true;

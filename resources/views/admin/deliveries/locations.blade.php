@@ -170,6 +170,7 @@
                                 $subFreqLabel = match($subFreq) {
                                     'alternate' => 'Alternate Days',
                                     'weekly' => 'Weekly' . ($subDs->preferred_day !== null ? ' (' . ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][$subDs->preferred_day] . ')' : ''),
+                                    'monthly' => 'Monthly' . ($subDs->preferred_day !== null ? ' (Day ' . $subDs->preferred_day . ')' : ''),
                                     default => null,
                                 };
                             @endphp

@@ -154,6 +154,7 @@
                                             $freqLabel = match($wds->delivery_frequency ?? 'daily') {
                                                 'alternate' => 'Alternate Days',
                                                 'weekly' => 'Weekly' . ($wds->preferred_day !== null ? ' (' . ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][$wds->preferred_day] . ')' : ''),
+                                                'monthly' => 'Monthly' . ($wds->preferred_day !== null ? ' (Day ' . $wds->preferred_day . ')' : ''),
                                                 default => 'Daily',
                                             };
                                         @endphp
@@ -374,8 +375,8 @@
                                 @endphp
                                 <div>
                                     <p class="text-xs font-bold mb-2" style="color:var(--text);"><i class="fa-solid fa-calendar-week mr-1.5" style="color:var(--green);"></i>Delivery Frequency</p>
-                                    <div class="grid grid-cols-3 gap-2">
-                                        @foreach([['value'=>'daily','label'=>'Daily','desc'=>'Every day','icon'=>'fa-calendar-days'],['value'=>'alternate','label'=>'Alternate','desc'=>'Every other day','icon'=>'fa-arrows-left-right'],['value'=>'weekly','label'=>'Weekly','desc'=>'Once a week','icon'=>'fa-calendar-week']] as $freq)
+                                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                                        @foreach([['value'=>'daily','label'=>'Daily','desc'=>'Every day','icon'=>'fa-calendar-days'],['value'=>'alternate','label'=>'Alternate','desc'=>'Every other day','icon'=>'fa-arrows-left-right'],['value'=>'weekly','label'=>'Weekly','desc'=>'Once a week','icon'=>'fa-calendar-week'],['value'=>'monthly','label'=>'Monthly','desc'=>'Once a month','icon'=>'fa-calendar']] as $freq)
                                         <label class="ws-freq-card flex flex-col items-center gap-1 p-3 rounded-xl border-2 cursor-pointer text-center transition-all"
                                             style="border-color:{{ $currentFrequency===$freq['value'] ? 'var(--green)' : 'var(--border)' }};background:{{ $currentFrequency===$freq['value'] ? 'rgba(47,74,30,0.05)' : '#fff' }};">
                                             <input type="radio" name="delivery_frequency" value="{{ $freq['value'] }}" class="hidden ws-freq-radio" {{ $currentFrequency===$freq['value'] ? 'checked' : '' }}>
@@ -392,11 +393,25 @@
                                         <div class="grid grid-cols-7 gap-1">
                                             @foreach($dayNames as $dayIdx => $dayName)
                                             <label class="ws-day-card flex flex-col items-center p-2 rounded-lg border-2 cursor-pointer transition-all text-center"
-                                                style="border-color:{{ $currentPreferredDay === $dayIdx ? 'var(--green)' : 'var(--border)' }};background:{{ $currentPreferredDay === $dayIdx ? 'rgba(47,74,30,0.05)' : '#fff' }};">
-                                                <input type="radio" name="preferred_day" value="{{ $dayIdx }}" class="hidden ws-day-radio" {{ $currentPreferredDay === $dayIdx ? 'checked' : '' }}>
-                                                <span class="text-[10px] font-bold" style="color:{{ $currentPreferredDay === $dayIdx ? 'var(--green)' : 'var(--text)' }};">{{ substr($dayName, 0, 3) }}</span>
+                                                style="border-color:{{ ($currentFrequency === 'weekly' && $currentPreferredDay === $dayIdx) ? 'var(--green)' : 'var(--border)' }};background:{{ ($currentFrequency === 'weekly' && $currentPreferredDay === $dayIdx) ? 'rgba(47,74,30,0.05)' : '#fff' }};">
+                                                <input type="radio" name="preferred_day" value="{{ $dayIdx }}" class="hidden ws-day-radio" {{ ($currentFrequency === 'weekly' && $currentPreferredDay === $dayIdx) ? 'checked' : '' }}>
+                                                <span class="text-[10px] font-bold" style="color:{{ ($currentFrequency === 'weekly' && $currentPreferredDay === $dayIdx) ? 'var(--green)' : 'var(--text)' }};">{{ substr($dayName, 0, 3) }}</span>
                                             </label>
                                             @endforeach
+                                        </div>
+                                    </div>
+
+                                    {{-- Preferred Date (shown only when monthly is selected) --}}
+                                    <div id="ws-preferred-date-wrap" class="{{ $currentFrequency === 'monthly' ? '' : 'hidden' }} mt-3">
+                                        <p class="text-[11px] font-semibold mb-1.5" style="color:var(--muted);">Which date of the month? (1–28)</p>
+                                        <div class="grid grid-cols-7 gap-1">
+                                            @for($d = 1; $d <= 28; $d++)
+                                            <label class="ws-date-card flex items-center justify-center p-2 rounded-lg border-2 cursor-pointer transition-all text-center"
+                                                style="border-color:{{ ($currentFrequency === 'monthly' && $currentPreferredDay === $d) ? 'var(--green)' : 'var(--border)' }};background:{{ ($currentFrequency === 'monthly' && $currentPreferredDay === $d) ? 'rgba(47,74,30,0.05)' : '#fff' }};">
+                                                <input type="radio" name="preferred_day" value="{{ $d }}" class="hidden ws-date-radio" {{ ($currentFrequency === 'monthly' && $currentPreferredDay === $d) ? 'checked' : '' }}>
+                                                <span class="text-[10px] font-bold" style="color:{{ ($currentFrequency === 'monthly' && $currentPreferredDay === $d) ? 'var(--green)' : 'var(--text)' }};">{{ $d }}</span>
+                                            </label>
+                                            @endfor
                                         </div>
                                     </div>
                                 </div>
@@ -779,8 +794,8 @@
                             {{-- Delivery Frequency --}}
                             <div>
                                 <label class="block text-xs font-semibold mb-2" style="color:var(--text);"><i class="fa-solid fa-calendar-week mr-1" style="color:var(--green);"></i>Delivery Frequency</label>
-                                <div class="grid grid-cols-3 gap-2">
-                                    @foreach([['value'=>'daily','label'=>'Daily','desc'=>'Every day','icon'=>'fa-calendar-days'],['value'=>'alternate','label'=>'Alternate','desc'=>'Every other day','icon'=>'fa-arrows-left-right'],['value'=>'weekly','label'=>'Weekly','desc'=>'Once a week','icon'=>'fa-calendar-week']] as $freq)
+                                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                                    @foreach([['value'=>'daily','label'=>'Daily','desc'=>'Every day','icon'=>'fa-calendar-days'],['value'=>'alternate','label'=>'Alternate','desc'=>'Every other day','icon'=>'fa-arrows-left-right'],['value'=>'weekly','label'=>'Weekly','desc'=>'Once a week','icon'=>'fa-calendar-week'],['value'=>'monthly','label'=>'Monthly','desc'=>'Once a month','icon'=>'fa-calendar']] as $freq)
                                     <label class="wi-freq-card flex flex-col items-center gap-1 p-3 rounded-xl border-2 cursor-pointer text-center transition-all hover:border-green-400"
                                         style="border-color:{{ $loop->first ? 'var(--green)' : 'var(--border)' }};background:{{ $loop->first ? 'rgba(47,74,30,0.05)' : '#fff' }};">
                                         <input type="radio" name="delivery_frequency" value="{{ $freq['value'] }}" class="hidden wi-freq-radio" {{ $loop->first ? 'checked' : '' }}>
@@ -801,6 +816,19 @@
                                             <span class="text-[10px] font-bold" style="color:var(--text);">{{ $dayLabel }}</span>
                                         </label>
                                         @endforeach
+                                    </div>
+                                </div>
+                                {{-- Preferred Date (shown only for monthly) --}}
+                                <div id="wi-preferred-date-wrap" class="hidden mt-3">
+                                    <p class="text-[11px] font-semibold mb-1.5" style="color:var(--muted);">Which date of the month? (1–28)</p>
+                                    <div class="grid grid-cols-7 gap-1">
+                                        @for($d = 1; $d <= 28; $d++)
+                                        <label class="wi-date-card flex items-center justify-center p-2 rounded-lg border-2 cursor-pointer transition-all text-center"
+                                            style="border-color:var(--border);background:#fff;">
+                                            <input type="radio" name="preferred_day" value="{{ $d }}" class="hidden wi-date-radio">
+                                            <span class="text-[10px] font-bold" style="color:var(--text);">{{ $d }}</span>
+                                        </label>
+                                        @endfor
                                     </div>
                                 </div>
                             </div>
@@ -1582,8 +1610,10 @@
 
         .ws-freq-card:has(.ws-freq-radio:checked),
         .ws-day-card:has(.ws-day-radio:checked),
+        .ws-date-card:has(.ws-date-radio:checked),
         .wi-freq-card:has(.wi-freq-radio:checked),
-        .wi-day-card:has(.wi-day-radio:checked) {
+        .wi-day-card:has(.wi-day-radio:checked),
+        .wi-date-card:has(.wi-date-radio:checked) {
             border-color: var(--green) !important;
             background: rgba(47, 74, 30, 0.05);
         }
@@ -2621,20 +2651,33 @@
                 if (icon) icon.style.color = 'var(--green)';
                 radio.checked = true;
 
-                // Show/hide preferred day selector
-                const wrap = document.getElementById('ws-preferred-day-wrap');
-                if (radio.value === 'weekly') {
-                    wrap.classList.remove('hidden');
-                } else {
-                    wrap.classList.add('hidden');
-                }
+                // Show/hide preferred day/date selector
+                const dayWrap = document.getElementById('ws-preferred-day-wrap');
+                const dateWrap = document.getElementById('ws-preferred-date-wrap');
+                dayWrap.classList.toggle('hidden', radio.value !== 'weekly');
+                dateWrap.classList.toggle('hidden', radio.value !== 'monthly');
             });
         });
 
-        // Preferred day cards (wallet settings)
+        // Preferred day cards (wallet settings - weekly)
         document.querySelectorAll('.ws-day-radio').forEach(function(radio) {
             radio.closest('label').addEventListener('click', function() {
                 document.querySelectorAll('.ws-day-card').forEach(c => {
+                    c.style.borderColor = 'var(--border)';
+                    c.style.background = '#fff';
+                    c.querySelector('span').style.color = 'var(--text)';
+                });
+                this.style.borderColor = 'var(--green)';
+                this.style.background = 'rgba(47,74,30,0.05)';
+                this.querySelector('span').style.color = 'var(--green)';
+                radio.checked = true;
+            });
+        });
+
+        // Preferred date cards (wallet settings - monthly)
+        document.querySelectorAll('.ws-date-radio').forEach(function(radio) {
+            radio.closest('label').addEventListener('click', function() {
+                document.querySelectorAll('.ws-date-card').forEach(c => {
                     c.style.borderColor = 'var(--border)';
                     c.style.background = '#fff';
                     c.querySelector('span').style.color = 'var(--text)';
@@ -2661,21 +2704,34 @@
                 if (icon) icon.style.color = 'var(--green)';
                 radio.checked = true;
 
-                // Show/hide preferred day selector
-                const wrap = document.getElementById('wi-preferred-day-wrap');
-                if (radio.value === 'weekly') {
-                    wrap.classList.remove('hidden');
-                } else {
-                    wrap.classList.add('hidden');
-                }
+                // Show/hide preferred day/date selector
+                const dayWrap = document.getElementById('wi-preferred-day-wrap');
+                const dateWrap = document.getElementById('wi-preferred-date-wrap');
+                dayWrap.classList.toggle('hidden', radio.value !== 'weekly');
+                dateWrap.classList.toggle('hidden', radio.value !== 'monthly');
                 wiUpdatePreview();
             });
         });
 
-        // Preferred day cards (wallet init)
+        // Preferred day cards (wallet init - weekly)
         document.querySelectorAll('.wi-day-radio').forEach(function(radio) {
             radio.closest('label').addEventListener('click', function() {
                 document.querySelectorAll('.wi-day-card').forEach(c => {
+                    c.style.borderColor = 'var(--border)';
+                    c.style.background = '#fff';
+                    c.querySelector('span').style.color = 'var(--text)';
+                });
+                this.style.borderColor = 'var(--green)';
+                this.style.background = 'rgba(47,74,30,0.05)';
+                this.querySelector('span').style.color = 'var(--green)';
+                radio.checked = true;
+            });
+        });
+
+        // Preferred date cards (wallet init - monthly)
+        document.querySelectorAll('.wi-date-radio').forEach(function(radio) {
+            radio.closest('label').addEventListener('click', function() {
+                document.querySelectorAll('.wi-date-card').forEach(c => {
                     c.style.borderColor = 'var(--border)';
                     c.style.background = '#fff';
                     c.querySelector('span').style.color = 'var(--text)';
