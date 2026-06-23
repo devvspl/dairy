@@ -303,6 +303,8 @@ class PaymentController extends Controller
                 'location_id'           => $locationId,
                 'delivery_address'      => $deliveryAddress,
                 'delivery_instructions' => null,
+                'delivery_frequency'    => $meta['delivery_frequency'] ?? 'daily',
+                'preferred_day'         => $meta['preferred_day'] ?? null,
             ];
 
             // If multi-milk, store milk_items; otherwise use legacy fields

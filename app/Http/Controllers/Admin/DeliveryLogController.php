@@ -444,7 +444,7 @@ class DeliveryLogController extends Controller
 
         $query = DeliveryLog::with([
                 'subscription' => fn($q) => $q->select('id','user_id','membership_plan_id','location_id','delivery_address','delivery_instructions','milk_type','quantity_per_day','delivery_slot','price_per_litre','wallet_balance','wallet_total','delivery_status')
-                    ->with(['user:id,name,phone', 'membershipPlan:id,name', 'location:id,name']),
+                    ->with(['user:id,name,phone', 'membershipPlan:id,name', 'location:id,name', 'deliverySettings']),
                 'markedBy:id,name',
             ])
             ->whereHas('subscription.user')

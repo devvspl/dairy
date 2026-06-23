@@ -164,6 +164,20 @@
                                 <i class="fa-solid fa-clock mr-0.5"></i>{{ ucfirst($sub->delivery_slot) }}
                             </div>
                             @endif
+                            @php
+                                $subDs = $sub?->deliverySettings;
+                                $subFreq = $subDs->delivery_frequency ?? 'daily';
+                                $subFreqLabel = match($subFreq) {
+                                    'alternate' => 'Alternate Days',
+                                    'weekly' => 'Weekly' . ($subDs->preferred_day !== null ? ' (' . ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][$subDs->preferred_day] . ')' : ''),
+                                    default => null,
+                                };
+                            @endphp
+                            @if($subFreqLabel)
+                            <div class="text-[10px] mt-0.5 font-semibold" style="color: var(--green);">
+                                <i class="fa-solid fa-calendar-week mr-0.5"></i>{{ $subFreqLabel }}
+                            </div>
+                            @endif
                             {{-- Delivery status badge --}}
                             @if($sub && $sub->delivery_status !== 'active')
                             <span class="inline-block mt-1 px-1.5 py-0.5 text-[10px] rounded-full font-semibold

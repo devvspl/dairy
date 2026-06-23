@@ -16,11 +16,14 @@ class SubscriptionDeliverySettings extends Model
         'location_id',
         'delivery_address',
         'delivery_instructions',
+        'delivery_frequency', // daily, alternate, weekly
+        'preferred_day',      // 0=Sun, 1=Mon, ... 6=Sat (used when frequency=weekly)
     ];
 
     protected $casts = [
         'quantity_per_day' => 'decimal:2',
         'milk_items'       => 'array',
+        'preferred_day'    => 'integer',
     ];
 
     public function subscription(): BelongsTo
@@ -78,5 +81,37 @@ class SubscriptionDeliverySettings extends Model
     {
         $items = $this->getMilkItemsResolved();
         return array_sum(array_column($items, 'qty'));
+    }
+
+    /**
+     * Check if a delivery should happen on the given date based on frequency.
+     *
+     * @param \Carbon\Carbon $date      The date to check
+     * @param \Carbon\Carbon $startDate The subscription/schedule start date (used for alternate-day calculation)
+     */
+    public function shouldDeliverOn(\Carbon\Carbon $date, \Carbon\Carbon $startDate): bool
+    {
+        $frequency = $this->delivery_frequency ?? 'daily';
+
+        if ($frequency === 'daily') {
+            return true;
+        }
+
+        if ($frequency === 'alternate') {
+            // Deliver on even-numbered days from start (day 0, 2, 4, ...)
+            $daysDiff = $startDate->diffInDays($date);
+            return $daysDiff % 2 === 0;
+        }
+
+        if ($frequency === 'weekly') {
+            // Deliver only on the preferred day of the week
+            $preferredDay = $this->preferred_day; // 0=Sun ... 6=Sat
+            if ($preferredDay === null) {
+                return true; // fallback to daily if no preferred day set
+            }
+            return $date->dayOfWeek === $preferredDay;
+        }
+
+        return true;
     }
 }

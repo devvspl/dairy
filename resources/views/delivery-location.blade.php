@@ -178,6 +178,15 @@
                             @endif
                             @php $slot = !empty($milkItems[0]['slot']) ? $milkItems[0]['slot'] : $sub->delivery_slot; @endphp
                             @if($slot)<div class="text-xs mt-0.5" style="color: var(--muted);">{{ ucfirst($slot) }}</div>@endif
+                            @php
+                                $freqVal = $wds->delivery_frequency ?? 'daily';
+                                $freqLbl = match($freqVal) {
+                                    'alternate' => 'Alternate Days',
+                                    'weekly' => 'Weekly' . ($wds->preferred_day !== null ? ' (' . ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][$wds->preferred_day] . ')' : ''),
+                                    default => null,
+                                };
+                            @endphp
+                            @if($freqLbl)<div class="text-[10px] mt-0.5 font-semibold" style="color: var(--green);"><i class="fa-solid fa-calendar-week mr-0.5"></i>{{ $freqLbl }}</div>@endif
                             @if($sub->delivery_status !== 'active')<span class="inline-block mt-1 px-1.5 py-0.5 text-[10px] rounded-full font-semibold {{ $sub->delivery_status === 'paused' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700' }}"><i class="fa-solid {{ $sub->delivery_status === 'paused' ? 'fa-pause' : 'fa-stop' }} mr-0.5"></i>{{ ucfirst($sub->delivery_status) }}</span>@endif
                         </td>
                         <td class="px-4 py-3 text-sm font-semibold" style="color: var(--green);">{{ $delivery->quantity_delivered }} L</td>
@@ -297,6 +306,15 @@
                             @elseif($sub->milk_type)
                             <div class="text-xs mt-0.5" style="color: var(--muted);">{{ ucfirst(str_replace('_',' ',$sub->milk_type)) }}</div>
                             @endif
+                            @php
+                                $cFreqVal = $wds->delivery_frequency ?? 'daily';
+                                $cFreqLbl = match($cFreqVal) {
+                                    'alternate' => 'Alternate Days',
+                                    'weekly' => 'Weekly' . ($wds->preferred_day !== null ? ' (' . ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][$wds->preferred_day] . ')' : ''),
+                                    default => null,
+                                };
+                            @endphp
+                            @if($cFreqLbl)<div class="text-[10px] mt-0.5 font-semibold" style="color: var(--green);"><i class="fa-solid fa-calendar-week mr-0.5"></i>{{ $cFreqLbl }}</div>@endif
                         </td>
                         <td class="px-4 py-3 text-sm font-semibold" style="color: var(--green);">{{ $delivery->quantity_delivered }} L</td>
                         <td class="px-4 py-3">

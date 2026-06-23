@@ -85,15 +85,16 @@ class DeliveryLog extends Model
 
         if ($dailyCost <= 0) return 0;
 
-        $totalDaysCovered = (int) floor($balance / $dailyCost);
-        if ($totalDaysCovered <= 0) return 0;
+        // Number of actual delivery days the balance can cover
+        $totalDeliveryDays = (int) floor($balance / $dailyCost);
+        if ($totalDeliveryDays <= 0) return 0;
 
         $alreadyPending = static::where('user_subscription_id', $subscription->id)
             ->where('status', 'pending')
             ->whereDate('delivery_date', '>=', now()->toDateString())
             ->count();
 
-        $netNew = $totalDaysCovered - $alreadyPending;
+        $netNew = $totalDeliveryDays - $alreadyPending;
         if ($netNew <= 0) return 0;
 
         $lastDate = static::where('user_subscription_id', $subscription->id)
@@ -104,23 +105,36 @@ class DeliveryLog extends Model
             ? \Carbon\Carbon::parse($lastDate)->addDay()
             : $subscription->start_date->copy()->startOfDay();
 
-        $end = $start->copy()->addDays($netNew - 1);
+        // Determine delivery frequency
+        $frequency = $settings->delivery_frequency ?? 'daily';
+        $scheduleStart = $subscription->start_date->copy()->startOfDay();
 
         $generated = 0;
         $cur = $start->copy();
-        while ($cur->lte($end)) {
-            $log = static::firstOrCreate(
-                [
-                    'user_subscription_id' => $subscription->id,
-                    'delivery_date'        => $cur->format('Y-m-d'),
-                ],
-                [
-                    'quantity_delivered' => $totalQty,
-                    'milk_items'         => !empty($milkItems) ? $milkItems : null,
-                    'status'             => 'pending',
-                ]
-            );
-            if ($log->wasRecentlyCreated) $generated++;
+        // Safety cap: don't scan more than 365 calendar days ahead
+        $maxDate = $cur->copy()->addDays(365);
+
+        while ($generated < $netNew && $cur->lte($maxDate)) {
+            // Check if this date qualifies based on frequency
+            $shouldDeliver = true;
+            if ($settings && $frequency !== 'daily') {
+                $shouldDeliver = $settings->shouldDeliverOn($cur, $scheduleStart);
+            }
+
+            if ($shouldDeliver) {
+                $log = static::firstOrCreate(
+                    [
+                        'user_subscription_id' => $subscription->id,
+                        'delivery_date'        => $cur->format('Y-m-d'),
+                    ],
+                    [
+                        'quantity_delivered' => $totalQty,
+                        'milk_items'         => !empty($milkItems) ? $milkItems : null,
+                        'status'             => 'pending',
+                    ]
+                );
+                if ($log->wasRecentlyCreated) $generated++;
+            }
             $cur->addDay();
         }
         return $generated;

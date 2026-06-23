@@ -16,8 +16,6 @@ use Illuminate\Support\Facades\Log;
 
 class WalletController extends Controller
 {
-    public function __construct(protected PhonePeService $phonePeService) {}
-
     /** GET /wallet/calendar */
     public function calendar(Request $request)
     {
@@ -74,6 +72,8 @@ class WalletController extends Controller
             'location_id'                => 'required|exists:locations,id',
             'delivery_address'           => 'required|string|max:500',
             'start_date'                 => 'required|date|after_or_equal:today',
+            'delivery_frequency'         => 'nullable|in:daily,alternate,weekly',
+            'preferred_day'              => 'nullable|integer|min:0|max:6',
         ]);
 
         $user   = auth()->user();
@@ -122,19 +122,21 @@ class WalletController extends Controller
                 'status'         => 'pending',
                 'payment_method' => 'phonepe',
                 'wallet_meta'    => [
-                    'milk_items'       => $enrichedItems,
-                    'delivery_slot'    => $request->delivery_slot,
-                    'location_id'      => $request->location_id,
-                    'delivery_address' => $request->delivery_address,
-                    'start_date'       => $startDate->format('Y-m-d'),
+                    'milk_items'          => $enrichedItems,
+                    'delivery_slot'       => $request->delivery_slot,
+                    'location_id'         => $request->location_id,
+                    'delivery_address'    => $request->delivery_address,
+                    'start_date'          => $startDate->format('Y-m-d'),
+                    'delivery_frequency'  => $request->delivery_frequency ?? 'daily',
+                    'preferred_day'       => $request->preferred_day,
                     // Legacy fields for backward compatibility
-                    'milk_type'        => $primaryMilk['milk_type'],
-                    'quantity_per_day' => $totalQty,
-                    'price_per_litre'  => $primaryMilk['ppl'],
+                    'milk_type'           => $primaryMilk['milk_type'],
+                    'quantity_per_day'    => $totalQty,
+                    'price_per_litre'     => $primaryMilk['ppl'],
                 ],
             ]);
 
-            $paymentResponse = $this->phonePeService->initiatePayment(
+            $paymentResponse = app(PhonePeService::class)->initiatePayment(
                 $order->order_id, $amount, $user->id, $user->name, $user->phone ?? '9999999999'
             );
 
@@ -253,6 +255,8 @@ class WalletController extends Controller
             'milk_items.*.milk_type'    => 'required_with:milk_items|string|max:50',
             'milk_items.*.qty'          => 'required_with:milk_items|numeric|min:0.5|max:20',
             'milk_items.*.ppl'          => 'nullable|numeric|min:0',
+            'delivery_frequency'        => 'nullable|in:daily,alternate,weekly',
+            'preferred_day'             => 'nullable|integer|min:0|max:6',
         ]);
 
         // Enrich milk_items: apply shared slot + refresh price from DB
@@ -303,10 +307,17 @@ class WalletController extends Controller
             'delivery_address'      => $data['delivery_address'] ?? null,
             'delivery_instructions' => $data['delivery_instructions'] ?? null,
             'location_id'           => $data['location_id'] ?? null,
+            'delivery_frequency'    => $data['delivery_frequency'] ?? null,
+            'preferred_day'         => isset($data['preferred_day']) ? (int) $data['preferred_day'] : null,
             // legacy single-milk fields derived from items
             'milk_type'             => $data['milk_items'][0]['milk_type'] ?? null,
             'quantity_per_day'      => !empty($data['milk_items']) ? array_sum(array_column($data['milk_items'], 'qty')) : null,
         ], fn($v) => $v !== null);
+
+        // If frequency is not weekly, clear preferred_day
+        if (isset($data['delivery_frequency']) && $data['delivery_frequency'] !== 'weekly') {
+            $settingsData['preferred_day'] = null;
+        }
 
         // Save to delivery settings table
         $subscription->deliverySettings()->updateOrCreate(
@@ -336,6 +347,24 @@ class WalletController extends Controller
             $settingsData,
             'Member updated delivery settings'
         );
+
+        // Regenerate delivery schedule if frequency changed
+        $oldFrequency    = $oldSettings->delivery_frequency ?? 'daily';
+        $oldPreferredDay = $oldSettings->preferred_day ?? null;
+        $newFrequency    = $data['delivery_frequency'] ?? $oldFrequency;
+        $newPreferredDay = $data['preferred_day'] ?? $oldPreferredDay;
+
+        if ($oldFrequency !== $newFrequency || $oldPreferredDay !== $newPreferredDay) {
+            // Delete future pending deliveries and regenerate with new frequency
+            DeliveryLog::where('user_subscription_id', $subscription->id)
+                ->where('status', 'pending')
+                ->whereDate('delivery_date', '>', now()->toDateString())
+                ->delete();
+
+            // Reload fresh settings for autoGenerate
+            $subscription->load('deliverySettings');
+            DeliveryLog::autoGenerate($subscription);
+        }
 
         return redirect()->route('member.dashboard')->with('success', 'Delivery preferences updated.');
     }
@@ -504,7 +533,7 @@ class WalletController extends Controller
                 'payment_method'       => 'phonepe',
             ]);
 
-            $paymentResponse = $this->phonePeService->initiatePayment(
+            $paymentResponse = app(PhonePeService::class)->initiatePayment(
                 $order->order_id, $amount, $user->id, $user->name, $user->phone ?? '9999999999'
             );
 
