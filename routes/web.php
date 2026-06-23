@@ -241,5 +241,7 @@ Route::middleware('auth')->group(function () {
         Route::resource('seo-metas', App\Http\Controllers\Admin\SeoMetaController::class);
         // Milk Prices
         Route::resource('milk-prices', App\Http\Controllers\Admin\MilkPriceController::class)->except(['show', 'create', 'edit']);
+        // Database Export
+        Route::get('database-export', [App\Http\Controllers\Admin\DatabaseExportController::class, 'export'])->name('database-export');
     });
 });
