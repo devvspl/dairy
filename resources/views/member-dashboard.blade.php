@@ -405,7 +405,7 @@
                                     <div id="ws-preferred-date-wrap" class="{{ $currentFrequency === 'monthly' ? '' : 'hidden' }} mt-3">
                                         <p class="text-[11px] font-semibold mb-1.5" style="color:var(--muted);">Which date of the month? (1–28)</p>
                                         <div class="grid grid-cols-7 gap-1">
-                                            @for($d = 1; $d <= 28; $d++)
+                                            @for($d = 1; $d <= 31; $d++)
                                             <label class="ws-date-card flex items-center justify-center p-2 rounded-lg border-2 cursor-pointer transition-all text-center"
                                                 style="border-color:{{ ($currentFrequency === 'monthly' && $currentPreferredDay === $d) ? 'var(--green)' : 'var(--border)' }};background:{{ ($currentFrequency === 'monthly' && $currentPreferredDay === $d) ? 'rgba(47,74,30,0.05)' : '#fff' }};">
                                                 <input type="radio" name="preferred_day" value="{{ $d }}" class="hidden ws-date-radio" {{ ($currentFrequency === 'monthly' && $currentPreferredDay === $d) ? 'checked' : '' }}>
