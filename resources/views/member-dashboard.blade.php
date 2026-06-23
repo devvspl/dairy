@@ -822,7 +822,7 @@
                                 <div id="wi-preferred-date-wrap" class="hidden mt-3">
                                     <p class="text-[11px] font-semibold mb-1.5" style="color:var(--muted);">Which date of the month? (1–28)</p>
                                     <div class="grid grid-cols-7 gap-1">
-                                        @for($d = 1; $d <= 28; $d++)
+                                        @for($d = 1; $d <= 31; $d++)
                                         <label class="wi-date-card flex items-center justify-center p-2 rounded-lg border-2 cursor-pointer transition-all text-center"
                                             style="border-color:var(--border);background:#fff;">
                                             <input type="radio" name="preferred_day" value="{{ $d }}" class="hidden wi-date-radio">
