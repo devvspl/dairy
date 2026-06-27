@@ -170,11 +170,11 @@
                                 {{ $subscription->membershipPlan->name ?? 'Milk Wallet' }}
                                 @php
                                     $subDs = $subscription->deliverySettings;
-                                    $subFreqVal = $subDs->delivery_frequency ?? 'daily';
+                                    $subFreqVal = $subDs ? ($subDs->delivery_frequency ?? 'daily') : 'daily';
                                     $subFreqBadge = match($subFreqVal) {
                                         'alternate' => 'Alternate',
-                                        'weekly' => 'Weekly' . ($subDs->preferred_day !== null ? ' (' . ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][$subDs->preferred_day] . ')' : ''),
-                                        'monthly' => 'Monthly' . ($subDs->preferred_day !== null ? ' (Day ' . $subDs->preferred_day . ')' : ''),
+                                        'weekly' => 'Weekly' . ($subDs && $subDs->preferred_day !== null && $subDs->preferred_day <= 6 ? ' (' . ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][$subDs->preferred_day] . ')' : ''),
+                                        'monthly' => 'Monthly' . ($subDs && $subDs->preferred_day !== null ? ' (Day ' . $subDs->preferred_day . ')' : ''),
                                         default => null,
                                     };
                                 @endphp

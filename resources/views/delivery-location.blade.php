@@ -179,11 +179,11 @@
                             @php $slot = !empty($milkItems[0]['slot']) ? $milkItems[0]['slot'] : $sub->delivery_slot; @endphp
                             @if($slot)<div class="text-xs mt-0.5" style="color: var(--muted);">{{ ucfirst($slot) }}</div>@endif
                             @php
-                                $freqVal = $wds->delivery_frequency ?? 'daily';
+                                $freqVal = $wds ? ($wds->delivery_frequency ?? 'daily') : 'daily';
                                 $freqLbl = match($freqVal) {
                                     'alternate' => 'Alternate Days',
-                                    'weekly' => 'Weekly' . ($wds->preferred_day !== null ? ' (' . ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][$wds->preferred_day] . ')' : ''),
-                                    'monthly' => 'Monthly' . ($wds->preferred_day !== null ? ' (Day ' . $wds->preferred_day . ')' : ''),
+                                    'weekly' => 'Weekly' . ($wds && $wds->preferred_day !== null && $wds->preferred_day <= 6 ? ' (' . ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][$wds->preferred_day] . ')' : ''),
+                                    'monthly' => 'Monthly' . ($wds && $wds->preferred_day !== null ? ' (Day ' . $wds->preferred_day . ')' : ''),
                                     default => null,
                                 };
                             @endphp
@@ -308,11 +308,11 @@
                             <div class="text-xs mt-0.5" style="color: var(--muted);">{{ ucfirst(str_replace('_',' ',$sub->milk_type)) }}</div>
                             @endif
                             @php
-                                $cFreqVal = $wds->delivery_frequency ?? 'daily';
+                                $cFreqVal = $wds ? ($wds->delivery_frequency ?? 'daily') : 'daily';
                                 $cFreqLbl = match($cFreqVal) {
                                     'alternate' => 'Alternate Days',
-                                    'weekly' => 'Weekly' . ($wds->preferred_day !== null ? ' (' . ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][$wds->preferred_day] . ')' : ''),
-                                    'monthly' => 'Monthly' . ($wds->preferred_day !== null ? ' (Day ' . $wds->preferred_day . ')' : ''),
+                                    'weekly' => 'Weekly' . ($wds && $wds->preferred_day !== null && $wds->preferred_day <= 6 ? ' (' . ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][$wds->preferred_day] . ')' : ''),
+                                    'monthly' => 'Monthly' . ($wds && $wds->preferred_day !== null ? ' (Day ' . $wds->preferred_day . ')' : ''),
                                     default => null,
                                 };
                             @endphp

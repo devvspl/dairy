@@ -106,7 +106,7 @@ class DeliveryLog extends Model
             : $subscription->start_date->copy()->startOfDay();
 
         // Determine delivery frequency
-        $frequency = $settings->delivery_frequency ?? 'daily';
+        $frequency = $settings ? ($settings->delivery_frequency ?? 'daily') : 'daily';
         $scheduleStart = $subscription->start_date->copy()->startOfDay();
 
         $generated = 0;

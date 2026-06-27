@@ -153,7 +153,7 @@
                                         @php
                                             $freqLabel = match($wds->delivery_frequency ?? 'daily') {
                                                 'alternate' => 'Alternate Days',
-                                                'weekly' => 'Weekly' . ($wds->preferred_day !== null ? ' (' . ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][$wds->preferred_day] . ')' : ''),
+                                                'weekly' => 'Weekly' . ($wds->preferred_day !== null && $wds->preferred_day <= 6 ? ' (' . ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][$wds->preferred_day] . ')' : ''),
                                                 'monthly' => 'Monthly' . ($wds->preferred_day !== null ? ' (Day ' . $wds->preferred_day . ')' : ''),
                                                 default => 'Daily',
                                             };

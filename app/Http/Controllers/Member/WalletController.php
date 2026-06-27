@@ -349,8 +349,8 @@ class WalletController extends Controller
         );
 
         // Regenerate delivery schedule if frequency changed
-        $oldFrequency    = $oldSettings->delivery_frequency ?? 'daily';
-        $oldPreferredDay = $oldSettings->preferred_day ?? null;
+        $oldFrequency    = $oldSettings ? ($oldSettings->delivery_frequency ?? 'daily') : 'daily';
+        $oldPreferredDay = $oldSettings ? $oldSettings->preferred_day : null;
         $newFrequency    = $data['delivery_frequency'] ?? $oldFrequency;
         $newPreferredDay = $data['preferred_day'] ?? $oldPreferredDay;
 
