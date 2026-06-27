@@ -24,7 +24,7 @@ class UserSubscriptionController extends Controller
      */
     public function index(Request $request)
     {
-        $query = UserSubscription::with(['user', 'membershipPlan', 'location'])
+        $query = UserSubscription::with(['user', 'membershipPlan', 'location', 'deliverySettings'])
             ->orderBy('created_at', 'desc');
 
         if ($request->filled('status')) {
@@ -44,6 +44,13 @@ class UserSubscriptionController extends Controller
             $query->whereHas('user', function($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
                   ->orWhere('email', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('delivery_frequency')) {
+            $freq = $request->delivery_frequency;
+            $query->whereHas('deliverySettings', function($q) use ($freq) {
+                $q->where('delivery_frequency', $freq);
             });
         }
 
@@ -335,6 +342,155 @@ class UserSubscriptionController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Reconciliation fix failed: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Detect duplicate wallet credits (same order credited more than once)
+     */
+    public function duplicateCredits(): JsonResponse
+    {
+        // Find credit transactions that reference the same Order ID more than once
+        $credits = MilkWalletTransaction::where('type', 'credit')
+            ->where('is_reversal', false)
+            ->where('description', 'like', '%Order:%')
+            ->where('description', 'not like', '%[DUPLICATE - REVERSED]%')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        // Group by order ID extracted from description
+        $grouped = $credits->groupBy(function ($txn) {
+            if (preg_match('/Order:\s*(ORD\w+)/', $txn->description, $m)) {
+                return $m[1];
+            }
+            return 'unknown_' . $txn->id;
+        });
+
+        // Filter to only groups with duplicates (more than 1 credit for same order)
+        $duplicates = $grouped->filter(fn($group) => $group->count() > 1);
+
+        $results = [];
+        foreach ($duplicates as $orderId => $txns) {
+            $first = $txns->first();
+            $sub = UserSubscription::with('user')->find($first->user_subscription_id);
+            $extraCount = $txns->count() - 1;
+            $extraAmount = round($first->amount * $extraCount, 2);
+
+            $results[] = [
+                'order_id'          => $orderId,
+                'subscription_id'   => $first->user_subscription_id,
+                'user_name'         => $sub?->user?->name ?? 'Unknown',
+                'user_phone'        => $sub?->user?->phone ?? '',
+                'amount_per_credit' => (float) $first->amount,
+                'total_credits'     => $txns->count(),
+                'extra_credits'     => $extraCount,
+                'extra_amount'      => $extraAmount,
+                'first_credited_at' => $txns->last()->created_at->format('d M Y, h:i A'),
+                'last_credited_at'  => $txns->first()->created_at->format('d M Y, h:i A'),
+                'transaction_ids'   => $txns->pluck('id')->toArray(),
+            ];
+        }
+
+        return response()->json([
+            'success'    => true,
+            'duplicates' => $results,
+            'count'      => count($results),
+        ]);
+    }
+
+    /**
+     * Fix a duplicate credit by reversing the extra amount
+     */
+    public function fixDuplicateCredit(Request $request): JsonResponse
+    {
+        $request->validate([
+            'order_id'        => 'required|string',
+            'subscription_id' => 'required|integer|exists:user_subscriptions,id',
+        ]);
+
+        $orderId        = $request->order_id;
+        $subscriptionId = $request->subscription_id;
+
+        $subscription = UserSubscription::findOrFail($subscriptionId);
+
+        // Find all credit transactions for this order (excluding already reversed)
+        $credits = MilkWalletTransaction::where('type', 'credit')
+            ->where('is_reversal', false)
+            ->where('user_subscription_id', $subscriptionId)
+            ->where('description', 'like', "%Order: {$orderId}%")
+            ->where('description', 'not like', '%[DUPLICATE - REVERSED]%')
+            ->orderBy('created_at', 'asc')
+            ->get();
+
+        if ($credits->count() <= 1) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No duplicate found for this order.',
+            ]);
+        }
+
+        // Keep the first credit, reverse all extras
+        $extras = $credits->slice(1);
+        $totalReversed = 0;
+
+        DB::beginTransaction();
+        try {
+            foreach ($extras as $extraTxn) {
+                $amount = (float) $extraTxn->amount;
+                $totalReversed += $amount;
+
+                // Debit the wallet balance (and reduce wallet_total since it was wrongly inflated)
+                $newBalance = round((float) $subscription->wallet_balance - $amount, 2);
+                $newTotal   = round((float) $subscription->wallet_total - $amount, 2);
+
+                $subscription->update([
+                    'wallet_balance' => max(0, $newBalance),
+                    'wallet_total'   => max(0, $newTotal),
+                ]);
+                $subscription->refresh();
+
+                // Create a reversal transaction
+                MilkWalletTransaction::create([
+                    'user_id'              => $subscription->user_id,
+                    'user_subscription_id' => $subscription->id,
+                    'type'                 => 'debit',
+                    'amount'               => $amount,
+                    'balance_after'        => (float) $subscription->wallet_balance,
+                    'description'          => "Duplicate credit reversed | Order: {$orderId} | Txn #{$extraTxn->id}",
+                    'transaction_date'     => now()->toDateString(),
+                    'is_reversal'          => true,
+                ]);
+
+                // Mark the original extra as reversed
+                $extraTxn->update([
+                    'description' => $extraTxn->description . ' [DUPLICATE - REVERSED]',
+                ]);
+            }
+
+            SubscriptionChangeLog::record(
+                $subscription->id,
+                auth()->id(),
+                'duplicate_credit_fix',
+                ['order_id' => $orderId, 'extra_credits' => $extras->count()],
+                ['reversed_amount' => $totalReversed, 'new_balance' => (float) $subscription->wallet_balance],
+                "Reversed {$extras->count()} duplicate credit(s) totalling ₹{$totalReversed} for Order: {$orderId}"
+            );
+
+            DB::commit();
+
+            return response()->json([
+                'success'          => true,
+                'message'          => "Reversed {$extras->count()} duplicate credit(s) totalling ₹" . number_format($totalReversed, 2) . ".",
+                'reversed_amount'  => $totalReversed,
+                'new_balance'      => (float) $subscription->wallet_balance,
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Fix Duplicate Credit Error', ['error' => $e->getMessage(), 'order_id' => $orderId]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fix duplicate: ' . $e->getMessage(),
             ], 500);
         }
     }

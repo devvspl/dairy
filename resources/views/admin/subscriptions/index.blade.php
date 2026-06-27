@@ -35,6 +35,22 @@
         </div>
     </div>
 
+    <!-- Duplicate Credits Alert -->
+    <div id="duplicateCreditsSection" class="hidden">
+        <div class="bg-white rounded-lg shadow-sm border overflow-hidden" style="border-color: #fca5a5;">
+            <div class="flex items-center justify-between px-4 py-3" style="background: #fef2f2; border-bottom: 1px solid #fca5a5;">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-triangle-exclamation text-red-600"></i>
+                    <span class="text-sm font-bold text-red-700">Duplicate Credits Detected</span>
+                    <span id="duplicateCount" class="text-xs font-semibold px-2 py-0.5 rounded-full bg-red-100 text-red-700"></span>
+                </div>
+                <button type="button" onclick="document.getElementById('duplicateCreditsSection').classList.add('hidden')"
+                    class="text-red-400 hover:text-red-600 text-sm"><i class="fa-solid fa-times"></i></button>
+            </div>
+            <div id="duplicateList" class="divide-y" style="border-color: var(--border);"></div>
+        </div>
+    </div>
+
     <!-- Filters + Export Actions -->
     <div class="bg-white rounded-lg shadow-sm p-4 border" style="border-color: var(--border);">
         <form method="GET" action="{{ route('admin.subscriptions.index') }}" id="filterForm"
@@ -71,6 +87,15 @@
                     <option value="{{ $loc->id }}" {{ request('location_id') == $loc->id ? 'selected' : '' }}>
                         {{ $loc->name }}{{ $loc->area ? ' - '.$loc->area : '' }}
                     </option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="min-w-[150px]">
+                <label class="block text-xs font-medium mb-1" style="color: var(--muted);">Frequency</label>
+                <select name="delivery_frequency" class="w-full px-3 py-2 border rounded-lg text-sm" style="border-color: var(--border);">
+                    <option value="">All Frequencies</option>
+                    @foreach(['daily'=>'Daily','alternate'=>'Alternate Days','weekly'=>'Weekly','monthly'=>'Monthly'] as $fVal => $fLabel)
+                    <option value="{{ $fVal }}" {{ request('delivery_frequency') === $fVal ? 'selected' : '' }}>{{ $fLabel }}</option>
                     @endforeach
                 </select>
             </div>
@@ -143,6 +168,21 @@
                             <td class="px-4 py-3 text-sm" style="color: var(--muted);">#{{ $subscription->id }}</td>
                             <td class="px-4 py-3 text-sm font-medium" style="color: var(--text);">
                                 {{ $subscription->membershipPlan->name ?? 'Milk Wallet' }}
+                                @php
+                                    $subDs = $subscription->deliverySettings;
+                                    $subFreqVal = $subDs->delivery_frequency ?? 'daily';
+                                    $subFreqBadge = match($subFreqVal) {
+                                        'alternate' => 'Alternate',
+                                        'weekly' => 'Weekly' . ($subDs->preferred_day !== null ? ' (' . ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][$subDs->preferred_day] . ')' : ''),
+                                        'monthly' => 'Monthly' . ($subDs->preferred_day !== null ? ' (Day ' . $subDs->preferred_day . ')' : ''),
+                                        default => null,
+                                    };
+                                @endphp
+                                @if($subFreqBadge)
+                                <div class="text-[10px] font-semibold mt-0.5" style="color: var(--green);">
+                                    <i class="fa-solid fa-calendar-week mr-0.5"></i>{{ $subFreqBadge }}
+                                </div>
+                                @endif
                             </td>
                             <td class="px-4 py-3 text-sm">
                                 @if($subscription->location)
@@ -366,6 +406,84 @@ function deleteExport(id) {
                 document.getElementById('exportsEmpty').classList.remove('hidden');
             }
         }
+    });
+}
+
+// ── Duplicate Credits Detection ──────────────────────────────────
+(function() {
+    fetch('{{ route("admin.subscriptions.duplicate-credits") }}', {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (!data.success || data.count === 0) return;
+
+        document.getElementById('duplicateCreditsSection').classList.remove('hidden');
+        document.getElementById('duplicateCount').textContent = data.count + ' issue' + (data.count > 1 ? 's' : '');
+
+        const list = document.getElementById('duplicateList');
+        list.innerHTML = data.duplicates.map(d => `
+            <div class="flex items-center justify-between px-4 py-3 hover:bg-red-50" id="dup-${d.order_id}">
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <span class="text-sm font-bold" style="color:var(--text);">${d.user_name}</span>
+                        <span class="text-xs" style="color:var(--muted);">${d.user_phone}</span>
+                        <span class="text-xs font-mono px-1.5 py-0.5 rounded bg-gray-100" style="color:var(--muted);">Sub #${d.subscription_id}</span>
+                    </div>
+                    <div class="flex items-center gap-3 mt-1 text-xs" style="color:var(--muted);">
+                        <span><i class="fa-solid fa-receipt mr-0.5"></i>Order: <strong class="text-gray-700">${d.order_id}</strong></span>
+                        <span><i class="fa-solid fa-copy mr-0.5 text-red-500"></i><strong class="text-red-600">${d.total_credits}x</strong> credited (${d.extra_credits} extra)</span>
+                        <span><i class="fa-solid fa-indian-rupee-sign mr-0.5"></i>Extra: <strong class="text-red-600">₹${d.extra_amount.toLocaleString('en-IN')}</strong></span>
+                    </div>
+                    <div class="text-[10px] mt-0.5" style="color:var(--muted);">
+                        First: ${d.first_credited_at} · Last: ${d.last_credited_at}
+                    </div>
+                </div>
+                <button onclick="fixDuplicate('${d.order_id}', ${d.subscription_id}, this)"
+                    class="flex-shrink-0 px-3 py-2 rounded-lg text-xs font-bold text-white transition-all hover:opacity-90"
+                    style="background:#dc2626;">
+                    <i class="fa-solid fa-wrench mr-1"></i>Fix (Reverse ₹${d.extra_amount.toLocaleString('en-IN')})
+                </button>
+            </div>
+        `).join('');
+    })
+    .catch(() => {});
+})();
+
+function fixDuplicate(orderId, subscriptionId, btn) {
+    if (!confirm('This will reverse the duplicate credit and deduct ₹ from the wallet. Continue?')) return;
+
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i>Fixing...';
+
+    fetch('{{ route("admin.subscriptions.fix-duplicate-credit") }}', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF_TOKEN },
+        body: JSON.stringify({ order_id: orderId, subscription_id: subscriptionId }),
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            const row = document.getElementById('dup-' + orderId);
+            if (row) {
+                row.innerHTML = `
+                    <div class="flex items-center gap-2 px-4 py-3 w-full">
+                        <i class="fa-solid fa-circle-check text-green-600"></i>
+                        <span class="text-sm font-semibold text-green-700">${data.message}</span>
+                        <span class="text-xs ml-auto" style="color:var(--muted);">New balance: ₹${data.new_balance.toLocaleString('en-IN', {minimumFractionDigits:2})}</span>
+                    </div>
+                `;
+            }
+        } else {
+            alert(data.message || 'Fix failed.');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-wrench mr-1"></i>Retry';
+        }
+    })
+    .catch(() => {
+        alert('Network error. Please try again.');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-wrench mr-1"></i>Retry';
     });
 }
 </script>

@@ -197,6 +197,8 @@ Route::middleware('auth')->group(function () {
             Route::post('export', [App\Http\Controllers\Admin\UserSubscriptionController::class, 'export'])->name('export');
             Route::get('exports', [App\Http\Controllers\Admin\UserSubscriptionController::class, 'exportList'])->name('exports.list');
             Route::delete('exports/{export}', [App\Http\Controllers\Admin\UserSubscriptionController::class, 'exportDelete'])->name('exports.delete');
+            Route::get('duplicate-credits', [App\Http\Controllers\Admin\UserSubscriptionController::class, 'duplicateCredits'])->name('duplicate-credits');
+            Route::post('fix-duplicate-credit', [App\Http\Controllers\Admin\UserSubscriptionController::class, 'fixDuplicateCredit'])->name('fix-duplicate-credit');
             Route::get('{subscription}', [App\Http\Controllers\Admin\UserSubscriptionController::class, 'show'])->name('show');
             Route::get('{subscription}/payment-history', [App\Http\Controllers\Admin\UserSubscriptionController::class, 'paymentHistory'])->name('payment-history');
             Route::post('{subscription}/fix-reconciliation', [App\Http\Controllers\Admin\UserSubscriptionController::class, 'fixReconciliation'])->name('fix-reconciliation');

@@ -195,6 +195,13 @@ class PaymentController extends Controller
                 ]);
 
                 if ($verification['success'] && ($verification['state'] ?? '') === 'COMPLETED') {
+                    // Prevent duplicate processing — if order is already successful, just redirect
+                    if ($order->status === 'success') {
+                        DB::commit();
+                        Log::info('PhonePe: Duplicate callback ignored — order already processed', ['order_id' => $order->order_id]);
+                        return redirect()->route('payment.success', ['order' => $order->id]);
+                    }
+
                     $order->update([
                         'status'         => 'success',
                         'transaction_id' => $verification['data']['orderId'] ?? $merchantOrderId,
@@ -855,6 +862,12 @@ class PaymentController extends Controller
         DB::beginTransaction();
         try {
             if ($verification['success'] && ($verification['state'] ?? '') === 'COMPLETED') {
+                // Prevent duplicate processing
+                if ($order->status === 'success') {
+                    DB::commit();
+                    return redirect()->route('payment.product.success', ['order' => $order->id]);
+                }
+
                 $order->update([
                     'status'           => 'success',
                     'transaction_id'   => $verification['data']['orderId'] ?? $merchantOrderId,
