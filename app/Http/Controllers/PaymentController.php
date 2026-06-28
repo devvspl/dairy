@@ -218,10 +218,21 @@ class PaymentController extends Controller
                     return redirect()->route('payment.success', ['order' => $order->id]);
                 }
 
+                // Payment is still pending (bank processing, user hasn't completed)
+                $state = $verification['state'] ?? 'UNKNOWN';
+                if (in_array($state, ['PENDING', 'INITIATED'])) {
+                    // Don't mark as failed — leave as pending, user can retry or admin can verify later
+                    DB::commit();
+                    Log::info('PhonePe: Payment still pending', ['order_id' => $order->order_id, 'state' => $state]);
+                    return redirect()->route('payment.failure')->with('error', 'Payment is still being processed. Please wait a few minutes and check your dashboard. If amount was debited, it will be auto-credited.');
+                }
+
+                // Definitively failed
                 $order->update(['status' => 'failed']);
                 DB::commit();
 
-                return redirect()->route('payment.failure')->with('error', 'Payment verification failed.');
+                Log::info('PhonePe: Payment failed', ['order_id' => $order->order_id, 'state' => $state]);
+                return redirect()->route('payment.failure')->with('error', 'Payment failed. Status: ' . $state . '. If amount was debited, it will be refunded within 3-5 business days.');
             } catch (\Exception $e) {
                 DB::rollBack();
                 Log::error('PhonePe: Callback processing error', [
@@ -940,9 +951,17 @@ class PaymentController extends Controller
                 return redirect()->route('payment.product.success', $order->id);
             }
 
+            // Payment still pending
+            $state = $verification['state'] ?? 'UNKNOWN';
+            if (in_array($state, ['PENDING', 'INITIATED'])) {
+                DB::commit();
+                return redirect()->route('payment.failure')->with('error', 'Payment is still being processed. Please wait a few minutes. If amount was debited, it will be auto-credited.');
+            }
+
+            // Definitively failed
             $order->update(['status' => 'failed']);
             DB::commit();
-            return redirect()->route('payment.failure')->with('error', 'Payment verification failed.');
+            return redirect()->route('payment.failure')->with('error', 'Payment failed. Status: ' . $state . '. If amount was debited, it will be refunded within 3-5 business days.');
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Product Order Callback Error', ['error' => $e->getMessage()]);
