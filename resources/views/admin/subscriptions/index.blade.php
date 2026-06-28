@@ -666,16 +666,11 @@ function fixDuplicate(orderId, subscriptionId, btn) {
                         <span><i class="fa-solid fa-clock mr-0.5"></i>${p.age}</span>
                     </div>
                 </div>
-                <div class="flex-shrink-0 flex gap-2">
+                <div class="flex-shrink-0 flex gap-2" id="pending-actions-${p.order_id}">
                     <button onclick="verifyPending('${p.order_id}', this)"
                         class="px-3 py-2 rounded-lg text-xs font-bold text-white transition-all hover:opacity-90"
                         style="background:#d97706;">
                         <i class="fa-solid fa-rotate mr-1"></i>Verify
-                    </button>
-                    <button onclick="markFailed('${p.order_id}', this)"
-                        class="px-3 py-2 rounded-lg text-xs font-bold transition-all hover:opacity-90 border"
-                        style="border-color:#fca5a5; color:#dc2626; background:#fff5f5;">
-                        <i class="fa-solid fa-times mr-1"></i>Mark Failed
                     </button>
                 </div>
             </div>
@@ -697,16 +692,30 @@ function verifyPending(orderId, btn) {
     .then(data => {
         const row = document.getElementById('pending-' + orderId);
         if (data.success && data.status === 'success') {
+            // Payment was actually completed — show success
             if (row) row.innerHTML = `
                 <div class="flex items-center gap-2 w-full px-2">
                     <i class="fa-solid fa-circle-check text-green-600"></i>
                     <span class="text-sm font-semibold text-green-700">${data.message}</span>
                 </div>`;
         } else if (data.success) {
+            // Not paid — show status and enable "Mark Failed" button
             btn.disabled = false;
             btn.innerHTML = '<i class="fa-solid fa-clock mr-1"></i>' + (data.message || 'Not paid');
             btn.style.background = '#6b7280';
-            setTimeout(() => { btn.style.background = '#d97706'; btn.innerHTML = '<i class="fa-solid fa-rotate mr-1"></i>Verify'; }, 3000);
+
+            // Show "Mark Failed" button now that we've confirmed it's not paid
+            const actionsDiv = document.getElementById('pending-actions-' + orderId);
+            if (actionsDiv && !actionsDiv.querySelector('.mark-failed-btn')) {
+                const failBtn = document.createElement('button');
+                failBtn.className = 'mark-failed-btn px-3 py-2 rounded-lg text-xs font-bold transition-all hover:opacity-90 border';
+                failBtn.style.cssText = 'border-color:#fca5a5; color:#dc2626; background:#fff5f5;';
+                failBtn.innerHTML = '<i class="fa-solid fa-times mr-1"></i>Mark Failed';
+                failBtn.onclick = function() { markFailed(orderId, failBtn); };
+                actionsDiv.appendChild(failBtn);
+            }
+
+            setTimeout(() => { btn.style.background = '#d97706'; btn.innerHTML = '<i class="fa-solid fa-rotate mr-1"></i>Re-verify'; }, 4000);
         } else {
             alert(data.message || 'Verification failed.');
             btn.disabled = false;

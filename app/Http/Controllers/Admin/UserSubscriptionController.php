@@ -598,8 +598,39 @@ class UserSubscriptionController extends Controller
             return response()->json(['success' => false, 'message' => 'Order is already marked as success.']);
         }
 
-        // Admin can manually mark as failed (customer never paid)
+        // Admin can manually mark as failed — but ONLY after verifying with PhonePe that it's not paid
         if ($request->boolean('mark_failed')) {
+            // First verify with PhonePe to make sure money was NOT transacted
+            try {
+                $phonePe = app(\App\Services\PhonePeService::class);
+                $verification = $phonePe->verifyPayment($order->order_id);
+
+                $state = $verification['state'] ?? 'UNKNOWN';
+
+                // If PhonePe says COMPLETED, do NOT allow marking as failed — it was actually paid!
+                if ($verification['success'] && $state === 'COMPLETED') {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Cannot mark as failed — PhonePe confirms this payment was COMPLETED (₹' . number_format($order->amount, 2) . '). Use "Verify" to credit it instead.',
+                    ]);
+                }
+
+                // If PhonePe says PENDING, warn admin — payment might still complete
+                if (in_array($state, ['PENDING', 'INITIATED'])) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Cannot mark as failed — PhonePe shows status as "' . $state . '". Payment may still be processing. Wait and try again later.',
+                    ]);
+                }
+            } catch (\Exception $e) {
+                // If PhonePe service is not configured, allow marking failed with a warning logged
+                Log::warning('Mark Failed: PhonePe verification unavailable, proceeding with mark failed', [
+                    'order_id' => $orderId,
+                    'error'    => $e->getMessage(),
+                ]);
+            }
+
+            // PhonePe confirmed NOT paid (FAILED/EXPIRED/etc.) — safe to mark as failed
             $order->update([
                 'status' => 'failed',
                 'payment_response' => array_merge(
@@ -609,7 +640,8 @@ class UserSubscriptionController extends Controller
                         'by'        => auth()->user()->name,
                         'by_id'     => auth()->id(),
                         'at'        => now()->toDateTimeString(),
-                        'reason'    => 'Admin marked as failed — customer never paid',
+                        'phonepe_state' => $state ?? 'NOT_CHECKED',
+                        'reason'    => 'Admin marked as failed after PhonePe confirmed not paid',
                     ]]
                 ),
             ]);
@@ -622,20 +654,21 @@ class UserSubscriptionController extends Controller
                     'payment_marked_failed',
                     ['order_id' => $orderId, 'amount' => (float) $order->amount, 'old_status' => 'pending'],
                     ['order_id' => $orderId, 'amount' => (float) $order->amount, 'new_status' => 'failed'],
-                    "Admin marked pending payment ₹" . number_format($order->amount, 2) . " as failed (Order: {$orderId})"
+                    "Admin marked pending payment ₹" . number_format($order->amount, 2) . " as failed — PhonePe status: " . ($state ?? 'N/A') . " (Order: {$orderId})"
                 );
             }
 
             Log::info('Admin: Marked payment as failed', [
-                'order_id' => $orderId,
-                'amount'   => $order->amount,
-                'admin_id' => auth()->id(),
-                'admin'    => auth()->user()->name,
+                'order_id'     => $orderId,
+                'amount'       => $order->amount,
+                'phonepe_state'=> $state ?? 'NOT_CHECKED',
+                'admin_id'     => auth()->id(),
+                'admin'        => auth()->user()->name,
             ]);
 
             return response()->json([
                 'success' => true,
-                'message' => 'Order marked as failed.',
+                'message' => 'Order marked as failed (PhonePe confirmed: ' . ($state ?? 'not transacted') . ').',
                 'status'  => 'failed',
             ]);
         }
