@@ -600,7 +600,39 @@ class UserSubscriptionController extends Controller
 
         // Admin can manually mark as failed (customer never paid)
         if ($request->boolean('mark_failed')) {
-            $order->update(['status' => 'failed']);
+            $order->update([
+                'status' => 'failed',
+                'payment_response' => array_merge(
+                    $order->payment_response ?? [],
+                    ['admin_action' => [
+                        'action'    => 'marked_failed',
+                        'by'        => auth()->user()->name,
+                        'by_id'     => auth()->id(),
+                        'at'        => now()->toDateTimeString(),
+                        'reason'    => 'Admin marked as failed — customer never paid',
+                    ]]
+                ),
+            ]);
+
+            // Log to subscription change log if subscription exists
+            if ($order->user_subscription_id) {
+                SubscriptionChangeLog::record(
+                    $order->user_subscription_id,
+                    auth()->id(),
+                    'payment_marked_failed',
+                    ['order_id' => $orderId, 'amount' => (float) $order->amount, 'old_status' => 'pending'],
+                    ['order_id' => $orderId, 'amount' => (float) $order->amount, 'new_status' => 'failed'],
+                    "Admin marked pending payment ₹" . number_format($order->amount, 2) . " as failed (Order: {$orderId})"
+                );
+            }
+
+            Log::info('Admin: Marked payment as failed', [
+                'order_id' => $orderId,
+                'amount'   => $order->amount,
+                'admin_id' => auth()->id(),
+                'admin'    => auth()->user()->name,
+            ]);
+
             return response()->json([
                 'success' => true,
                 'message' => 'Order marked as failed.',
@@ -641,8 +673,25 @@ class UserSubscriptionController extends Controller
                                 $subscription->update(['delivery_status' => 'active']);
                             }
                             \App\Models\DeliveryLog::autoGenerate($subscription);
+
+                            // Log the admin verification action
+                            SubscriptionChangeLog::record(
+                                $subscription->id,
+                                auth()->id(),
+                                'payment_verified_success',
+                                ['order_id' => $orderId, 'amount' => (float) $order->amount, 'old_status' => 'pending'],
+                                ['order_id' => $orderId, 'amount' => (float) $order->amount, 'new_status' => 'success', 'new_balance' => (float) $subscription->wallet_balance],
+                                "Admin verified pending payment ₹" . number_format($order->amount, 2) . " as COMPLETED via PhonePe API (Order: {$orderId})"
+                            );
                         }
                     }
+
+                    Log::info('Admin: Verified payment as success', [
+                        'order_id' => $orderId,
+                        'amount'   => $order->amount,
+                        'admin_id' => auth()->id(),
+                        'admin'    => auth()->user()->name,
+                    ]);
 
                     DB::commit();
 
