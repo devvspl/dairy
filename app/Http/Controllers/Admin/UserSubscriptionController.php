@@ -494,4 +494,183 @@ class UserSubscriptionController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Get all pending payment orders (for admin alert panel)
+     */
+    public function pendingPayments(): JsonResponse
+    {
+        $pendingOrders = Order::where('status', 'pending')
+            ->where('order_type', 'wallet_topup')
+            ->where('created_at', '>=', now()->subDays(30)) // Only last 30 days
+            ->with(['user:id,name,phone,email'])
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->map(function ($order) {
+                return [
+                    'order_id'        => $order->order_id,
+                    'user_name'       => $order->user?->name ?? 'Unknown',
+                    'user_phone'      => $order->user?->phone ?? '',
+                    'amount'          => (float) $order->amount,
+                    'subscription_id' => $order->user_subscription_id,
+                    'created_at'      => $order->created_at->format('d M Y, h:i A'),
+                    'age'             => $order->created_at->diffForHumans(),
+                ];
+            });
+
+        return response()->json([
+            'success'  => true,
+            'payments' => $pendingOrders,
+            'count'    => $pendingOrders->count(),
+        ]);
+    }
+
+    /**
+     * Get all payment transactions (for admin panel)
+     */
+    public function allPayments(Request $request): JsonResponse
+    {
+        $query = Order::where('order_type', 'wallet_topup')
+            ->with(['user:id,name,phone,email'])
+            ->orderBy('created_at', 'desc');
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('order_id', 'like', "%{$search}%")
+                  ->orWhereHas('user', function ($q2) use ($search) {
+                      $q2->where('name', 'like', "%{$search}%")
+                         ->orWhere('phone', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        $payments = $query->take(200)->get();
+
+        $successAmount = $payments->where('status', 'success')->sum('amount');
+        $pendingAmount = $payments->where('status', 'pending')->sum('amount');
+        $totalAmount   = $payments->sum('amount');
+
+        $mapped = $payments->map(function ($order) {
+            return [
+                'order_id'        => $order->order_id,
+                'transaction_id'  => $order->transaction_id,
+                'user_name'       => $order->user?->name ?? 'Unknown',
+                'user_phone'      => $order->user?->phone ?? '',
+                'amount'          => (float) $order->amount,
+                'status'          => $order->status,
+                'subscription_id' => $order->user_subscription_id,
+                'date'            => $order->created_at->format('d M Y'),
+                'time'            => $order->created_at->format('h:i A'),
+            ];
+        });
+
+        return response()->json([
+            'success'        => true,
+            'payments'       => $mapped,
+            'total_amount'   => (float) $totalAmount,
+            'success_amount' => (float) $successAmount,
+            'pending_amount' => (float) $pendingAmount,
+        ]);
+    }
+
+    /**
+     * Verify a pending payment order with PhonePe and process if paid
+     */
+    public function verifyPendingPayment(Request $request): JsonResponse
+    {
+        $request->validate([
+            'order_id' => 'required|string',
+        ]);
+
+        $orderId = $request->order_id;
+        $order = Order::where('order_id', $orderId)->first();
+
+        if (!$order) {
+            return response()->json(['success' => false, 'message' => 'Order not found.']);
+        }
+
+        if ($order->status === 'success') {
+            return response()->json(['success' => false, 'message' => 'Order is already marked as success.']);
+        }
+
+        // Admin can manually mark as failed (customer never paid)
+        if ($request->boolean('mark_failed')) {
+            $order->update(['status' => 'failed']);
+            return response()->json([
+                'success' => true,
+                'message' => 'Order marked as failed.',
+                'status'  => 'failed',
+            ]);
+        }
+
+        try {
+            $phonePe = app(\App\Services\PhonePeService::class);
+            $verification = $phonePe->verifyPayment($order->order_id);
+
+            if ($verification['success'] && ($verification['state'] ?? '') === 'COMPLETED') {
+                DB::beginTransaction();
+                try {
+                    $order->update([
+                        'status'           => 'success',
+                        'transaction_id'   => $verification['data']['orderId'] ?? $order->transaction_id,
+                        'paid_at'          => now(),
+                        'payment_response' => array_merge(
+                            $order->payment_response ?? [],
+                            ['admin_verification' => $verification]
+                        ),
+                    ]);
+
+                    if ($order->isWalletTopup()) {
+                        // Process wallet top-up
+                        $subscription = $order->user_subscription_id
+                            ? UserSubscription::find($order->user_subscription_id)
+                            : null;
+
+                        if ($subscription) {
+                            $subscription->creditWallet(
+                                (float) $order->amount,
+                                'Wallet top-up | Order: ' . $order->order_id . ' (admin verified)'
+                            );
+
+                            if (in_array($subscription->delivery_status, ['stopped', 'paused'])) {
+                                $subscription->update(['delivery_status' => 'active']);
+                            }
+                            \App\Models\DeliveryLog::autoGenerate($subscription);
+                        }
+                    }
+
+                    DB::commit();
+
+                    return response()->json([
+                        'success' => true,
+                        'message' => 'Payment verified as COMPLETED. ₹' . number_format($order->amount, 2) . ' credited to wallet.',
+                        'status'  => 'success',
+                    ]);
+                } catch (\Exception $e) {
+                    DB::rollBack();
+                    throw $e;
+                }
+            }
+
+            // Payment not completed
+            $state = $verification['state'] ?? 'UNKNOWN';
+            return response()->json([
+                'success' => true,
+                'message' => "Payment status from PhonePe: {$state}. Not yet paid.",
+                'status'  => strtolower($state),
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Verify Pending Payment Error', ['error' => $e->getMessage(), 'order_id' => $orderId]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Verification failed: ' . $e->getMessage(),
+            ]);
+        }
+    }
 }

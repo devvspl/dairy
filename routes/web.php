@@ -199,6 +199,9 @@ Route::middleware('auth')->group(function () {
             Route::delete('exports/{export}', [App\Http\Controllers\Admin\UserSubscriptionController::class, 'exportDelete'])->name('exports.delete');
             Route::get('duplicate-credits', [App\Http\Controllers\Admin\UserSubscriptionController::class, 'duplicateCredits'])->name('duplicate-credits');
             Route::post('fix-duplicate-credit', [App\Http\Controllers\Admin\UserSubscriptionController::class, 'fixDuplicateCredit'])->name('fix-duplicate-credit');
+            Route::get('pending-payments', [App\Http\Controllers\Admin\UserSubscriptionController::class, 'pendingPayments'])->name('pending-payments');
+            Route::get('all-payments', [App\Http\Controllers\Admin\UserSubscriptionController::class, 'allPayments'])->name('all-payments');
+            Route::post('verify-pending-payment', [App\Http\Controllers\Admin\UserSubscriptionController::class, 'verifyPendingPayment'])->name('verify-pending-payment');
             Route::get('{subscription}', [App\Http\Controllers\Admin\UserSubscriptionController::class, 'show'])->name('show');
             Route::get('{subscription}/payment-history', [App\Http\Controllers\Admin\UserSubscriptionController::class, 'paymentHistory'])->name('payment-history');
             Route::post('{subscription}/fix-reconciliation', [App\Http\Controllers\Admin\UserSubscriptionController::class, 'fixReconciliation'])->name('fix-reconciliation');

@@ -30,8 +30,8 @@ class PhonePeService
 
     public function __construct()
     {
-        $this->clientId      = config('services.phonepe.client_id');
-        $this->clientSecret  = config('services.phonepe.client_secret');
+        $this->clientId      = config('services.phonepe.client_id') ?? '';
+        $this->clientSecret  = config('services.phonepe.client_secret') ?? '';
         $this->clientVersion = (int) config('services.phonepe.client_version', 1);
         $this->isSandbox     = (bool) config('services.phonepe.sandbox', true);
 

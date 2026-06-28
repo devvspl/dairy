@@ -701,6 +701,15 @@ function renderBankPayments(payments) {
                             <span class="font-mono text-[10px]">${payment.transaction_id}</span>
                         </div>
                         ` : ''}
+                        ${payment.status === 'pending' ? `
+                        <div class="col-span-2 mt-2">
+                            <button onclick="verifyPendingPayment('${payment.order_id}', this)"
+                                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-white transition-all hover:opacity-90"
+                                style="background:#d97706;">
+                                <i class="fa-solid fa-rotate"></i> Verify with PhonePe
+                            </button>
+                        </div>
+                        ` : ''}
                     </div>
                 </div>
             </div>
@@ -723,6 +732,38 @@ function renderBankPayments(payments) {
     ` + html;
     
     container.innerHTML = html;
+}
+
+function verifyPendingPayment(orderId, btn) {
+    if (!confirm('Verify this payment with PhonePe? If paid, it will be credited to the wallet.')) return;
+    
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i>Verifying...';
+
+    fetch('{{ route("admin.subscriptions.verify-pending-payment") }}', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+        body: JSON.stringify({ order_id: orderId }),
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success && data.status === 'success') {
+            btn.outerHTML = `<span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-white" style="background:#16a34a;"><i class="fa-solid fa-check-circle"></i>${data.message}</span>`;
+        } else if (data.success) {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-clock mr-1"></i>' + data.message;
+            btn.style.background = '#6b7280';
+        } else {
+            alert(data.message || 'Verification failed.');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-rotate mr-1"></i>Retry';
+        }
+    })
+    .catch(() => {
+        alert('Network error. Please try again.');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-rotate mr-1"></i>Retry';
+    });
 }
 
 function renderWalletHistory(transactions) {

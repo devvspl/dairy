@@ -51,6 +51,22 @@
         </div>
     </div>
 
+    <!-- Pending Payments Alert -->
+    <div id="pendingPaymentsSection" class="hidden">
+        <div class="bg-white rounded-lg shadow-sm border overflow-hidden" style="border-color: #fde68a;">
+            <div class="flex items-center justify-between px-4 py-3" style="background: #fffbeb; border-bottom: 1px solid #fde68a;">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-clock text-yellow-600"></i>
+                    <span class="text-sm font-bold text-yellow-700">Pending Payments</span>
+                    <span id="pendingPaymentsCount" class="text-xs font-semibold px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700"></span>
+                </div>
+                <button type="button" onclick="document.getElementById('pendingPaymentsSection').classList.add('hidden')"
+                    class="text-yellow-400 hover:text-yellow-600 text-sm"><i class="fa-solid fa-times"></i></button>
+            </div>
+            <div id="pendingPaymentsList" class="divide-y" style="border-color: var(--border);"></div>
+        </div>
+    </div>
+
     <!-- Filters + Export Actions -->
     <div class="bg-white rounded-lg shadow-sm p-4 border" style="border-color: var(--border);">
         <form method="GET" action="{{ route('admin.subscriptions.index') }}" id="filterForm"
@@ -106,6 +122,12 @@
                 Clear
             </a>
             <div class="ml-auto flex gap-2">
+                <button type="button" onclick="openAllPaymentsPanel()"
+                        class="inline-flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-sm text-white"
+                        style="background-color: #7c3aed;">
+                    <i class="fa-solid fa-credit-card"></i>
+                    <span>All Payments</span>
+                </button>
                 <button type="button" onclick="generateExport()"
                         id="exportBtn"
                         class="inline-flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-sm text-white"
@@ -269,9 +291,53 @@
     </div>
 </div>
 
+<!-- All Payments Offcanvas -->
+<div id="allPaymentsPanel" class="fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-black bg-opacity-40" onclick="closeAllPaymentsPanel()"></div>
+    <div id="allPaymentsPanelDrawer"
+         class="absolute top-0 right-0 h-full w-full max-w-2xl bg-white shadow-2xl flex flex-col"
+         style="transform: translateX(100%); transition: transform 0.3s ease;">
+        <div class="flex items-center justify-between px-5 py-4 border-b" style="border-color: var(--border); background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%);">
+            <div class="flex items-center gap-2">
+                <i class="fa-solid fa-credit-card text-white"></i>
+                <h3 class="font-bold text-white text-base">All Payment Transactions</h3>
+            </div>
+            <button onclick="closeAllPaymentsPanel()" class="text-white hover:text-gray-200 text-xl leading-none">&times;</button>
+        </div>
+        {{-- Filters --}}
+        <div class="px-5 py-3 border-b flex flex-wrap gap-2 items-center" style="border-color: var(--border); background: #faf5ff;">
+            <select id="ap-status-filter" onchange="loadAllPayments()" class="px-3 py-1.5 border rounded-lg text-xs" style="border-color: var(--border);">
+                <option value="">All Status</option>
+                <option value="success">Success</option>
+                <option value="pending">Pending</option>
+                <option value="failed">Failed</option>
+            </select>
+            <input type="text" id="ap-search-filter" onkeyup="debounceLoadPayments()" placeholder="Search name, phone, order..."
+                class="px-3 py-1.5 border rounded-lg text-xs min-w-[160px]" style="border-color: var(--border);">
+            <span id="ap-total-label" class="ml-auto text-xs font-semibold" style="color: var(--muted);"></span>
+        </div>
+        {{-- Content --}}
+        <div class="flex-1 overflow-y-auto p-4" id="allPaymentsBody">
+            <div class="flex items-center justify-center h-32 text-gray-400 text-sm" id="apLoading">
+                <i class="fa-solid fa-spinner fa-spin mr-2"></i> Loading...
+            </div>
+            <div id="apList" class="space-y-2 hidden"></div>
+            <div id="apEmpty" class="hidden text-center py-10 text-gray-400 text-sm">
+                <i class="fa-solid fa-credit-card text-3xl mb-2 block" style="color: #7c3aed;"></i>
+                No payments found.
+            </div>
+        </div>
+        <div class="px-5 py-3 border-t flex items-center justify-between" style="border-color: var(--border);">
+            <span class="text-xs text-gray-400">Last 200 transactions</span>
+            <div id="ap-summary" class="text-xs font-semibold" style="color: var(--green);"></div>
+        </div>
+    </div>
+</div>
+
 <script>
 const EXPORT_URL       = '{{ route('admin.subscriptions.export') }}';
 const EXPORTS_LIST_URL = '{{ route('admin.subscriptions.exports.list') }}';
+const ALL_PAYMENTS_URL = '{{ route('admin.subscriptions.all-payments') }}';
 const CSRF_TOKEN       = '{{ csrf_token() }}';
 
 function getFilters() {
@@ -409,6 +475,92 @@ function deleteExport(id) {
     });
 }
 
+// ── All Payments Panel ───────────────────────────────────────────
+function openAllPaymentsPanel() {
+    const panel  = document.getElementById('allPaymentsPanel');
+    const drawer = document.getElementById('allPaymentsPanelDrawer');
+    panel.classList.remove('hidden');
+    setTimeout(() => drawer.style.transform = 'translateX(0)', 10);
+    loadAllPayments();
+}
+
+function closeAllPaymentsPanel() {
+    const drawer = document.getElementById('allPaymentsPanelDrawer');
+    drawer.style.transform = 'translateX(100%)';
+    setTimeout(() => document.getElementById('allPaymentsPanel').classList.add('hidden'), 300);
+}
+
+let apDebounceTimer = null;
+function debounceLoadPayments() {
+    clearTimeout(apDebounceTimer);
+    apDebounceTimer = setTimeout(loadAllPayments, 400);
+}
+
+function loadAllPayments() {
+    document.getElementById('apLoading').classList.remove('hidden');
+    document.getElementById('apList').classList.add('hidden');
+    document.getElementById('apEmpty').classList.add('hidden');
+
+    const status = document.getElementById('ap-status-filter').value;
+    const search = document.getElementById('ap-search-filter').value;
+    const params = new URLSearchParams();
+    if (status) params.set('status', status);
+    if (search) params.set('search', search);
+
+    fetch(ALL_PAYMENTS_URL + '?' + params.toString(), {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(r => r.json())
+    .then(data => {
+        document.getElementById('apLoading').classList.add('hidden');
+
+        if (!data.success || data.payments.length === 0) {
+            document.getElementById('apEmpty').classList.remove('hidden');
+            document.getElementById('ap-total-label').textContent = '0 transactions';
+            document.getElementById('ap-summary').textContent = '';
+            return;
+        }
+
+        document.getElementById('ap-total-label').textContent = data.payments.length + ' transaction(s) · Total: ₹' + data.total_amount.toLocaleString('en-IN', {minimumFractionDigits:2});
+        document.getElementById('ap-summary').innerHTML = `<span style="color:var(--green);">Success: ₹${data.success_amount.toLocaleString('en-IN')}</span> · <span style="color:#d97706;">Pending: ₹${data.pending_amount.toLocaleString('en-IN')}</span>`;
+
+        const list = document.getElementById('apList');
+        list.innerHTML = data.payments.map(p => {
+            const statusColor = p.status === 'success' ? '#16a34a' : p.status === 'pending' ? '#d97706' : '#dc2626';
+            const statusBg = p.status === 'success' ? '#f0fdf4' : p.status === 'pending' ? '#fffbeb' : '#fef2f2';
+            return `
+            <div class="flex items-center gap-3 p-3 rounded-lg border hover:shadow-sm transition-shadow" style="border-color: var(--border); background: ${statusBg};">
+                <div class="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0" style="background: ${statusBg}; border: 2px solid ${statusColor};">
+                    <i class="fa-solid ${p.status === 'success' ? 'fa-check' : p.status === 'pending' ? 'fa-clock' : 'fa-times'} text-xs" style="color: ${statusColor};"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <span class="text-sm font-bold" style="color:var(--text);">${p.user_name}</span>
+                        <span class="text-xs" style="color:var(--muted);">${p.user_phone}</span>
+                        <span class="px-1.5 py-0.5 text-[10px] rounded-full font-bold" style="background:${statusBg};color:${statusColor};border:1px solid ${statusColor};">${p.status.toUpperCase()}</span>
+                    </div>
+                    <div class="flex items-center gap-3 mt-0.5 text-[11px]" style="color:var(--muted);">
+                        <span class="font-mono">${p.order_id}</span>
+                        <span>${p.date}</span>
+                        <span>${p.time}</span>
+                        ${p.subscription_id ? '<span>Sub #' + p.subscription_id + '</span>' : '<span class="text-purple-600">New Wallet</span>'}
+                    </div>
+                </div>
+                <div class="text-right flex-shrink-0">
+                    <p class="text-sm font-bold" style="color: ${statusColor};">₹${p.amount.toLocaleString('en-IN', {minimumFractionDigits:2})}</p>
+                </div>
+            </div>`;
+        }).join('');
+
+        list.classList.remove('hidden');
+    })
+    .catch(() => {
+        document.getElementById('apLoading').classList.add('hidden');
+        document.getElementById('apList').innerHTML = '<p class="text-sm text-red-500 text-center">Failed to load payments.</p>';
+        document.getElementById('apList').classList.remove('hidden');
+    });
+}
+
 // ── Duplicate Credits Detection ──────────────────────────────────
 (function() {
     fetch('{{ route("admin.subscriptions.duplicate-credits") }}', {
@@ -484,6 +636,119 @@ function fixDuplicate(orderId, subscriptionId, btn) {
         alert('Network error. Please try again.');
         btn.disabled = false;
         btn.innerHTML = '<i class="fa-solid fa-wrench mr-1"></i>Retry';
+    });
+}
+
+// ── Pending Payments Detection ───────────────────────────────────
+(function() {
+    fetch('{{ route("admin.subscriptions.pending-payments") }}', {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (!data.success || data.count === 0) return;
+
+        document.getElementById('pendingPaymentsSection').classList.remove('hidden');
+        document.getElementById('pendingPaymentsCount').textContent = data.count + ' payment' + (data.count > 1 ? 's' : '');
+
+        const list = document.getElementById('pendingPaymentsList');
+        list.innerHTML = data.payments.map(p => `
+            <div class="flex items-center justify-between px-4 py-3 hover:bg-yellow-50" id="pending-${p.order_id}">
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <span class="text-sm font-bold" style="color:var(--text);">${p.user_name}</span>
+                        <span class="text-xs" style="color:var(--muted);">${p.user_phone}</span>
+                        ${p.subscription_id ? `<span class="text-xs font-mono px-1.5 py-0.5 rounded bg-gray-100" style="color:var(--muted);">Sub #${p.subscription_id}</span>` : '<span class="text-xs font-mono px-1.5 py-0.5 rounded bg-blue-50 text-blue-600">New Wallet</span>'}
+                    </div>
+                    <div class="flex items-center gap-3 mt-1 text-xs" style="color:var(--muted);">
+                        <span><i class="fa-solid fa-receipt mr-0.5"></i>${p.order_id}</span>
+                        <span><i class="fa-solid fa-indian-rupee-sign mr-0.5"></i><strong class="text-yellow-700">₹${p.amount.toLocaleString('en-IN')}</strong></span>
+                        <span><i class="fa-solid fa-clock mr-0.5"></i>${p.age}</span>
+                    </div>
+                </div>
+                <div class="flex-shrink-0 flex gap-2">
+                    <button onclick="verifyPending('${p.order_id}', this)"
+                        class="px-3 py-2 rounded-lg text-xs font-bold text-white transition-all hover:opacity-90"
+                        style="background:#d97706;">
+                        <i class="fa-solid fa-rotate mr-1"></i>Verify
+                    </button>
+                    <button onclick="markFailed('${p.order_id}', this)"
+                        class="px-3 py-2 rounded-lg text-xs font-bold transition-all hover:opacity-90 border"
+                        style="border-color:#fca5a5; color:#dc2626; background:#fff5f5;">
+                        <i class="fa-solid fa-times mr-1"></i>Mark Failed
+                    </button>
+                </div>
+            </div>
+        `).join('');
+    })
+    .catch(() => {});
+})();
+
+function verifyPending(orderId, btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i>Checking...';
+
+    fetch('{{ route("admin.subscriptions.verify-pending-payment") }}', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF_TOKEN },
+        body: JSON.stringify({ order_id: orderId }),
+    })
+    .then(r => r.json())
+    .then(data => {
+        const row = document.getElementById('pending-' + orderId);
+        if (data.success && data.status === 'success') {
+            if (row) row.innerHTML = `
+                <div class="flex items-center gap-2 w-full px-2">
+                    <i class="fa-solid fa-circle-check text-green-600"></i>
+                    <span class="text-sm font-semibold text-green-700">${data.message}</span>
+                </div>`;
+        } else if (data.success) {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-clock mr-1"></i>' + (data.message || 'Not paid');
+            btn.style.background = '#6b7280';
+            setTimeout(() => { btn.style.background = '#d97706'; btn.innerHTML = '<i class="fa-solid fa-rotate mr-1"></i>Verify'; }, 3000);
+        } else {
+            alert(data.message || 'Verification failed.');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-rotate mr-1"></i>Retry';
+        }
+    })
+    .catch(() => {
+        alert('Network error.');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-rotate mr-1"></i>Retry';
+    });
+}
+
+function markFailed(orderId, btn) {
+    if (!confirm('Mark this payment as failed? This means the customer never paid.')) return;
+
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i>...';
+
+    fetch('{{ route("admin.subscriptions.verify-pending-payment") }}', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF_TOKEN },
+        body: JSON.stringify({ order_id: orderId, mark_failed: true }),
+    })
+    .then(r => r.json())
+    .then(data => {
+        const row = document.getElementById('pending-' + orderId);
+        if (data.success) {
+            if (row) row.innerHTML = `
+                <div class="flex items-center gap-2 w-full px-2">
+                    <i class="fa-solid fa-circle-xmark text-gray-500"></i>
+                    <span class="text-sm font-semibold text-gray-600">Marked as failed</span>
+                </div>`;
+        } else {
+            alert(data.message || 'Failed.');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-times mr-1"></i>Mark Failed';
+        }
+    })
+    .catch(() => {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-times mr-1"></i>Mark Failed';
     });
 }
 </script>
