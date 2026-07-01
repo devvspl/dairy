@@ -769,12 +769,13 @@ class PaymentController extends Controller
             }
 
             $items[] = [
-                'id'         => $product->id,
-                'variant_id' => $variant?->id,
-                'name'       => $itemName,
-                'price'      => $itemPrice,
-                'quantity'   => (int) $item['quantity'],
-                'image'      => $product->main_image,
+                'id'               => $product->id,
+                'variant_id'       => $variant?->id,
+                'name'             => $itemName,
+                'price'            => $itemPrice,
+                'quantity'         => (int) $item['quantity'],
+                'image'            => $product->main_image,
+                'skip_shiprocket'  => (bool) $product->skip_shiprocket,
             ];
             $total += $itemPrice * $item['quantity'];
         }
@@ -816,6 +817,7 @@ class PaymentController extends Controller
                 'customer_phone'   => $request->customer_phone,
                 'customer_email'   => $request->customer_email,
                 'delivery_address' => $request->delivery_address,
+                'skip_shiprocket'  => collect($items)->contains('skip_shiprocket', true),
             ]);
 
             $paymentResponse = $this->phonePeService->initiatePayment(
