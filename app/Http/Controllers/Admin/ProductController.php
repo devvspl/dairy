@@ -79,6 +79,7 @@ class ProductController extends Controller
         $validated['is_active'] = $request->has('is_active');
         $validated['is_featured'] = $request->has('is_featured');
         $validated['is_subscription_redirect'] = $request->has('is_subscription_redirect');
+        $validated['skip_shiprocket'] = $request->has('skip_shiprocket');
 
         // Ensure NOT NULL columns never receive null (DB has no default for these)
         $validated['badge_color'] = $validated['badge_color'] ?? '';
@@ -174,6 +175,7 @@ class ProductController extends Controller
         $validated['is_active'] = $request->has('is_active');
         $validated['is_featured'] = $request->has('is_featured');
         $validated['is_subscription_redirect'] = $request->has('is_subscription_redirect');
+        $validated['skip_shiprocket'] = $request->has('skip_shiprocket');
 
         // Ensure NOT NULL columns never receive null (DB has no default for these)
         $validated['badge_color'] = $validated['badge_color'] ?? '';

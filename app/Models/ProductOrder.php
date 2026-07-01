@@ -13,6 +13,7 @@ class ProductOrder extends Model
         'delivery_address', 'paid_at', 'coupon_code', 'discount_amount',
         'shiprocket_order_id', 'shiprocket_shipment_id', 'shiprocket_awb',
         'shiprocket_courier', 'shiprocket_status', 'shiprocket_assigned_at',
+        'skip_shiprocket',
     ];
 
     protected $casts = [
