@@ -29,6 +29,9 @@ class ProductOrderController extends Controller
                 $query->where('items', 'like', '%"id":' . $product->id . '%');
             }
         }
+        if ($request->has('skip_shiprocket') && $request->input('skip_shiprocket') !== '') {
+            $query->where('skip_shiprocket', (bool) $request->input('skip_shiprocket'));
+        }
         if ($request->filled('date_from')) {
             $query->whereDate('created_at', '>=', $request->date_from);
         }

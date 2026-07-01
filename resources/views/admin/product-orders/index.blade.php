@@ -52,6 +52,12 @@
                 @endforeach
             </select>
 
+            <select name="skip_shiprocket" class="px-3 py-2 border rounded-lg text-sm" style="border-color: var(--border);">
+                <option value="">All Fulfilment</option>
+                <option value="0" {{ request('skip_shiprocket') === '0' ? 'selected' : '' }}>Shiprocket</option>
+                <option value="1" {{ request('skip_shiprocket') === '1' ? 'selected' : '' }}>Skip Shiprocket</option>
+            </select>
+
             <input type="date" name="date_from" value="{{ request('date_from') }}"
                    class="px-3 py-2 border rounded-lg text-sm" style="border-color: var(--border);">
             <input type="date" name="date_to" value="{{ request('date_to') }}"
@@ -137,9 +143,11 @@
                         data-assigned="{{ $order->shiprocket_order_id ? '1' : '0' }}">
                         @if($srEnabled)
                         <td class="px-4 py-3 w-10">
-                            @if(!$order->shiprocket_order_id)
+                            @if(!$order->shiprocket_order_id && !$order->skip_shiprocket)
                             <input type="checkbox" class="row-check w-4 h-4 rounded accent-green-600 cursor-pointer"
                                    value="{{ $order->id }}" onchange="onRowCheck()">
+                            @elseif($order->skip_shiprocket)
+                            <span class="block w-4 h-4"></span>
                             @else
                             <span class="block w-4 h-4 flex items-center justify-center">
                                 <i class="fa-solid fa-circle-check text-green-500 text-sm"></i>
@@ -172,7 +180,11 @@
                         </td>
                         @if($srEnabled)
                         <td class="px-4 py-3">
-                            @if($order->shiprocket_order_id)
+                            @if($order->skip_shiprocket)
+                                <span class="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-full font-semibold bg-orange-50 text-orange-700">
+                                    <i class="fa-solid fa-ban text-xs"></i> Skip SR
+                                </span>
+                            @elseif($order->shiprocket_order_id)
                                 <span class="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-full font-semibold bg-blue-50 text-blue-700">
                                     <i class="fa-solid fa-truck-fast text-xs"></i>
                                     {{ $order->shiprocket_status ?? 'Assigned' }}

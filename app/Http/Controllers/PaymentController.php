@@ -817,7 +817,6 @@ class PaymentController extends Controller
                 'customer_phone'   => $request->customer_phone,
                 'customer_email'   => $request->customer_email,
                 'delivery_address' => $request->delivery_address,
-                'skip_shiprocket'  => collect($items)->contains('skip_shiprocket', true),
             ]);
 
             $paymentResponse = $this->phonePeService->initiatePayment(
@@ -925,10 +924,10 @@ class PaymentController extends Controller
                     }
                 }
 
-                // Assign shiprocket 
+                // Assign shiprocket (skip if the order or any of its products opted out)
                 $shiprocket = app(ShiprocketService::class);
 
-                if ($shiprocket->isEnabled() && !$order->isShiprocketAssigned()) {
+                if ($shiprocket->isEnabled() && !$order->isShiprocketAssigned() && !$order->skip_shiprocket) {
                     $shipment = $shiprocket->createOrder($order);
 
                     if ($shipment['success']) {
