@@ -143,12 +143,7 @@ class UserSubscriptionController extends Controller
             ->get()
             ->keyBy(fn($item) => $item->delivery_date->format('Y-m-d'));
 
-        $productOrders = \App\Models\ProductOrder::where('user_id', $subscription->user_id)
-            ->where('status', 'success')
-            ->latest()
-            ->get();
-
-        return view('admin.subscriptions.show', compact('subscription', 'monthDeliveries', 'productOrders'));
+        return view('admin.subscriptions.show', compact('subscription', 'monthDeliveries'));
     }
 
     /**

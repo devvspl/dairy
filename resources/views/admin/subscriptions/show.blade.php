@@ -438,4 +438,77 @@
 </div>
 @endif
 
+{{-- ── Product Orders for this user ───────────────────────────────────── --}}
+@if($productOrders->isNotEmpty())
+<div class="bg-white rounded-lg shadow-sm border mt-6" style="border-color: var(--border);">
+    <div class="flex items-center justify-between px-6 py-4 border-b" style="border-color: var(--border);">
+        <h3 class="text-base font-bold flex items-center gap-2" style="color: var(--text);">
+            <i class="fa-solid fa-box-open" style="color: var(--green);"></i>
+            Product Orders — {{ $subscription->user->name }}
+        </h3>
+        <span class="text-xs px-2 py-1 rounded-full font-semibold bg-green-50 text-green-700">
+            {{ $productOrders->count() }} order(s)
+        </span>
+    </div>
+
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead class="border-b" style="border-color: var(--border); background: rgba(47,74,30,0.05);">
+                <tr>
+                    <th class="px-4 py-3 text-left font-semibold" style="color: var(--text);">Order ID</th>
+                    <th class="px-4 py-3 text-left font-semibold" style="color: var(--text);">Items</th>
+                    <th class="px-4 py-3 text-left font-semibold" style="color: var(--text);">Amount</th>
+                    <th class="px-4 py-3 text-left font-semibold" style="color: var(--text);">Delivery Address</th>
+                    <th class="px-4 py-3 text-left font-semibold" style="color: var(--text);">Shiprocket</th>
+                    <th class="px-4 py-3 text-left font-semibold" style="color: var(--text);">Ordered On</th>
+                    <th class="px-4 py-3"></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($productOrders as $po)
+                <tr class="border-b hover:bg-gray-50" style="border-color: var(--border);">
+                    <td class="px-4 py-3 font-mono text-xs" style="color: var(--text);">{{ $po->order_id }}</td>
+                    <td class="px-4 py-3" style="color: var(--muted);">
+                        <div>{{ collect($po->items)->sum('quantity') }} item(s)</div>
+                        <div class="text-xs mt-0.5">
+                            {{ collect($po->items)->pluck('name')->implode(', ') }}
+                        </div>
+                    </td>
+                    <td class="px-4 py-3 font-bold" style="color: var(--green);">
+                        ₹{{ number_format($po->amount, 2) }}
+                        @if($po->discount_amount > 0)
+                        <div class="text-xs font-normal" style="color: var(--muted);">-₹{{ number_format($po->discount_amount, 2) }} off</div>
+                        @endif
+                    </td>
+                    <td class="px-4 py-3 text-xs max-w-[200px] truncate" style="color: var(--muted);" title="{{ $po->delivery_address }}">
+                        {{ $po->delivery_address ?? '—' }}
+                    </td>
+                    <td class="px-4 py-3">
+                        @if($po->skip_shiprocket)
+                            <span class="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-full font-semibold bg-orange-50 text-orange-700">
+                                <i class="fa-solid fa-ban text-xs"></i> Skip SR
+                            </span>
+                        @elseif($po->shiprocket_order_id)
+                            <span class="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-full font-semibold bg-blue-50 text-blue-700">
+                                <i class="fa-solid fa-truck-fast text-xs"></i> {{ $po->shiprocket_status ?? 'Assigned' }}
+                            </span>
+                        @else
+                            <span class="text-xs" style="color: var(--muted);">—</span>
+                        @endif
+                    </td>
+                    <td class="px-4 py-3 text-xs" style="color: var(--muted);">
+                        {{ $po->created_at->format('d M Y, h:i A') }}
+                    </td>
+                    <td class="px-4 py-3">
+                        <a href="{{ route('admin.product-orders.show', $po) }}"
+                           class="text-xs font-semibold hover:underline" style="color: var(--green);">View</a>
+                    </td>
+                </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
+</div>
+@endif
+
 @endsection

@@ -59,6 +59,7 @@ class Product extends Model
         'is_active'                  => 'boolean',
         'is_featured'                => 'boolean',
         'is_subscription_redirect'   => 'boolean',
+        'skip_shiprocket'            => 'boolean',
     ];
 
     public function scopeActive($query)
