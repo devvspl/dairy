@@ -19,7 +19,7 @@ class ProductOrderController extends Controller
 
         if ($request->filled('status')) {
             $query->where('status', $request->status);
-        } elseif (!$request->hasAny(['search', 'product_id', 'date_from', 'date_to', 'status'])) {
+        } elseif (!$request->hasAny(['search', 'product_id', 'date_from', 'date_to', 'status', 'skip_shiprocket'])) {
             // Default to success when no filters applied at all
             $query->where('status', 'success');
         }
@@ -28,6 +28,9 @@ class ProductOrderController extends Controller
             if ($product) {
                 $query->where('items', 'like', '%"id":' . $product->id . '%');
             }
+        }
+        if ($request->has('skip_shiprocket') && $request->input('skip_shiprocket') !== '') {
+            $query->where('skip_shiprocket', (bool) $request->input('skip_shiprocket'));
         }
         if ($request->filled('date_from')) {
             $query->whereDate('created_at', '>=', $request->date_from);

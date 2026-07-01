@@ -804,6 +804,14 @@ class PaymentController extends Controller
         DB::beginTransaction();
         try {
             $user  = auth()->user();
+
+            // Derive skip_shiprocket from product config — re-query from DB so it
+            // cannot be spoofed by client-sent item data.
+            $orderedProductIds  = collect($items)->pluck('id')->filter()->unique()->values()->toArray();
+            $skipShiprocket     = \App\Models\Product::whereIn('id', $orderedProductIds)
+                                    ->where('skip_shiprocket', true)
+                                    ->exists();
+
             $order = ProductOrder::create([
                 'user_id'          => $user?->id,
                 'order_id'         => ProductOrder::generateOrderId(),
@@ -817,6 +825,7 @@ class PaymentController extends Controller
                 'customer_phone'   => $request->customer_phone,
                 'customer_email'   => $request->customer_email,
                 'delivery_address' => $request->delivery_address,
+                'skip_shiprocket'  => $skipShiprocket,
             ]);
 
             $paymentResponse = $this->phonePeService->initiatePayment(
