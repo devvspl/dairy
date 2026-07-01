@@ -179,6 +179,14 @@ class User extends Authenticatable
     }
 
     /**
+     * Get all product orders for this user
+     */
+    public function productOrders()
+    {
+        return $this->hasMany(ProductOrder::class)->latest();
+    }
+
+    /**
      * Get saved delivery addresses
      */
     public function deliveryAddresses()

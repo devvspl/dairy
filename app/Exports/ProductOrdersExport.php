@@ -50,7 +50,7 @@ class ProductOrdersExport implements
         if (!empty($this->filters['search'])) {
             $s = $this->filters['search'];
             $query->where(fn($q) => $q
-                ->where('customer_name',  'like', "%{$s}%")
+                ->where('customer_name',   'like', "%{$s}%")
                 ->orWhere('customer_phone', 'like', "%{$s}%")
                 ->orWhere('customer_email', 'like', "%{$s}%")
                 ->orWhere('order_id',       'like', "%{$s}%")
@@ -58,24 +58,24 @@ class ProductOrdersExport implements
         }
 
         $rows = $query->get()->map(fn($o) => [
-            'Order ID'           => $o->order_id,
-            'Customer'           => $o->customer_name,
-            'Phone'              => $o->customer_phone,
-            'Email'              => $o->customer_email ?? '-',
-            'Items'              => collect($o->items)->sum('quantity'),
-            'Amount (₹)'         => number_format($o->amount, 2),
-            'Discount (₹)'       => $o->discount_amount > 0 ? number_format($o->discount_amount, 2) : '-',
-            'Coupon'             => $o->coupon_code ?? '-',
-            'Payment Method'     => ucfirst(str_replace('_', ' ', $o->payment_method ?? '-')),
-            'Status'             => ucfirst($o->status),
-            'Delivery Address'   => $o->delivery_address ?? '-',
-            'Skip Shiprocket'    => $o->skip_shiprocket ? 'Yes' : 'No',
-            'Shiprocket Order'   => $o->shiprocket_order_id ?? '-',
-            'Shiprocket AWB'     => $o->shiprocket_awb ?? '-',
-            'Shiprocket Status'  => $o->shiprocket_status ?? '-',
-            'Transaction ID'     => $o->transaction_id ?? '-',
-            'Paid At'            => $o->paid_at ? $o->paid_at->format('d M Y H:i') : '-',
-            'Order Date'         => $o->created_at->format('d M Y H:i'),
+            'Order ID'          => $o->order_id,
+            'Customer'          => $o->customer_name,
+            'Phone'             => $o->customer_phone,
+            'Email'             => $o->customer_email ?? '-',
+            'Items'             => collect($o->items)->sum('quantity'),
+            'Amount (₹)'        => number_format($o->amount, 2),
+            'Discount (₹)'      => $o->discount_amount > 0 ? number_format($o->discount_amount, 2) : '-',
+            'Coupon'            => $o->coupon_code ?? '-',
+            'Payment Method'    => ucfirst(str_replace('_', ' ', $o->payment_method ?? '-')),
+            'Status'            => ucfirst($o->status),
+            'Delivery Address'  => $o->delivery_address ?? '-',
+            'Skip Shiprocket'   => $o->skip_shiprocket ? 'Yes' : 'No',
+            'Shiprocket Order'  => $o->shiprocket_order_id ?? '-',
+            'Shiprocket AWB'    => $o->shiprocket_awb ?? '-',
+            'Shiprocket Status' => $o->shiprocket_status ?? '-',
+            'Transaction ID'    => $o->transaction_id ?? '-',
+            'Paid At'           => $o->paid_at ? $o->paid_at->format('d M Y H:i') : '-',
+            'Order Date'        => $o->created_at->format('d M Y H:i'),
         ]);
 
         $this->rowCount = $rows->count();
@@ -112,6 +112,7 @@ class ProductOrdersExport implements
         $lastRow = $sheet->getHighestRow();
         $lastCol = 'R';
 
+        // Header row
         $sheet->getStyle("A1:{$lastCol}1")->applyFromArray([
             'font'      => ['bold' => true, 'color' => ['argb' => 'FFFFFFFF'], 'size' => 11],
             'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => 'FF2F4A1E']],
@@ -121,10 +122,10 @@ class ProductOrdersExport implements
         $sheet->getRowDimension(1)->setRowHeight(22);
 
         for ($row = 2; $row <= $lastRow; $row++) {
-            $status      = strtolower((string) $sheet->getCell("J{$row}")->getValue());
-            $skipSR      = strtolower((string) $sheet->getCell("L{$row}")->getValue()) === 'yes';
+            $status = strtolower((string) $sheet->getCell("J{$row}")->getValue());
+            $skipSR = strtolower((string) $sheet->getCell("L{$row}")->getValue()) === 'yes';
 
-            $rowBg  = match ($status) {
+            $rowBg = match ($status) {
                 'success'   => 'FFD1FAE5',
                 'pending'   => 'FFFEF9C3',
                 'failed'    => 'FFFEE2E2',
@@ -144,24 +145,29 @@ class ProductOrdersExport implements
                 'borders'   => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['argb' => 'FFD1D5DB']]],
                 'alignment' => ['vertical' => Alignment::VERTICAL_CENTER],
             ]);
+
+            // Status column (J) — bold + colour
             $sheet->getStyle("J{$row}")->applyFromArray([
                 'font'      => ['bold' => true, 'color' => ['argb' => $textColor]],
                 'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
             ]);
-            // Skip Shiprocket column — highlight "Yes" in orange
+
+            // Skip Shiprocket column (L) — orange highlight for "Yes"
             if ($skipSR) {
                 $sheet->getStyle("L{$row}")->applyFromArray([
-                    'font' => ['bold' => true, 'color' => ['argb' => 'FFB45309']],
-                    'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => 'FFFFF7ED']],
+                    'font'      => ['bold' => true, 'color' => ['argb' => 'FFB45309']],
+                    'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => 'FFFFF7ED']],
                     'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
                 ]);
             } else {
                 $sheet->getStyle("L{$row}")->getAlignment()
                       ->setHorizontal(Alignment::HORIZONTAL_CENTER);
             }
+
             $sheet->getRowDimension($row)->setRowHeight(18);
         }
 
+        // Outer border
         $sheet->getStyle("A1:{$lastCol}{$lastRow}")->applyFromArray([
             'borders' => ['outline' => ['borderStyle' => Border::BORDER_MEDIUM, 'color' => ['argb' => 'FF2F4A1E']]],
         ]);

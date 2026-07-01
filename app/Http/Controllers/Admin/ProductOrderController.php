@@ -75,7 +75,7 @@ class ProductOrderController extends Controller
 
     public function export(Request $request)
     {
-        $filters  = $request->only(['status', 'product_id', 'date_from', 'date_to', 'search', 'skip_shiprocket']);
+        $filters  = $request->only(['status', 'product_id', 'date_from', 'date_to', 'search']);
         $exporter = new ProductOrdersExport($filters);
 
         $filename = 'product-orders-' . now()->format('Y-m-d-His') . '.xlsx';
