@@ -873,10 +873,13 @@
                                 data-product-price="{{ $product->price }}"
                                 data-product-image="{{ asset($product->main_image) }}"
                                 data-product-slug="{{ $product->slug }}"
+                                data-subscription-redirect="{{ $product->is_subscription_redirect ? '1' : '0' }}"
                                 onclick="if(!event.target.closest('button') && !event.target.closest('select')) {
-                                    @if (in_array($product->slug, ['1-litre-cow-milk', '1-litre-buffalo-milk'])) window.location.href = IS_MEMBER_LOGGED_IN ? '{{ route('member.dashboard') }}' : MEMBER_LOGIN_URL;
-                                    @else
-                                        window.location.href = '{{ route('product.detail', $product->slug) }}'; @endif
+                                    if(this.dataset.subscriptionRedirect === '1') {
+                                        window.location.href = IS_MEMBER_LOGGED_IN ? '{{ route('member.dashboard') }}' : MEMBER_LOGIN_URL;
+                                    } else {
+                                        window.location.href = '{{ url('products') }}/' + this.dataset.productSlug;
+                                    }
                                 }"
                                 style="cursor:pointer;">
                                 <div class="tb-card-media">
@@ -959,7 +962,7 @@
                                         @endif>
                                         @if($product->stock_status !== 'available' || $product->stock_quantity === 0)
                                             Out of Stock
-                                        @elseif(in_array($product->slug, ['1-litre-cow-milk', '1-litre-buffalo-milk']))
+                                        @elseif($product->is_subscription_redirect)
                                             Subscribe Now
                                         @else
                                             Add to Cart
@@ -1493,9 +1496,9 @@
                                 if (!parentCard) return;
 
                                 const slug = parentCard.getAttribute('data-product-slug');
-                                const milkSlugs = ['1-litre-cow-milk', '1-litre-buffalo-milk'];
+                                const isSubscriptionRedirect = parentCard.getAttribute('data-subscription-redirect') === '1';
 
-                                if (milkSlugs.includes(slug)) {
+                                if (isSubscriptionRedirect) {
                                     if (IS_MEMBER_LOGGED_IN) {
                                         window.location.href = '{{ route('member.dashboard') }}';
                                     } else {

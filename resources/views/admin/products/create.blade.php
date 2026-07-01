@@ -334,7 +334,7 @@
         <!-- Status -->
         <div class="mb-6">
             <h3 class="text-lg font-bold mb-4" style="color: var(--text);">Status</h3>
-            <div class="flex space-x-4">
+            <div class="flex flex-wrap gap-4">
                 <label class="flex items-center">
                     <input type="checkbox" name="is_featured" value="1" {{ old('is_featured') ? 'checked' : '' }} class="mr-2">
                     <span class="text-sm" style="color: var(--text);">Featured</span>
@@ -342,6 +342,10 @@
                 <label class="flex items-center">
                     <input type="checkbox" name="is_active" value="1" {{ old('is_active', true) ? 'checked' : '' }} class="mr-2">
                     <span class="text-sm" style="color: var(--text);">Active</span>
+                </label>
+                <label class="flex items-center gap-1.5" title="Clicking this product redirects to member dashboard (for subscription-based products like milk)">
+                    <input type="checkbox" name="is_subscription_redirect" value="1" {{ old('is_subscription_redirect') ? 'checked' : '' }} class="mr-2">
+                    <span class="text-sm font-semibold" style="color: var(--green);">Subscription Redirect</span>
                 </label>
             </div>
         </div>

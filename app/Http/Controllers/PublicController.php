@@ -178,6 +178,7 @@ class PublicController extends Controller
                     'url' => route('product.detail', $product->slug),
                     'badge' => $product->badge,
                     'category' => $product->category,
+                    'is_subscription_redirect' => (bool) $product->is_subscription_redirect,
                 ];
             });
 
@@ -266,6 +267,7 @@ class PublicController extends Controller
                 'type' => $product->type ? $product->type->name : null,
                 'type_slug' => $product->type ? $product->type->slug : null,
                 'type_id' => $product->type_id,
+                'is_subscription_redirect' => (bool) $product->is_subscription_redirect,
             ];
         });
 

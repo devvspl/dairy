@@ -867,7 +867,8 @@
             data-product-price="{{ $product->price }}"
             data-product-image="{{ asset($product->main_image) }}"
             data-product-slug="{{ $product->slug }}"
-            data-product='{"id":{{ $product->id }},"name":"{{ addslashes($product->name) }}","slug":"{{ $product->slug }}","short_description":"{{ addslashes($product->short_description ?? $product->meta) }}","price":{{ $product->price }},"mrp":{{ $product->mrp ?? 'null' }},"image":"{{ asset($product->main_image) }}","url":"{{ route('product.detail', $product->slug) }}","badge":"{{ $product->badge ?? '' }}","badge_color":"{{ $product->badge_color ?? '' }}","rating":{{ $product->rating }},"category":"{{ $product->type ? addslashes($product->type->name) : '' }}"}'>
+            data-subscription-redirect="{{ $product->is_subscription_redirect ? '1' : '0' }}"
+            data-product='{"id":{{ $product->id }},"name":"{{ addslashes($product->name) }}","slug":"{{ $product->slug }}","short_description":"{{ addslashes($product->short_description ?? $product->meta) }}","price":{{ $product->price }},"mrp":{{ $product->mrp ?? 'null' }},"image":"{{ asset($product->main_image) }}","url":"{{ route('product.detail', $product->slug) }}","badge":"{{ $product->badge ?? '' }}","badge_color":"{{ $product->badge_color ?? '' }}","rating":{{ $product->rating }},"category":"{{ $product->type ? addslashes($product->type->name) : '' }}","is_subscription_redirect":{{ $product->is_subscription_redirect ? 'true' : 'false' }}}}'>
             @if($product->badge)
             <div class="plpg-badges">
               <span class="plpg-tag plpg-tag-{{ $product->badge_color }}">
@@ -888,7 +889,7 @@
             </div>
             <div class="plpg-info">
               <div class="plpg-title">
-                <a href="{{ in_array($product->slug, ['1-litre-cow-milk','1-litre-buffalo-milk']) ? (auth()->check() ? route('member.dashboard') : route('member.login')) : route('product.detail', $product->slug) }}" style="text-decoration: none; color: inherit;">
+                <a href="{{ $product->is_subscription_redirect ? (auth()->check() ? route('member.dashboard') : route('member.login')) : route('product.detail', $product->slug) }}" style="text-decoration: none; color: inherit;">
                   <strong>{{ $product->name }}</strong>
                 </a>
                 <span class="plpg-rating"><i class="fa-solid fa-star"></i> {{ number_format($product->rating, 1) }}</span>
@@ -903,7 +904,7 @@
                 </div>
                 <div class="plpg-actions">
                   <button class="plpg-iconbtn wishlist-btn" type="button" title="Wishlist" data-product-id="{{ $product->id }}"><i class="fa-regular fa-heart"></i></button>
-                  @if(in_array($product->slug, ['1-litre-cow-milk','1-litre-buffalo-milk']))
+                  @if($product->is_subscription_redirect)
                   <a class="plpg-btn plpg-btn-primary" href="{{ auth()->check() ? route('member.dashboard') : route('member.login') }}"><i class="fa-solid fa-droplet"></i> Subscribe</a>
                   @else
                   <a class="plpg-btn plpg-btn-primary" href="{{ route('product.detail', $product->slug) }}"><i class="fa-solid fa-eye"></i> View</a>
@@ -1534,12 +1535,10 @@
   initCartWishlist();
 })();
 
-// Milk product card click — redirect to dashboard or login
+// Milk product card click — redirect to dashboard or login based on is_subscription_redirect flag
 (function() {
-  const milkSlugs = ['1-litre-cow-milk', '1-litre-buffalo-milk'];
   document.querySelectorAll('.plpg-card').forEach(function(card) {
-    const slug = card.getAttribute('data-product-slug');
-    if (!milkSlugs.includes(slug)) return;
+    if (card.getAttribute('data-subscription-redirect') !== '1') return;
     card.style.cursor = 'pointer';
     card.addEventListener('click', function(e) {
       if (e.target.closest('button') || e.target.closest('a')) return;

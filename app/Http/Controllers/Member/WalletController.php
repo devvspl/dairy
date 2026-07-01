@@ -226,6 +226,14 @@ class WalletController extends Controller
 
         $oldStatus = $subscription->delivery_status;
         $subscription->update(['delivery_status' => 'active']);
+
+        // Delete future skipped entries created by the stop action
+        // so autoGenerate starts fresh from today, not after the old skipped dates
+        DeliveryLog::where('user_subscription_id', $subscription->id)
+            ->where('status', 'skipped')
+            ->whereDate('delivery_date', '>=', now()->toDateString())
+            ->delete();
+
         DeliveryLog::autoGenerate($subscription);
 
         SubscriptionChangeLog::record(
@@ -238,7 +246,7 @@ class WalletController extends Controller
         );
 
         return redirect()->route('member.dashboard')
-            ->with('success', 'Deliveries restarted. Schedule has been regenerated from tomorrow.');
+            ->with('success', 'Deliveries restarted. Schedule has been regenerated from today.');
     }
 
     /** PATCH /wallet/{subscription}/update */

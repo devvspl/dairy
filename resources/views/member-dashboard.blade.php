@@ -26,7 +26,7 @@
                     style="background:rgba(47,74,30,0.12); color:var(--green);"
                     onmouseover="this.style.background='rgba(47,74,30,0.22)'" onmouseout="this.style.background='rgba(47,74,30,0.12)'"
                     aria-label="Dismiss">
-                    <i class="fa-solid fa-times text-xs"></i>
+                    X
                 </button>
             </div>
         @endif
@@ -42,7 +42,7 @@
                     style="background:rgba(220,38,38,0.12); color:#dc2626;"
                     onmouseover="this.style.background='rgba(220,38,38,0.22)'" onmouseout="this.style.background='rgba(220,38,38,0.12)'"
                     aria-label="Dismiss">
-                    <i class="fa-solid fa-times text-xs"></i>
+                    X
                 </button>
             </div>
         @endif

@@ -289,7 +289,8 @@
       name: product.name,
       price: product.price,
       image: product.image,
-      slug: product.slug
+      slug: product.slug,
+      is_subscription_redirect: product.is_subscription_redirect || false
     });
 
     setStorage(WISHLIST_KEY, wishlist);

@@ -101,9 +101,13 @@ class DeliveryLog extends Model
             ->orderByDesc('delivery_date')
             ->value('delivery_date');
 
-        $start = $lastDate
+        // Start from today or the day after the last entry — whichever is later
+        $fromLastDate = $lastDate
             ? \Carbon\Carbon::parse($lastDate)->addDay()
             : $subscription->start_date->copy()->startOfDay();
+
+        $today = now()->startOfDay();
+        $start = $fromLastDate->lt($today) ? $today : $fromLastDate;
 
         // Determine delivery frequency
         $frequency = $settings ? ($settings->delivery_frequency ?? 'daily') : 'daily';

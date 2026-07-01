@@ -1731,14 +1731,13 @@
 
                 dropdown.classList.remove('loading', 'empty');
 
-                const milkSlugs = ['1-litre-cow-milk', '1-litre-buffalo-milk'];
                 const isMemberLoggedIn = {{ auth()->check() && auth()->user()->isMember() ? 'true' : 'false' }};
                 const memberDashUrl = '{{ route('member.dashboard') }}';
                 const memberLoginUrl = '{{ route('member.login') }}';
 
                 let html = '';
                 products.forEach(product => {
-                    const isMilk = milkSlugs.includes(product.slug);
+                    const isMilk = product.is_subscription_redirect === true;
                     const href = isMilk ?
                         (isMemberLoggedIn ? memberDashUrl : memberLoginUrl) :
                         product.url;
@@ -2150,8 +2149,7 @@
                         const itemSlug = item.slug || '';
                         const productUrl = itemSlug ? `{{ url('products') }}/${itemSlug}` : '#';
 
-                        const milkSlugs = ['1-litre-cow-milk', '1-litre-buffalo-milk'];
-                        const isMilk = milkSlugs.includes(itemSlug);
+                        const isMilk = item.is_subscription_redirect || false;
                         const subscribeUrl = IS_MEMBER_LOGGED_IN ? '{{ route('member.dashboard') }}' :
                             MEMBER_LOGIN_URL;
 

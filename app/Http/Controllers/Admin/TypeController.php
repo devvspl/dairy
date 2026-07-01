@@ -30,13 +30,15 @@ class TypeController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
+            'name' => ['required', 'string', 'max:255', 'unique:types,name'],
             'slug' => ['nullable', 'string', 'max:255', 'unique:types,slug'],
             'description' => ['nullable', 'string'],
             'icon' => ['nullable', 'string', 'max:100'],
             'image' => ['nullable', 'string', 'max:255'],
             'order' => ['required', 'integer', 'min:0'],
             'is_active' => ['boolean'],
+        ], [
+            'name.unique' => 'A type with this name already exists.',
         ]);
 
         $validated['is_active'] = $request->has('is_active');
@@ -59,13 +61,15 @@ class TypeController extends Controller
     public function update(Request $request, Type $type)
     {
         $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
+            'name' => ['required', 'string', 'max:255', 'unique:types,name,' . $type->id],
             'slug' => ['nullable', 'string', 'max:255', 'unique:types,slug,' . $type->id],
             'description' => ['nullable', 'string'],
             'icon' => ['nullable', 'string', 'max:100'],
             'image' => ['nullable', 'string', 'max:255'],
             'order' => ['required', 'integer', 'min:0'],
             'is_active' => ['boolean'],
+        ], [
+            'name.unique' => 'A type with this name already exists.',
         ]);
 
         $validated['is_active'] = $request->has('is_active');

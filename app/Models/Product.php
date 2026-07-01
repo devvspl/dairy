@@ -40,6 +40,7 @@ class Product extends Model
         'order',
         'is_active',
         'is_featured',
+        'is_subscription_redirect',
     ];
 
     protected $casts = [
@@ -54,8 +55,9 @@ class Product extends Model
         'nutrition_info' => 'array',
         'storage_instructions' => 'array',
         'features' => 'array',
-        'is_active' => 'boolean',
-        'is_featured' => 'boolean',
+        'is_active'                  => 'boolean',
+        'is_featured'                => 'boolean',
+        'is_subscription_redirect'   => 'boolean',
     ];
 
     public function scopeActive($query)
