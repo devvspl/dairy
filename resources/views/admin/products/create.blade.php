@@ -347,6 +347,10 @@
                     <input type="checkbox" name="is_subscription_redirect" value="1" {{ old('is_subscription_redirect') ? 'checked' : '' }} class="mr-2">
                     <span class="text-sm font-semibold" style="color: var(--green);">Subscription Redirect</span>
                 </label>
+                <label class="flex items-center gap-1.5" title="Orders for this product will NOT be sent to Shiprocket for fulfilment">
+                    <input type="checkbox" name="skip_shiprocket" value="1" {{ old('skip_shiprocket') ? 'checked' : '' }} class="mr-2">
+                    <span class="text-sm font-semibold" style="color: #e67e22;">Skip Shiprocket</span>
+                </label>
             </div>
         </div>
 
