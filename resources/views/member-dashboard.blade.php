@@ -627,13 +627,20 @@
                     <div class="mb-5 mt-3">
                         <div class="flex items-center justify-between mb-3">
                             <h3 class="font-bold text-sm" style="color: var(--text);"><i class="fa-solid fa-calendar-days mr-2" style="color: var(--green);"></i>Wallet Calendar</h3>
-                            <div class="flex items-center gap-2">
-                                <button onclick="calPrev()" class="w-7 h-7 rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors" style="color:var(--muted);">
-                                    <i class="fa-solid fa-chevron-left text-xs"></i>
+                            <div class="flex items-center gap-1">
+                                <button onclick="calPrev()" id="cal-prev-btn"
+                                    class="w-8 h-8 rounded-lg flex items-center justify-center transition-all hover:shadow-sm active:scale-95"
+                                    style="background:rgba(47,74,30,0.1); color:var(--green); border:1.5px solid rgba(47,74,30,0.2);">
+                                    <
                                 </button>
-                                <span id="cal-month-label" class="text-sm font-semibold" style="color: var(--green);">{{ now()->format('F Y') }}</span>
-                                <button onclick="calNext()" id="cal-next-btn" class="w-7 h-7 rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors" style="color:var(--muted);">
-                                    <i class="fa-solid fa-chevron-right text-xs"></i>
+                                <span id="cal-month-label" class="text-sm font-bold px-3 py-1 rounded-lg"
+                                    style="color:var(--green); background:rgba(47,74,30,0.06); min-width:120px; text-align:center;">
+                                    {{ now()->format('F Y') }}
+                                </span>
+                                <button onclick="calNext()" id="cal-next-btn"
+                                    class="w-8 h-8 rounded-lg flex items-center justify-center transition-all hover:shadow-sm active:scale-95"
+                                    style="background:rgba(47,74,30,0.1); color:var(--green); border:1.5px solid rgba(47,74,30,0.2);">
+                                    >
                                 </button>
                             </div>
                         </div>
@@ -645,13 +652,13 @@
                         <div id="cal-grid" class="grid grid-cols-7 gap-1">
                             {{-- Rendered by JS --}}
                         </div>
-                        {{-- <div class="mt-3 flex flex-wrap gap-3">
-                            <div class="flex items-center gap-1.5 text-xs"><div class="w-4 h-4 rounded border-2 border-yellow-500" style="background:#fef3c7;"></div><span style="color:var(--muted);">Delivered (debit)</span></div>
-                            <div class="flex items-center gap-1.5 text-xs"><div class="w-4 h-4 rounded border-2 border-green-600" style="background:#dcfce7;"></div><span style="color:var(--muted);">Top-up (credit)</span></div>
-                            <div class="flex items-center gap-1.5 text-xs"><div class="w-4 h-4 rounded border-2 border-blue-400" style="background:#eff6ff;"></div><span style="color:var(--muted);">Pending delivery</span></div>
-                            <div class="flex items-center gap-1.5 text-xs"><div class="w-4 h-4 rounded border-2 border-gray-300" style="background:#f3f4f6;"></div><span style="color:var(--muted);">Skipped</span></div>
-                            <div class="flex items-center gap-1.5 text-xs"><div class="w-4 h-4 rounded" style="background:var(--green);"></div><span style="color:var(--muted);">Today</span></div>
-                        </div> --}}
+                        <div class="mt-3 flex flex-wrap gap-2">
+                            <div class="flex items-center gap-1.5 text-[10px]"><div class="w-3.5 h-3.5 rounded border-2 border-yellow-500" style="background:#fef3c7;"></div><span style="color:var(--muted);">Delivered</span></div>
+                            <div class="flex items-center gap-1.5 text-[10px]"><div class="w-3.5 h-3.5 rounded border-2 border-green-600" style="background:#dcfce7;"></div><span style="color:var(--muted);">Top-up</span></div>
+                            <div class="flex items-center gap-1.5 text-[10px]"><div class="w-3.5 h-3.5 rounded border-2 border-blue-400" style="background:#eff6ff;"></div><span style="color:var(--muted);">Pending</span></div>
+                            <div class="flex items-center gap-1.5 text-[10px]"><div class="w-3.5 h-3.5 rounded border-2 border-gray-300" style="background:#f3f4f6;"></div><span style="color:var(--muted);">Skipped</span></div>
+                            <div class="flex items-center gap-1.5 text-[10px]"><div class="w-3.5 h-3.5 rounded" style="background:var(--green);"></div><span style="color:var(--muted);">Today</span></div>
+                        </div>
                     </div>
 
                     {{-- Transaction History --}}
@@ -1872,11 +1879,13 @@
         // ── Wallet Calendar (multi-month) ────────────────────────────
         @if($walletSubscription)
         (function() {
-            const SUB_ID = {{ $walletSubscription->id }};
-            const CSRF   = '{{ csrf_token() }}';
-            let calYear  = {{ now()->year }};
-            let calMonth = {{ now()->month }};
-            const todayStr = '{{ now()->format('Y-m-d') }}';
+            const SUB_ID    = {{ $walletSubscription->id }};
+            const CSRF      = '{{ csrf_token() }}';
+            let calYear     = {{ now()->year }};
+            let calMonth    = {{ now()->month }};
+            const todayStr  = '{{ now()->format('Y-m-d') }}';
+            const startYear  = {{ $walletSubscription->start_date->year }};
+            const startMonth = {{ $walletSubscription->start_date->month }};
 
             // Extra milk cutoff validation
             const extraDateInput = document.getElementById('extra-date-{{ $walletSubscription->id }}');
@@ -1951,49 +1960,52 @@
                 if (!grid) return;
                 grid.innerHTML = days.map(d => {
                     let bg = d.inMonth ? '#fff' : '#fafafa';
-                    let border = '#e5e7eb';
-                    let dayColor = d.inMonth ? '#1f2937' : '#9ca3af';
+                    let border = d.inMonth ? '#e5e7eb' : '#f3f4f6';
+                    let dayColor = d.inMonth ? '#1f2937' : '#d1d5db';
                     let inner = '';
 
-                    if (d.isToday) {
+                    if (!d.inMonth) {
+                        // Out-of-month day — just show muted date, no content
+                    } else if (d.isToday) {
                         bg = 'linear-gradient(135deg,var(--green),#3d6b2e)';
                         border = 'var(--green)';
                         dayColor = '#fff';
-                        inner = '<i class="fa-solid fa-star text-[9px] text-white"></i>';
-                    } else if (d.txn && d.txn.type === 'debit') {
-                        bg = '#fef3c7'; border = '#d97706';
-                        inner = `<i class="fa-solid fa-droplet text-[9px]" style="color:#d97706;"></i>
-                                 <p class="text-[9px] font-bold leading-tight" style="color:#92400e;">${d.txn.litres.toFixed(1)}L</p>
-                                 <p class="text-[8px] leading-tight" style="color:#b45309;">−₹${Math.round(d.txn.amount)}</p>`;
+                        inner = '<p class="text-[9px] mt-0.5 font-semibold text-white opacity-80">Today</p>';
                     } else if (d.txn && d.txn.type === 'credit') {
+                        // Top-up — show credit prominently
                         bg = '#dcfce7'; border = '#16a34a';
                         inner = `<i class="fa-solid fa-plus text-[9px]" style="color:#16a34a;"></i>
                                  <p class="text-[8px] font-bold leading-tight" style="color:#15803d;">+₹${Math.round(d.txn.amount)}</p>`;
-                    } else if (d.delivery && d.inMonth) {
-                        if (d.delivery.status === 'pending') {
-                            bg = '#eff6ff'; border = '#93c5fd';
-                            inner = `<i class="fa-solid fa-clock text-[9px]" style="color:#3b82f6;"></i>
-                                     <p class="text-[8px] leading-tight font-semibold" style="color:#1d4ed8;">${d.delivery.qty.toFixed(1)}L</p>
-                                     <p class="text-[8px] leading-tight" style="color:#3b82f6;">Pending</p>`;
-                        } else if (d.delivery.status === 'skipped') {
-                            bg = '#f3f4f6'; border = '#d1d5db';
-                            inner = `<i class="fa-solid fa-ban text-[9px]" style="color:#9ca3af;"></i>
-                                     <p class="text-[8px] leading-tight" style="color:#6b7280;">Skipped</p>`;
-                        } else if (d.delivery.status === 'failed') {
-                            inner = `<i class="fa-solid fa-circle-xmark text-[9px]" style="color:#ef4444;"></i>
-                                     <p class="text-[8px] leading-tight" style="color:#dc2626;">Failed</p>`;
-                        } else if (d.delivery.status === 'delivered') {
+                    } else if (d.txn && d.txn.type === 'debit') {
+                        // Delivery charged — yellow
+                        bg = '#fef3c7'; border = '#d97706';
+                        const litres = d.txn.litres > 0 ? d.txn.litres.toFixed(1) : '';
+                        inner = `<i class="fa-solid fa-droplet text-[9px]" style="color:#d97706;"></i>
+                                 ${litres ? `<p class="text-[9px] font-bold leading-tight" style="color:#92400e;">${litres}L</p>` : ''}
+                                 <p class="text-[8px] leading-tight" style="color:#b45309;">−₹${Math.round(d.txn.amount)}</p>`;
+                    } else if (d.delivery) {
+                        if (d.delivery.status === 'delivered') {
                             bg = '#fef3c7'; border = '#d97706';
                             inner = `<i class="fa-solid fa-droplet text-[9px]" style="color:#d97706;"></i>
                                      <p class="text-[9px] font-bold leading-tight" style="color:#92400e;">${d.delivery.qty.toFixed(1)}L</p>`;
+                        } else if (d.delivery.status === 'pending') {
+                            bg = '#eff6ff'; border = '#93c5fd';
+                            inner = `<i class="fa-solid fa-clock text-[9px]" style="color:#3b82f6;"></i>
+                                     <p class="text-[8px] leading-tight font-semibold" style="color:#1d4ed8;">${d.delivery.qty.toFixed(1)}L</p>`;
+                        } else if (d.delivery.status === 'skipped') {
+                            bg = '#f3f4f6'; border = '#d1d5db';
+                            inner = `<p class="text-[8px] leading-tight mt-0.5" style="color:#9ca3af;">Skipped</p>`;
+                        } else if (d.delivery.status === 'failed') {
+                            bg = '#fef2f2'; border = '#fca5a5';
+                            inner = `<i class="fa-solid fa-circle-xmark text-[9px]" style="color:#ef4444;"></i>
+                                     <p class="text-[8px] leading-tight" style="color:#dc2626;">Failed</p>`;
                         }
                     }
 
-                    const bgStyle = bg.startsWith('linear') ? `background:${bg}` : `background:${bg}`;
-                    const scale   = d.isToday ? 'transform:scale(1.05); box-shadow:0 4px 6px rgba(0,0,0,0.1);' : '';
-                    return `<div class="min-h-[72px] p-1.5 rounded-lg border-2 text-center transition-all"
-                                 style="${bgStyle}; border-color:${border}; ${scale}">
-                                <span class="text-xs font-bold block" style="color:${dayColor};">${d.day}</span>
+                    const todayStyle = d.isToday ? 'position:relative; z-index:2; box-shadow:0 4px 12px rgba(47,74,30,0.4);' : '';
+                    return `<div class="min-h-[60px] p-1.5 rounded-lg border-2 text-center"
+                                 style="background:${bg}; border-color:${border}; ${todayStyle}">
+                                <span class="text-xs font-bold block" style="color:${dayColor};">${d.inMonth ? d.day : ''}</span>
                                 ${inner}
                             </div>`;
                 }).join('');
@@ -2002,21 +2014,47 @@
             function loadCal() {
                 const label = document.getElementById('cal-month-label');
                 const nextBtn = document.getElementById('cal-next-btn');
+                const prevBtn = document.getElementById('cal-prev-btn');
                 const now = new Date();
-                // Disable next if already at current month
-                if (nextBtn) nextBtn.style.opacity = (calYear > now.getFullYear() || (calYear === now.getFullYear() && calMonth >= now.getMonth() + 1)) ? '0.3' : '1';
                 const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+                // Disable next if at or beyond current month
+                const isCurrentOrFuture = (calYear > now.getFullYear()) || (calYear === now.getFullYear() && calMonth >= now.getMonth() + 1);
+                if (nextBtn) {
+                    nextBtn.style.opacity = isCurrentOrFuture ? '0.35' : '1';
+                    nextBtn.style.pointerEvents = isCurrentOrFuture ? 'none' : 'auto';
+                    nextBtn.style.background = isCurrentOrFuture ? '#f3f4f6' : 'rgba(47,74,30,0.1)';
+                    nextBtn.style.color = isCurrentOrFuture ? '#9ca3af' : 'var(--green)';
+                }
+
+                // Disable prev if at or before subscription start month
+                const atStart = (calYear < startYear) || (calYear === startYear && calMonth <= startMonth);
+                if (prevBtn) {
+                    prevBtn.style.opacity = atStart ? '0.35' : '1';
+                    prevBtn.style.pointerEvents = atStart ? 'none' : 'auto';
+                    prevBtn.style.background = atStart ? '#f3f4f6' : 'rgba(47,74,30,0.1)';
+                    prevBtn.style.color = atStart ? '#9ca3af' : 'var(--green)';
+                }
+
                 if (label) label.textContent = monthNames[calMonth - 1] + ' ' + calYear;
+
+                // Loading state
+                const grid = document.getElementById('cal-grid');
+                if (grid) grid.innerHTML = '<div class="col-span-7 py-8 text-center text-xs" style="color:var(--muted);"><i class="fa-solid fa-spinner fa-spin mr-2"></i>Loading...</div>';
 
                 fetch(`/wallet/calendar?subscription_id=${SUB_ID}&year=${calYear}&month=${calMonth}`, {
                     headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': CSRF }
                 })
                 .then(r => r.json())
                 .then(data => renderCal(data.days))
-                .catch(() => {});
+                .catch(() => {
+                    if (grid) grid.innerHTML = '<div class="col-span-7 py-8 text-center text-xs text-red-500">Failed to load calendar.</div>';
+                });
             }
 
             window.calPrev = function() {
+                const atStart = (calYear < startYear) || (calYear === startYear && calMonth <= startMonth);
+                if (atStart) return;
                 calMonth--;
                 if (calMonth < 1) { calMonth = 12; calYear--; }
                 loadCal();
