@@ -649,7 +649,7 @@
                                 <div class="text-center py-1.5 text-[10px] font-bold rounded" style="background: rgba(47,74,30,0.05); color: var(--green);">{{ $d }}</div>
                             @endforeach
                         </div>
-                        <div id="cal-grid" class="grid grid-cols-7 gap-1">
+                        <div id="cal-grid" class="grid grid-cols-7" style="gap:4px;">
                             {{-- Rendered by JS --}}
                         </div>
                         <div class="mt-3 flex flex-wrap gap-2">
@@ -1956,59 +1956,66 @@
             });
 
             function renderCal(days) {
-                const grid = document.getElementById('cal-grid');
+                var grid = document.getElementById('cal-grid');
                 if (!grid) return;
-                grid.innerHTML = days.map(d => {
-                    let bg = d.inMonth ? '#fff' : '#fafafa';
-                    let border = d.inMonth ? '#e5e7eb' : '#f3f4f6';
-                    let dayColor = d.inMonth ? '#1f2937' : '#d1d5db';
-                    let inner = '';
+
+                if (!days || days.length === 0) {
+                    grid.innerHTML = '<p style="grid-column:span 7;text-align:center;color:#9ca3af;padding:20px;font-size:12px;">No data for this month.</p>';
+                    return;
+                }
+
+                var html = '';
+                for (var i = 0; i < days.length; i++) {
+                    var d = days[i];
+                    var bg     = d.inMonth ? '#fff'    : '#f9fafb';
+                    var border = d.inMonth ? '#e5e7eb' : '#f3f4f6';
+                    var numClr = d.inMonth ? '#111827' : '#d1d5db';
+                    var badge  = '';
 
                     if (!d.inMonth) {
-                        // Out-of-month day — just show muted date, no content
+                        // empty faded cell
                     } else if (d.isToday) {
-                        bg = 'linear-gradient(135deg,var(--green),#3d6b2e)';
-                        border = 'var(--green)';
-                        dayColor = '#fff';
-                        inner = '<p class="text-[9px] mt-0.5 font-semibold text-white opacity-80">Today</p>';
-                    } else if (d.txn && d.txn.type === 'credit') {
-                        // Top-up — show credit prominently
-                        bg = '#dcfce7'; border = '#16a34a';
-                        inner = `<i class="fa-solid fa-plus text-[9px]" style="color:#16a34a;"></i>
-                                 <p class="text-[8px] font-bold leading-tight" style="color:#15803d;">+₹${Math.round(d.txn.amount)}</p>`;
-                    } else if (d.txn && d.txn.type === 'debit') {
-                        // Delivery charged — yellow
-                        bg = '#fef3c7'; border = '#d97706';
-                        const litres = d.txn.litres > 0 ? d.txn.litres.toFixed(1) : '';
-                        inner = `<i class="fa-solid fa-droplet text-[9px]" style="color:#d97706;"></i>
-                                 ${litres ? `<p class="text-[9px] font-bold leading-tight" style="color:#92400e;">${litres}L</p>` : ''}
-                                 <p class="text-[8px] leading-tight" style="color:#b45309;">−₹${Math.round(d.txn.amount)}</p>`;
+                        bg     = 'linear-gradient(135deg,#2f4a1e,#3d6b2e)';
+                        border = '#2f4a1e';
+                        numClr = '#ffffff';
+                        badge  = '<span style="font-size:9px;color:rgba(255,255,255,0.8);display:block;line-height:1.3;">Today</span>';
+                    } else if (d.txn) {
+                        if (d.txn.type === 'credit') {
+                            bg = '#f0fdf4'; border = '#86efac';
+                            badge = '<span style="font-size:9px;color:#15803d;font-weight:700;display:block;line-height:1.3;">+₹' + Math.round(d.txn.amount) + '</span>';
+                        } else if (d.txn.type === 'debit') {
+                            bg = '#fffbeb'; border = '#fcd34d';
+                            var ltr = (parseFloat(d.txn.litres) > 0) ? parseFloat(d.txn.litres).toFixed(1) + 'L' : '';
+                            badge = (ltr ? '<span style="font-size:9px;color:#92400e;font-weight:700;display:block;line-height:1.3;">' + ltr + '</span>' : '') +
+                                    '<span style="font-size:8px;color:#b45309;display:block;line-height:1.3;">-₹' + Math.round(d.txn.amount) + '</span>';
+                        }
                     } else if (d.delivery) {
-                        if (d.delivery.status === 'delivered') {
-                            bg = '#fef3c7'; border = '#d97706';
-                            inner = `<i class="fa-solid fa-droplet text-[9px]" style="color:#d97706;"></i>
-                                     <p class="text-[9px] font-bold leading-tight" style="color:#92400e;">${d.delivery.qty.toFixed(1)}L</p>`;
-                        } else if (d.delivery.status === 'pending') {
+                        var st  = d.delivery.status;
+                        var qty = parseFloat(d.delivery.qty).toFixed(1) + 'L';
+                        if (st === 'delivered') {
+                            bg = '#fffbeb'; border = '#fcd34d';
+                            badge = '<span style="font-size:9px;color:#92400e;font-weight:700;display:block;line-height:1.3;">' + qty + '</span>';
+                        } else if (st === 'pending') {
                             bg = '#eff6ff'; border = '#93c5fd';
-                            inner = `<i class="fa-solid fa-clock text-[9px]" style="color:#3b82f6;"></i>
-                                     <p class="text-[8px] leading-tight font-semibold" style="color:#1d4ed8;">${d.delivery.qty.toFixed(1)}L</p>`;
-                        } else if (d.delivery.status === 'skipped') {
+                            badge = '<span style="font-size:9px;color:#1d4ed8;font-weight:700;display:block;line-height:1.3;">' + qty + '</span>' +
+                                    '<span style="font-size:8px;color:#3b82f6;display:block;line-height:1.3;">Pending</span>';
+                        } else if (st === 'skipped') {
                             bg = '#f3f4f6'; border = '#d1d5db';
-                            inner = `<p class="text-[8px] leading-tight mt-0.5" style="color:#9ca3af;">Skipped</p>`;
-                        } else if (d.delivery.status === 'failed') {
+                            badge = '<span style="font-size:8px;color:#9ca3af;display:block;line-height:1.3;">Skipped</span>';
+                        } else if (st === 'failed') {
                             bg = '#fef2f2'; border = '#fca5a5';
-                            inner = `<i class="fa-solid fa-circle-xmark text-[9px]" style="color:#ef4444;"></i>
-                                     <p class="text-[8px] leading-tight" style="color:#dc2626;">Failed</p>`;
+                            badge = '<span style="font-size:8px;color:#dc2626;display:block;line-height:1.3;">Failed</span>';
                         }
                     }
 
-                    const todayStyle = d.isToday ? 'position:relative; z-index:2; box-shadow:0 4px 12px rgba(47,74,30,0.4);' : '';
-                    return `<div class="min-h-[60px] p-1.5 rounded-lg border-2 text-center"
-                                 style="background:${bg}; border-color:${border}; ${todayStyle}">
-                                <span class="text-xs font-bold block" style="color:${dayColor};">${d.inMonth ? d.day : ''}</span>
-                                ${inner}
-                            </div>`;
-                }).join('');
+                    var shadow = d.isToday ? 'box-shadow:0 2px 8px rgba(47,74,30,0.35);' : '';
+                    html += '<div style="background:' + bg + ';border:2px solid ' + border + ';' + shadow + 'border-radius:8px;padding:6px 4px;text-align:center;height:72px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:2px;overflow:hidden;">' +
+                            '<span style="font-size:11px;font-weight:700;color:' + numClr + ';line-height:1.3;">' + (d.inMonth ? d.day : '') + '</span>' +
+                            badge +
+                            '</div>';
+                }
+
+                grid.innerHTML = html;
             }
 
             function loadCal() {
@@ -2039,16 +2046,19 @@
                 if (label) label.textContent = monthNames[calMonth - 1] + ' ' + calYear;
 
                 // Loading state
-                const grid = document.getElementById('cal-grid');
-                if (grid) grid.innerHTML = '<div class="col-span-7 py-8 text-center text-xs" style="color:var(--muted);"><i class="fa-solid fa-spinner fa-spin mr-2"></i>Loading...</div>';
+                var grid = document.getElementById('cal-grid');
+                if (grid) grid.innerHTML = '<p style="grid-column:span 7;text-align:center;color:#9ca3af;padding:20px;font-size:12px;"><i class="fa-solid fa-spinner fa-spin" style="margin-right:6px;"></i>Loading...</p>';
 
-                fetch(`/wallet/calendar?subscription_id=${SUB_ID}&year=${calYear}&month=${calMonth}`, {
+                fetch('/wallet/calendar?subscription_id=' + SUB_ID + '&year=' + calYear + '&month=' + calMonth, {
                     headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': CSRF }
                 })
-                .then(r => r.json())
-                .then(data => renderCal(data.days))
-                .catch(() => {
-                    if (grid) grid.innerHTML = '<div class="col-span-7 py-8 text-center text-xs text-red-500">Failed to load calendar.</div>';
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    renderCal(data.days);
+                })
+                .catch(function() {
+                    var g = document.getElementById('cal-grid');
+                    if (g) g.innerHTML = '<p style="grid-column:span 7;text-align:center;color:#ef4444;padding:20px;font-size:12px;">Failed to load. Please try again.</p>';
                 });
             }
 
@@ -3143,99 +3153,5 @@
             });
         }
 
-        // Calendar functions
-        let currentCalMonth = new Date().getMonth();
-        let currentCalYear = new Date().getFullYear();
-
-        function calPrev() {
-            currentCalMonth--;
-            if (currentCalMonth < 0) {
-                currentCalMonth = 11;
-                currentCalYear--;
-            }
-            renderCalendar();
-        }
-
-        function calNext() {
-            const now = new Date();
-            const maxMonth = now.getMonth() + 2; // Allow 2 months ahead
-            const maxYear = now.getFullYear();
-            
-            if (currentCalYear < maxYear || (currentCalYear === maxYear && currentCalMonth < maxMonth)) {
-                currentCalMonth++;
-                if (currentCalMonth > 11) {
-                    currentCalMonth = 0;
-                    currentCalYear++;
-                }
-                renderCalendar();
-            }
-        }
-
-        function renderCalendar() {
-            const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
-                'July', 'August', 'September', 'October', 'November', 'December'];
-            
-            const monthLabel = document.getElementById('cal-month-label');
-            if (!monthLabel) return; // Exit early if calendar elements don't exist
-            
-            monthLabel.textContent = monthNames[currentCalMonth] + ' ' + currentCalYear;
-            
-            // Enable/disable next button
-            const now = new Date();
-            const maxMonth = now.getMonth() + 2;
-            const maxYear = now.getFullYear();
-            const nextBtn = document.getElementById('cal-next-btn');
-            
-            if (nextBtn) {
-                if (currentCalYear > maxYear || (currentCalYear === maxYear && currentCalMonth >= maxMonth)) {
-                    nextBtn.style.opacity = '0.5';
-                    nextBtn.style.pointerEvents = 'none';
-                } else {
-                    nextBtn.style.opacity = '1';
-                    nextBtn.style.pointerEvents = 'auto';
-                }
-            }
-            
-            // Render calendar grid (simplified version)
-            const grid = document.getElementById('cal-grid');
-            if (grid) {
-                grid.innerHTML = ''; // Clear existing content
-                
-                const firstDay = new Date(currentCalYear, currentCalMonth, 1).getDay();
-                const daysInMonth = new Date(currentCalYear, currentCalMonth + 1, 0).getDate();
-                
-                // Add empty cells for days before month starts
-                for (let i = 0; i < firstDay; i++) {
-                    const cell = document.createElement('div');
-                    cell.className = 'aspect-square';
-                    grid.appendChild(cell);
-                }
-                
-                // Add days of the month
-                for (let day = 1; day <= daysInMonth; day++) {
-                    const cell = document.createElement('div');
-                    cell.className = 'aspect-square flex items-center justify-center text-xs rounded cursor-pointer hover:bg-gray-100';
-                    cell.textContent = day;
-                    
-                    const cellDate = new Date(currentCalYear, currentCalMonth, day);
-                    const today = new Date();
-                    
-                    if (cellDate.toDateString() === today.toDateString()) {
-                        cell.style.background = 'var(--green)';
-                        cell.style.color = '#fff';
-                        cell.style.fontWeight = 'bold';
-                    } else {
-                        cell.style.color = 'var(--text)';
-                    }
-                    
-                    grid.appendChild(cell);
-                }
-            }
-        }
-
-        // Initialize calendar on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            renderCalendar();
-        });
     </script>
 @endsection
