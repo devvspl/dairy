@@ -927,7 +927,20 @@ class PaymentController extends Controller
                 // Assign shiprocket (skip if the order or any of its products opted out)
                 $shiprocket = app(ShiprocketService::class);
 
-                if ($shiprocket->isEnabled() && !$order->isShiprocketAssigned() && !$order->skip_shiprocket) {
+                // Re-derive skip flag from the products themselves in case the order
+                // was created before skip_shiprocket existed, or the flag changed after checkout.
+                $productIds        = collect($order->items)->pluck('id')->filter()->unique();
+                $anyProductSkips   = \App\Models\Product::whereIn('id', $productIds)
+                    ->where('skip_shiprocket', true)
+                    ->exists();
+                $shouldSkip = $order->skip_shiprocket || $anyProductSkips;
+
+                // Sync the flag onto the order so the admin UI is accurate
+                if ($anyProductSkips && !$order->skip_shiprocket) {
+                    $order->update(['skip_shiprocket' => true]);
+                }
+
+                if ($shiprocket->isEnabled() && !$order->isShiprocketAssigned() && !$shouldSkip) {
                     $shipment = $shiprocket->createOrder($order);
 
                     if ($shipment['success']) {

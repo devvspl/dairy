@@ -156,6 +156,10 @@ class ProductOrderController extends Controller
             return response()->json(['success' => false, 'message' => 'Order already assigned to Shiprocket.']);
         }
 
+        if ($productOrder->skip_shiprocket) {
+            return response()->json(['success' => false, 'message' => 'This order is marked to skip Shiprocket fulfilment.']);
+        }
+
         $result = $shiprocket->createOrder($productOrder);
 
         if ($result['success']) {
@@ -218,6 +222,7 @@ class ProductOrderController extends Controller
 
         $orders  = ProductOrder::whereIn('id', $request->ids)
                                ->whereNull('shiprocket_order_id')
+                               ->where('skip_shiprocket', false)
                                ->get();
 
         $results = ['success' => [], 'failed' => []];
