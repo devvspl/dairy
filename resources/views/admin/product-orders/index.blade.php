@@ -143,11 +143,9 @@
                         data-assigned="{{ $order->shiprocket_order_id ? '1' : '0' }}">
                         @if($srEnabled)
                         <td class="px-4 py-3 w-10">
-                            @if(!$order->shiprocket_order_id && !$order->skip_shiprocket)
+                            @if(!$order->shiprocket_order_id)
                             <input type="checkbox" class="row-check w-4 h-4 rounded accent-green-600 cursor-pointer"
                                    value="{{ $order->id }}" onchange="onRowCheck()">
-                            @elseif($order->skip_shiprocket)
-                            <span class="block w-4 h-4"></span>
                             @else
                             <span class="block w-4 h-4 flex items-center justify-center">
                                 <i class="fa-solid fa-circle-check text-green-500 text-sm"></i>
@@ -180,11 +178,7 @@
                         </td>
                         @if($srEnabled)
                         <td class="px-4 py-3">
-                            @if($order->skip_shiprocket)
-                                <span class="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-full font-semibold bg-orange-50 text-orange-700">
-                                    <i class="fa-solid fa-ban text-xs"></i> Skip SR
-                                </span>
-                            @elseif($order->shiprocket_order_id)
+                            @if($order->shiprocket_order_id)
                                 <span class="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-full font-semibold bg-blue-50 text-blue-700">
                                     <i class="fa-solid fa-truck-fast text-xs"></i>
                                     {{ $order->shiprocket_status ?? 'Assigned' }}

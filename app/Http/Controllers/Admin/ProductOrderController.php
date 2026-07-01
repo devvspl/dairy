@@ -29,9 +29,6 @@ class ProductOrderController extends Controller
                 $query->where('items', 'like', '%"id":' . $product->id . '%');
             }
         }
-        if ($request->has('skip_shiprocket') && $request->input('skip_shiprocket') !== '') {
-            $query->where('skip_shiprocket', (bool) $request->input('skip_shiprocket'));
-        }
         if ($request->filled('date_from')) {
             $query->whereDate('created_at', '>=', $request->date_from);
         }
@@ -78,7 +75,7 @@ class ProductOrderController extends Controller
 
     public function export(Request $request)
     {
-        $filters  = $request->only(['status', 'product_id', 'date_from', 'date_to', 'search']);
+        $filters  = $request->only(['status', 'product_id', 'date_from', 'date_to', 'search', 'skip_shiprocket']);
         $exporter = new ProductOrdersExport($filters);
 
         $filename = 'product-orders-' . now()->format('Y-m-d-His') . '.xlsx';
