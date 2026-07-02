@@ -158,6 +158,7 @@ Route::middleware('auth')->group(function () {
         Route::post('product-orders/shiprocket/bulk-assign', [App\Http\Controllers\Admin\ProductOrderController::class, 'shiprocketBulkAssign'])->name('product-orders.shiprocket.bulk-assign');
         Route::get('product-orders/{product_order}/shiprocket/track', [App\Http\Controllers\Admin\ProductOrderController::class, 'shiprocketTrack'])->name('product-orders.shiprocket.track');
         Route::post('product-orders/{product_order}/shiprocket/cancel', [App\Http\Controllers\Admin\ProductOrderController::class, 'shiprocketCancel'])->name('product-orders.shiprocket.cancel');
+        Route::post('product-orders/{product_order}/mark-delivered', [App\Http\Controllers\Admin\ProductOrderController::class, 'markDelivered'])->name('product-orders.mark-delivered');
         // Shiprocket Settings
         Route::get('settings/shiprocket', [App\Http\Controllers\Admin\ShiprocketSettingController::class, 'index'])->name('settings.shiprocket');
         Route::post('settings/shiprocket', [App\Http\Controllers\Admin\ShiprocketSettingController::class, 'update'])->name('settings.shiprocket.update');

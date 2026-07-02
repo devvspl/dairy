@@ -76,6 +76,23 @@ class ProductOrderController extends Controller
         return redirect()->back()->with('success', 'Order status updated successfully.');
     }
 
+    public function markDelivered(Request $request, ProductOrder $productOrder)
+    {
+        if ($productOrder->status !== 'success') {
+            return response()->json(['success' => false, 'message' => 'Only successful orders can be marked as delivered.']);
+        }
+
+        $notes = $request->input('notes');
+
+        $productOrder->update([
+            'delivery_status'   => 'delivered',
+            'delivered_at'      => now(),
+            'delivery_notes'    => $notes,
+        ]);
+
+        return response()->json(['success' => true, 'message' => 'Order marked as delivered successfully.']);
+    }
+
     public function export(Request $request)
     {
         $filters  = $request->only(['status', 'product_id', 'date_from', 'date_to', 'search']);
