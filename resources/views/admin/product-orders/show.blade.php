@@ -286,6 +286,61 @@
                 </div>
             </div>
 
+            <!-- Manual Delivery Status -->
+            @if($productOrder->status === 'success' && ($productOrder->skip_shiprocket || !$productOrder->isShiprocketAssigned()))
+            <div class="bg-white rounded-lg shadow-sm border" style="border-color: var(--border);">
+                <div class="px-5 py-4 border-b flex items-center gap-2" style="border-color: var(--border);">
+                    <i class="fa-solid fa-box-open" style="color: var(--green);"></i>
+                    <h3 class="font-bold" style="color: var(--text);">Manual Delivery</h3>
+                </div>
+                <div class="p-5 space-y-4">
+
+                    @if($productOrder->delivery_status === 'delivered')
+                        <!-- Already marked delivered -->
+                        <div class="flex items-center gap-2">
+                            <i class="fa-solid fa-circle-check text-green-600"></i>
+                            <span class="font-semibold text-green-700 text-sm">Delivered</span>
+                        </div>
+                        <div class="text-sm space-y-1">
+                            @if($productOrder->delivered_at)
+                            <div class="flex justify-between">
+                                <span style="color:var(--muted);">Delivered At</span>
+                                <span class="font-semibold" style="color:var(--text);">{{ $productOrder->delivered_at->format('d M Y, h:i A') }}</span>
+                            </div>
+                            @endif
+                            @if($productOrder->delivery_notes)
+                            <div class="pt-1">
+                                <span class="text-xs font-medium" style="color:var(--muted);">Notes</span>
+                                <p class="text-sm mt-0.5" style="color:var(--text);">{{ $productOrder->delivery_notes }}</p>
+                            </div>
+                            @endif
+                        </div>
+                        <button onclick="openMarkDelivered()"
+                                class="w-full px-4 py-2 rounded-lg border text-sm font-semibold"
+                                style="border-color:var(--border); color:var(--muted);">
+                            <i class="fa-solid fa-pen mr-1"></i> Update
+                        </button>
+
+                    @else
+                        <!-- Not yet delivered -->
+                        <p class="text-sm" style="color:var(--muted);">
+                            @if($productOrder->skip_shiprocket)
+                                This order skips Shiprocket — mark delivery manually once handed to customer.
+                            @else
+                                No courier assigned — mark delivery status manually.
+                            @endif
+                        </p>
+                        <button onclick="openMarkDelivered()"
+                                class="w-full px-4 py-2 rounded-lg font-semibold text-sm text-white"
+                                style="background-color: var(--green);">
+                            <i class="fa-solid fa-box-open mr-2"></i>Mark as Delivered
+                        </button>
+                    @endif
+
+                </div>
+            </div>
+            @endif
+
             <!-- Linked User -->
             @if($productOrder->user)
             <div class="bg-white rounded-lg shadow-sm p-6 border" style="border-color: var(--border);">
@@ -397,5 +452,82 @@ function srCancel() {
     });
 }
 @endif
+@if($productOrder->status === 'success' && ($productOrder->skip_shiprocket || !$productOrder->isShiprocketAssigned()))
+function openMarkDelivered() {
+    document.getElementById('markDeliveredModal').classList.remove('hidden');
+    document.getElementById('markDeliveredModal').classList.add('flex');
+}
+function closeMarkDelivered() {
+    document.getElementById('markDeliveredModal').classList.add('hidden');
+    document.getElementById('markDeliveredModal').classList.remove('flex');
+}
+function submitMarkDelivered() {
+    const btn   = document.getElementById('markDeliveredBtn');
+    const notes = document.getElementById('deliveryNotes').value;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i>Saving...';
+
+    fetch('{{ route('admin.product-orders.mark-delivered', $productOrder) }}', {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': CSRF,
+            'X-Requested-With': 'XMLHttpRequest',
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ notes }),
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            closeMarkDelivered();
+            location.reload();
+        } else {
+            alert(data.message);
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-box-open mr-2"></i>Confirm Delivered';
+        }
+    })
+    .catch(() => {
+        alert('Request failed. Please try again.');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-box-open mr-2"></i>Confirm Delivered';
+    });
+}
+@endif
 </script>
+
+<!-- Mark Delivered Modal -->
+@if($productOrder->status === 'success' && ($productOrder->skip_shiprocket || !$productOrder->isShiprocketAssigned()))
+<div id="markDeliveredModal" class="fixed inset-0 z-50 hidden items-center justify-center">
+    <div class="absolute inset-0 bg-black bg-opacity-40" onclick="closeMarkDelivered()"></div>
+    <div class="relative bg-white rounded-xl shadow-2xl w-full max-w-sm mx-4 p-6 z-10">
+        <h3 class="text-lg font-bold mb-1" style="color: var(--text);">
+            <i class="fa-solid fa-box-open mr-2" style="color: var(--green);"></i>Mark as Delivered
+        </h3>
+        <p class="text-sm mb-4" style="color: var(--muted);">Confirm this order was physically delivered to the customer.</p>
+
+        <div class="mb-4">
+            <label class="block text-xs font-semibold mb-1" style="color: var(--muted);">Delivery Notes (optional)</label>
+            <textarea id="deliveryNotes" rows="3"
+                      class="w-full px-3 py-2 border rounded-lg text-sm" style="border-color: var(--border);"
+                      placeholder="e.g. Left at door, handed to neighbour..."></textarea>
+        </div>
+
+        <div class="flex gap-3">
+            <button id="markDeliveredBtn"
+                    onclick="submitMarkDelivered()"
+                    class="flex-1 px-4 py-2 rounded-lg font-semibold text-sm text-white"
+                    style="background-color: var(--green);">
+                <i class="fa-solid fa-box-open mr-2"></i>Confirm Delivered
+            </button>
+            <button onclick="closeMarkDelivered()"
+                    class="px-4 py-2 rounded-lg border font-semibold text-sm"
+                    style="border-color: var(--border); color: var(--text);">
+                Cancel
+            </button>
+        </div>
+    </div>
+</div>
+@endif
+
 @endsection
