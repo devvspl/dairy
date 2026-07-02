@@ -14,6 +14,7 @@ class ProductOrder extends Model
         'shiprocket_order_id', 'shiprocket_shipment_id', 'shiprocket_awb',
         'shiprocket_courier', 'shiprocket_status', 'shiprocket_assigned_at',
         'skip_shiprocket',
+        'delivery_status', 'delivered_at', 'delivery_notes',
     ];
 
     protected $casts = [
@@ -23,6 +24,8 @@ class ProductOrder extends Model
         'payment_response'        => 'array',
         'paid_at'                 => 'datetime',
         'shiprocket_assigned_at'  => 'datetime',
+        'skip_shiprocket'         => 'boolean',
+        'delivered_at'            => 'datetime',
     ];
 
     public function isShiprocketAssigned(): bool
